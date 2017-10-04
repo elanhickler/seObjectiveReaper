@@ -87,32 +87,6 @@ int WavAudioFile::getSamplePosition(double timeInSeconds) const
   return int(std::round(timeInSeconds * sampleRate));
 }
 
-//void WavAudioFile::applyFadeOutAtEnd(int fadeLength, int shape, double tension)
-//{
-//	ensureAudioLoaded();
-//
-//	if (audio->getNumChannels() == 0 || audio->getNumSamples() < fadeLength)
-//	{
-//		jassertfalse;
-//		return;
-//	}
-//
-//	auto data = audio->getArrayOfWritePointers();
-//	auto numSamples = audio->getNumSamples();
-//	auto numChans = audio->getNumChannels();
-//	int count{ fadeLength };
-//
-//	for (int i = numSamples - fadeLength; i < numSamples; ++i)
-//	{
-//		auto fadeAmount = float(count) / float(fadeLength);
-//
-//		for (int chan = 0; chan < numChans; ++chan)
-//			data[chan][i] *= fadeAmount;
-//
-//		count--;
-//	}
-//}
-
 double WavAudioFile::getPeakValue()
 {
   ensureAudioLoaded();
@@ -407,11 +381,11 @@ WavAudioFile::Loop WavAudioFile::getSampleLoop(int index) const
   r.playcount = getIntValue(idLoop, index, "PlayCount");
   r.cueIdentifier = getIntValue(idLoop, index, "Identifier");
   return r;
-}/*
+}
 
 void AudioFile::collectCues()
 {
-    cues = WavAudioFile::create(m_file);
+    cues = WavAudioFile::create(m_file, 0.0, m_samples/(double)m_srate);
 }
 
 Array<WavAudioFile::CuePoint> AudioFile::getCuePoints()
@@ -432,4 +406,4 @@ Array<WavAudioFile::Loop> AudioFile::getLoops()
 void AudioFile::writeCues()
 {
     cues->saveChanges(m_file);
-}*/
+}

@@ -231,16 +231,15 @@ public:
   double m_length;
   vector<vector<double>> multichannel;
 
-  // functions
-  //void setFile(File file)
-  //{
-  //  m_file = file;
-  //}
-  //void collectCues();
-  //Array<WavAudioFile::CuePoint> getCuePoints();
-  //Array<WavAudioFile::Region> getCueRegions();
-  //Array<WavAudioFile::Loop> getLoops();
-  //void writeCues();
+  void setFile(File file)
+  {
+    m_file = file;
+  }
+  void collectCues();
+  Array<WavAudioFile::CuePoint> getCuePoints();
+  Array<WavAudioFile::Region> getCueRegions();
+  Array<WavAudioFile::Loop> getLoops();
+  void writeCues();
 
   // getters
   int samples() { return m_samples; }
