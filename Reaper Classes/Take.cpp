@@ -33,7 +33,7 @@ bool TAKE::objectIsValid() const { return take != nullptr; }
 TAKE::TAKE(MediaItem_Take * take) : take(take)
 {
     jassert(take != nullptr);
-    InitAudio();
+    initAudio();
     TagManager.WithTags(getObjectName());
 
     envelope.Volume.setTrackEnvelope(take, "Volume");
@@ -43,7 +43,7 @@ TAKE::TAKE(MediaItem_Take * take) : take(take)
 }
 
 // functions
-AUDIO& TAKE::audio() { return m_audio; }
+AudioFile & TAKE::audio() { return audioFile; }
 int TAKE::idx() const { return GetMediaItemTakeInfo_Value(take, "IP_TAKENUMBER"); }
 MediaItem * TAKE::item() const { return GetMediaItemTake_Item(take); }
 MediaTrack * TAKE::track() const { return GetMediaItemTrack(item()); }
@@ -72,7 +72,7 @@ bool TAKE::preservepitch() const { return GetMediaItemTakeInfo_Value(take, "B_PP
 double TAKE::rate() const { return GetMediaItemTakeInfo_Value(take, "D_PLAYRATE"); }
 double TAKE::vol() const { return GetMediaItemTakeInfo_Value(take, "D_VOL"); }
 double TAKE::offset() const { return GetMediaItemTakeInfo_Value(take, "D_STARTOFFS"); }
-int TAKE::srate() { return m_srate; }
+int TAKE::srate() { return audioFile.m_srate; }
 int TAKE::bitdepth() { return m_bitdepth; }
 int TAKE::nch() { return m_nch; }
 PCM_source * TAKE::pcm_source() const { return m_source; }
@@ -142,23 +142,23 @@ TAKE TAKE::move(MediaItem * new_item)
     return take;
 }
 
-void TAKE::InitAudio(double starttime, double endtime)
+void TAKE::initAudio(double starttime, double endtime)
 {
     m_source = GetMediaItemTake_Source(take);
 
-    m_audio = AUDIO((File)m_source->GetFileName());
+    audioFile = AudioFile((File)m_source->GetFileName());
 
-    /*Needs to be moved to AUDIO constructor*/
-    m_audio.m_srate = m_source->GetSampleRate();
-    m_audio.m_samples = m_source->GetLength();
-    m_audio.m_bitdepth = m_source->GetBitsPerSample();
-    m_audio.m_channels = m_source->GetNumChannels();
-    m_audio.m_frames = m_audio.m_samples / m_audio.m_channels;
-    /***************************************/
 
-    m_file = m_source->GetFileName();
-    m_srate = m_source->GetSampleRate();
-    m_file_frames = length() * m_srate;
+    // raw audio file properties
+    audioFile.m_srate = m_source->GetSampleRate();
+    audioFile.m_samples = m_source->GetLength();
+    audioFile.m_bitdepth = m_source->GetBitsPerSample();
+    audioFile.m_channels = m_source->GetNumChannels();
+    audioFile.m_frames = audioFile.m_samples / audioFile.m_channels;
+    
+    // take audio properties
+    audioFile.m_file = m_source->GetFileName();
+    m_file_frames = length() * audioFile.m_srate;
     m_file_length = m_source->GetLength();
     m_bitdepth = m_source->GetBitsPerSample();
     m_nch = m_source->GetNumChannels();
@@ -166,18 +166,18 @@ void TAKE::InitAudio(double starttime, double endtime)
     if (starttime == -1) starttime = m_audiobuf_starttime = 0;
     if (endtime == -1) { endtime = m_audiobuf_endtime = length(); }
 
-    m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)m_srate;
+    m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)audioFile.m_srate;
     m_take_samples = m_take_frames * m_nch;
 }
 
-void TAKE::LoadAudio()
+void TAKE::loadAudio()
 {
     int initial_chanmode = chanmode();
     chanmode(0);
 
     vector<double> buffer(m_take_samples, 0);
     AudioAccessor* accessor = CreateTakeAudioAccessor(take);
-    GetAudioAccessorSamples(accessor, m_srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
+    GetAudioAccessorSamples(accessor, audioFile.m_srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
     DestroyAudioAccessor(accessor);
 
     chanmode(initial_chanmode);
@@ -185,7 +185,22 @@ void TAKE::LoadAudio()
     m_audiobuf = InterleavedToMultichannel(buffer.data(), m_nch, m_take_frames);
 }
 
-void TAKE::UnloadAudio() { m_audiobuf.clear(); }
+void TAKE::unloadAudio() { m_audiobuf.clear(); }
+
+vector<vector<double>> & TAKE::getAudioMultichannel() { return m_audiobuf; }
+
+vector<double>& TAKE::getAudioChannel(int channel)
+{
+  jassert(channel < m_audiobuf.size());
+  return m_audiobuf[channel];
+}
+
+double TAKE::getAudioSample(int channel, int sample) 
+{
+  jassert(channel < m_audiobuf.size());
+  jassert(sample < m_audiobuf[channel].size());
+  return m_audiobuf[channel][sample];
+}
 
 TAKELIST::TAKELIST() {}
 TAKELIST::TAKELIST(MediaItem * item)

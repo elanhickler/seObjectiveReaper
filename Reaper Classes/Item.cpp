@@ -13,8 +13,8 @@ bool ITEM::is_grouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_tra
 
 ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
 ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
-String ITEM::getObjectName() const { return take().name(); }
-void ITEM::setObjectName(const String & v) { take().name(v); }
+String ITEM::getObjectName() const { return getTake().name(); }
+void ITEM::setObjectName(const String & v) { getTake().name(v); }
 double ITEM::getObjectStartPos() const { return GetMediaItemInfo_Value(item, "D_POSITION"); }
 
 void ITEM::setObjectStartPos(double v)
@@ -62,23 +62,23 @@ int ITEM::fadeout_shape() const { return GetMediaItemInfo_Value(item, "C_FADEOUT
 double ITEM::fadein_curve() const { return GetMediaItemInfo_Value(item, "D_FADEINDIR"); }
 double ITEM::fadeout_curve() const { return GetMediaItemInfo_Value(item, "D_FADEOUTDIR"); }
 bool ITEM::selected() const { return 0.0 != GetMediaItemInfo_Value(item, "B_UISEL"); }
-const TAKE & ITEM::activeTake() const { return active_take; }
+const TAKE & ITEM::getActiveTake() const { return active_take; }
 const TAKE & ITEM::take(int i) const
 {
     if (i >= TakeList.size())
         return InvalidTake;
     return TakeList[i];
 }
-const TAKE & ITEM::take() const { return activeTake(); }
-TAKE & ITEM::activeTake() {  return active_take;  }
+const TAKE & ITEM::getTake() const { return getActiveTake(); }
+TAKE & ITEM::getActiveTake() {  return active_take;  }
 TAKE & ITEM::take(int i) {
     if (i >= TakeList.size())
         return InvalidTake;
     return TakeList[i];
 }
-TAKE & ITEM::take() { return activeTake(); }
+TAKE & ITEM::getTake() { return getActiveTake(); }
 int ITEM::num_takes() { return CountTakes(item); }
-double ITEM::rate() const { return activeTake().rate(); }
+double ITEM::rate() const { return getActiveTake().rate(); }
 
 ITEM ITEM::duplicate()
 {
@@ -173,12 +173,12 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     auto iter = method_lookup.find(key);
 
     if (iter == method_lookup.end())
-        return take().getTag(key);
+        return getActiveTake().getTag(key);
 
     switch (iter->second)
     {
     case __name:
-        return take().nameNoTags();
+        return getActiveTake().nameNoTags();
     case __track:
         if (get_value) return (String)TRACK(track()).idx();
         else return TRACK(track()).name();
@@ -197,13 +197,13 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __fadeoutlen:
         return (String)fadeoutlen();
     case __startoffset:
-        return (String)take().offset();
+        return (String)getActiveTake().offset();
     case __tags:
-        return take().nameTagsOnly();
+        return getActiveTake().nameTagsOnly();
     case __pitch:
-        return (String)take().pitch();
+        return (String)getActiveTake().pitch();
     case __file_extension:
-        return take().file().getFileExtension();
+        return getActiveTake().file().getFileExtension();
     }
 
     return String();
@@ -220,7 +220,6 @@ void ITEMLIST::CollectItems()
         r = RANGE({ front().startPos(), list.back().endPos() });
     }
 }
-
 
 void ITEMLIST::CollectSelectedItems()
 {
@@ -320,7 +319,7 @@ void ITEMLIST::selected(bool select)
 
 void ITEMLIST::InitAudio()
 {
-    for (auto & item : list) item.take().InitAudio();
+    for (auto & item : list) item.getActiveTake().initAudio();
 }
 
 void ITEMGROUPLIST::collect_donotgroup(bool selected_only)

@@ -21,13 +21,14 @@ static const String idCue{ "Cue" };
 static const String idLoop{ "Loop" };
 
 
-WavMetadata::WavMetadata(const File& sourceFile)
+WavAudioFile::WavAudioFile(const File& sourceFile, double startOffset, double length)
   :
-  sourceFile(sourceFile)
+  clipStart(startOffset), clipLength(length)
 {
   manager.registerBasicFormats();
 
-  ScopedPointer<AudioFormatReader> reader = manager.createReaderFor(sourceFile);
+  reader = manager.createReaderFor(sourceFile);
+  sampleRate = reader->sampleRate;
 
   if (reader)
   {
@@ -37,32 +38,125 @@ WavMetadata::WavMetadata(const File& sourceFile)
   }
 }
 
-StringPairArray WavMetadata::getMetadata() const
+StringPairArray WavAudioFile::getMetadata() const
 {
   return metadata;
 }
 
-int WavMetadata::getNumSampleLoops() const
+double WavAudioFile::getSampleRate() const
+{
+  return reader->sampleRate;
+}
+
+//void WavAudioFile::setSampleStart(int s)
+//{
+//	sampleStart = s;
+//}
+//void WavAudioFile::setSampleEnd(int s)
+//{
+//	sampleEnd = s;
+//}
+
+double WavAudioFile::getFileLengthInSeconds() const
+{
+  if (reader->sampleRate == 0.0)
+    return 0.0;
+
+  return double(reader->lengthInSamples) / reader->sampleRate;
+}
+
+int64 WavAudioFile::getLengthInSamples() const
+{
+  return reader->lengthInSamples;
+}
+
+void WavAudioFile::loadAudio()
+{
+  auto startSample = getSamplePosition(clipStart);
+  auto numSamples = getSamplePosition(clipLength);
+
+  jassert(numSamples != 0);
+  jassert(clipStart + numSamples <= int(reader->lengthInSamples));
+
+  audio = new AudioSampleBuffer(reader->numChannels, numSamples);
+  reader->read(audio, 0, numSamples, startSample, true, true);
+}
+
+int WavAudioFile::getSamplePosition(double timeInSeconds) const
+{
+  return int(std::round(timeInSeconds * sampleRate));
+}
+
+//void WavAudioFile::applyFadeOutAtEnd(int fadeLength, int shape, double tension)
+//{
+//	ensureAudioLoaded();
+//
+//	if (audio->getNumChannels() == 0 || audio->getNumSamples() < fadeLength)
+//	{
+//		jassertfalse;
+//		return;
+//	}
+//
+//	auto data = audio->getArrayOfWritePointers();
+//	auto numSamples = audio->getNumSamples();
+//	auto numChans = audio->getNumChannels();
+//	int count{ fadeLength };
+//
+//	for (int i = numSamples - fadeLength; i < numSamples; ++i)
+//	{
+//		auto fadeAmount = float(count) / float(fadeLength);
+//
+//		for (int chan = 0; chan < numChans; ++chan)
+//			data[chan][i] *= fadeAmount;
+//
+//		count--;
+//	}
+//}
+
+double WavAudioFile::getPeakValue()
+{
+  ensureAudioLoaded();
+
+  auto data = audio->getArrayOfReadPointers();
+  auto numSamples = audio->getNumSamples();
+  auto numChans = audio->getNumChannels();
+
+  double v = 0.0;
+
+  for (int chan = 0; chan < numChans; ++chan)
+    for (int i = 0; i < numSamples; ++i)
+      v = max<double>(v, std::fabs(data[chan][i]));
+
+  return v;
+}
+
+void WavAudioFile::ensureAudioLoaded()
+{
+  if (audio == nullptr)
+    loadAudio();
+}
+
+int WavAudioFile::getNumSampleLoops() const
 {
   return metadata["NumSampleLoops"].getIntValue();
 }
 
-int WavMetadata::getNumCueRegions() const
+int WavAudioFile::getNumCueRegions() const
 {
   return metadata["NumCueRegions"].getIntValue();
 }
 
-int WavMetadata::getNumCueLabels() const
+int WavAudioFile::getNumCueLabels() const
 {
   return metadata["NumCueLabels"].getIntValue();
 }
 
-int WavMetadata::getNumCuePoints() const
+int WavAudioFile::getNumCuePoints() const
 {
   return metadata["NumCuePoints"].getIntValue();
 }
 
-bool WavMetadata::saveChanges(const File& destination)
+bool WavAudioFile::saveChanges(const File& destination)
 {
   if (destination == sourceFile)
   {
@@ -81,7 +175,11 @@ bool WavMetadata::saveChanges(const File& destination)
 
   createMetaDataFromArrays();
 
-  ScopedPointer<AudioFormatReader> reader = manager.createReaderFor(sourceFile);
+  //if (destination.existsAsFile())
+  //	return false;
+
+  ensureAudioLoaded();
+  //ScopedPointer<AudioFormatReader> reader = manager.createReaderFor(sourceFile);
 
   if (reader)
   {
@@ -93,10 +191,18 @@ bool WavMetadata::saveChanges(const File& destination)
     if (!writer)
       return false;
 
-    auto result = writer->writeFromAudioReader(*reader, 0, reader->lengthInSamples);
+    if (audio)
+    {
+      auto result = writer->writeFromAudioSampleBuffer(*audio, 0, audio->getNumSamples());
 
-    if (!result)
+      if (!result)
+        return false;
+    }
+    else
+    {
+      jassertfalse; // we must have audio loaded.
       return false;
+    }
   }
   else
   {
@@ -106,17 +212,17 @@ bool WavMetadata::saveChanges(const File& destination)
   return true;
 }
 
-String WavMetadata::getStringValue(const String& prefix, int num, const String& postfix) const
+String WavAudioFile::getStringValue(const String& prefix, int num, const String& postfix) const
 {
   return metadata[prefix + String(num) + postfix];
 }
 
-int64 WavMetadata::getIntValue(const String& prefix, int num, const String& postfix) const
+int64 WavAudioFile::getIntValue(const String& prefix, int num, const String& postfix) const
 {
   return metadata[prefix + String(num) + postfix].getLargeIntValue();
 }
 
-void WavMetadata::loadMetaData()
+void WavAudioFile::loadMetaData()
 {
   //for (int i = 0; i < getNumSampleLoops(); ++i)
   //	loops.add(getSampleLoop(i));
@@ -142,7 +248,7 @@ void WavMetadata::loadMetaData()
     loops.add(getSampleLoop(i));
 }
 
-void WavMetadata::createNewRegions()
+void WavAudioFile::createNewRegions()
 {
   int regionId{ 0 };
 
@@ -163,13 +269,13 @@ void WavMetadata::createNewRegions()
   newMetadata.set("NumCueRegions", String(regionId));
 }
 
-void WavMetadata::addAdditionalCuePoints()
+void WavAudioFile::addAdditionalCuePoints()
 {
   for (auto & cue : cuePoints)
     newCues.add(cue);
 }
 
-void WavMetadata::createNewCuePoints()
+void WavAudioFile::createNewCuePoints()
 {
   int cueIndex{ 0 };
 
@@ -194,17 +300,43 @@ void WavMetadata::createNewCuePoints()
   newMetadata.set("NumCueLabels", String(cueIndex));
 }
 
-void WavMetadata::createMetaDataFromArrays()
+void WavAudioFile::createNewLoops()
 {
+  int sampleLoopId{ 0 };
+
+  for (auto& l : loops)
+  {
+    CuePoint cue;
+    cue.offset = l.start;
+    cue.label = l.label;
+    newCues.add(cue);
+
+    newMetadata.set(idLoop + String(sampleLoopId) + "Identifier", String(newCues.size()));
+    newMetadata.set(idLoop + String(sampleLoopId) + "PlayCount", String(l.playcount));
+    newMetadata.set(idLoop + String(sampleLoopId) + "Fraction", String(l.fraction));
+    newMetadata.set(idLoop + String(sampleLoopId) + "Type", String(int(l.type)));
+    newMetadata.set(idLoop + String(sampleLoopId) + "Start", String(l.start));
+    newMetadata.set(idLoop + String(sampleLoopId) + "End", String(l.end));
+
+    sampleLoopId++;
+  }
+
+  newMetadata.set("NumSampleLoops", String(sampleLoopId));
+}
+
+void WavAudioFile::createMetaDataFromArrays()
+{
+
   newMetadata.clear();
   newCues.clear();
 
   createNewRegions();
+  createNewLoops();
   addAdditionalCuePoints();
   createNewCuePoints();
 }
 
-WavMetadata::CuePoint WavMetadata::getCuePoint(int index) const
+WavAudioFile::CuePoint WavAudioFile::getCuePoint(int index) const
 {
   auto base = String("Cue") + String(index);
 
@@ -227,7 +359,7 @@ WavMetadata::CuePoint WavMetadata::getCuePoint(int index) const
   return r;
 }
 
-WavMetadata::CuePoint WavMetadata::getCuePointByIdentifier(int identifier) const
+WavAudioFile::CuePoint WavAudioFile::getCuePointByIdentifier(int identifier) const
 {
   for (int i = 0; i < getNumCuePoints(); ++i)
   {
@@ -241,7 +373,7 @@ WavMetadata::CuePoint WavMetadata::getCuePointByIdentifier(int identifier) const
   return{};
 }
 
-String WavMetadata::getCueLabel(int identifier) const
+String WavAudioFile::getCueLabel(int identifier) const
 {
   auto numLabels = getNumCueLabels();
 
@@ -252,7 +384,7 @@ String WavMetadata::getCueLabel(int identifier) const
   return String();
 }
 
-WavMetadata::Region WavMetadata::getCueRegion(int index) const
+WavAudioFile::Region WavAudioFile::getCueRegion(int index) const
 {
   Region r;
   r.identifier = getIntValue(idCueRegion, index, "Identifier");
@@ -265,7 +397,7 @@ WavMetadata::Region WavMetadata::getCueRegion(int index) const
   return r;
 }
 
-WavMetadata::Loop WavMetadata::getSampleLoop(int index) const
+WavAudioFile::Loop WavAudioFile::getSampleLoop(int index) const
 {
   Loop r;
   r.start = getIntValue(idLoop, index, "Start");
@@ -275,29 +407,29 @@ WavMetadata::Loop WavMetadata::getSampleLoop(int index) const
   r.playcount = getIntValue(idLoop, index, "PlayCount");
   r.cueIdentifier = getIntValue(idLoop, index, "Identifier");
   return r;
-}
+}/*
 
-void AUDIO::collectCues()
+void AudioFile::collectCues()
 {
-    cues = WavMetadata::create(m_file);
+    cues = WavAudioFile::create(m_file);
 }
 
-Array<WavMetadata::CuePoint> AUDIO::getCuePoints()
+Array<WavAudioFile::CuePoint> AudioFile::getCuePoints()
 {
     return cues->cuePoints;
 }
 
-Array<WavMetadata::Region> AUDIO::getCueRegions()
+Array<WavAudioFile::Region> AudioFile::getCueRegions()
 {
     return cues->regions;
 }
 
-Array<WavMetadata::Loop> AUDIO::getLoops()
+Array<WavAudioFile::Loop> AudioFile::getLoops()
 {
   return cues->loops;
 }
 
-void AUDIO::writeCues()
+void AudioFile::writeCues()
 {
     cues->saveChanges(m_file);
-}
+}*/
