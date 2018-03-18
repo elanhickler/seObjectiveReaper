@@ -38,67 +38,78 @@ public:
   // constructor
   ITEM();
   ITEM(int i) { item = GetMediaItem(0, i); }
-  ITEM(MediaItem* item);
+  ITEM(MediaItem * item);
   ITEM(MediaItem_Take * take);
 
   // conversion
   operator void*() const { return item; }
   operator MediaItem*() const { return item; }
-  operator MediaItem_Take*() const { return getActiveTake(); }
+  operator MediaItem_Take*() const { return *getActiveTake(); }
 
   // operator
-  bool operator==(const MediaItem* rhs) const { return item == rhs; }
-  bool operator!=(const MediaItem* rhs) const { return item != rhs; }
+  bool operator==(const MediaItem * rhs) const { return item == rhs; }
+  bool operator!=(const MediaItem * rhs) const { return item != rhs; }
   bool operator==(const ITEM & rhs) const { return item == rhs.item; }
   bool operator!=(const ITEM & rhs) const { return item != rhs.item; }
   TAKE operator[](int i) const { return GetTake(item, i); }
 
-  // function
+  /* FUNCTIONS */
+
   void remove();
-  void split(double v);
+
+  // returns the item created from the right-hand-side of the split, or invalid item if split failed
+  ITEM split(double v);
+
+  // returns ITEMLIST of items created from splitting including itself
+  ITEMLIST split(vector<double> splitlist);
+
   TAKELIST GetTakes();
   void CollectTakes();
+  ITEM duplicate();
+  void move(double v);
+  bool crop(RANGE r, bool move_edge);
   MediaItem* pointer() { return item; }
 
-  // getter
+  /* GETTER */
+
+  bool getIsMuted() const;
+  bool getIsSelected() const;
+
   int idx() const;
   MediaTrack* track() const;
   int track_idx() const;
-  double snap() const;
-  bool mute() const;
-  int group() const;
+  double getSnapOffset() const;
+ 
+  int getGroupIndex() const;
   double vol() const;
   double fadeinlen() const;
   double fadeoutlen() const;
   double fadeinlen_auto() const;
   double fadeoutlen_auto() const;
-  int fadein_shape() const;
-  int fadeout_shape() const;
+  int setFadeInShape() const;
+  int setFadeOutShape() const;
   double fadein_curve() const;
   double fadeout_curve() const;
-  bool selected() const;
 
-  const TAKE & getActiveTake() const;
-  const TAKE & take(int i) const;
-  const TAKE & getTake() const;
-  TAKE & getActiveTake();
-  TAKE & take(int i);
-  TAKE & getTake();
-  int num_takes();
-  double rate() const;
-  ITEM duplicate();
+  const TAKE * getActiveTake() const;
+  TAKE * getActiveTake();
 
-  // setter
+  const TAKE * getTake(int i) const;
+  TAKE * getTake(int i);
+
+  int getNumTakes();
+  double getRate() const;
+
+  /* SETTER */
+  
   void track_idx(int v);
   void track(int v);
   bool track(MediaTrack* track);
   bool track(String name);
   void activeTake(int idx);
-  void snap(double v);
-  void mute(bool v);
+  void setSnapOffset(double v);
+  void setIsMuted(bool v);
   void vol(double v);
-  void move(double v);
-  bool crop(RANGE r, bool move_edge);
   void fadeinlen(double v);
   void fadeoutlen(double v);
   void fadeinlen_auto(double v);
@@ -107,7 +118,7 @@ public:
   void fadeout_shape(int v);
   void fadein_curve(double v);
   void fadeout_curve(double v);
-  void selected(bool v);
+  void setIsSelected(bool v);
   void rate(double new_rate, bool warp = true);
 
   //~ITEM() { jassert(false); };
@@ -187,7 +198,7 @@ public:
   int track(MediaTrack* track);
   int track(String name);
   void endPos(double v);
-  void snap(double v);
+  void setSnapOffset(double v);
   void move(double v);
   void remove();
   void selected(bool select);

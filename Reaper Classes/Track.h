@@ -26,6 +26,7 @@ public:
 private:
     // member
     MediaTrack* track;
+    ITEMLIST list_all;
     ITEMLIST list_selected;
 
 public:
@@ -67,9 +68,9 @@ public:
     void remove();
     void RemoveAllItemsFromProject();
 
-    vector<ITEM> & ItemList() { return list; }
-    ITEMLIST & selectedItemList() { return list_selected; }
-    const ITEMLIST & selectedItemsList() const { return list_selected; }
+    ITEMLIST * getItemList() { return &list_all; }
+    ITEMLIST * getSelectedItemList() { return &list_selected; }
+    const ITEMLIST * getSelectedItemList() const { return &list_selected; }
 
     // getters
     bool sel() const { return GetMediaTrackInfo_Value(track, "I_SELECTED") == 1; }
@@ -80,6 +81,13 @@ public:
     // logic
     bool is_valid() const { return track != nullptr; }
     bool is_selected() const { return sel(); }
+    bool hasMidiItems() const 
+    { 
+      for (const ITEM & item : list_selected)
+        if (item.getActiveTake()->isMidi())
+          return true;
+      return false;
+    }
     bool has_items() const { return countItems() > 0; }
     bool has_selected_items() const { return countSelectedItems() > 0; }
     bool has_child() const { return TRACK(idx()+1).parent() == track; }
@@ -104,7 +112,6 @@ static TRACK TRACK_invalid;
 class TRACKLIST : public LIST<TRACK>
 {
 public:
-    static TRACKLIST GetTracksWithSelectedItems();
     static TRACKLIST CreateTrackAsFirstChild(TRACK parent, int how_many = 1);
     static TRACKLIST CreateTrackAsLastChild(TRACK parent, int how_many = 1);
     static TRACKLIST GetSelected();
@@ -121,6 +128,7 @@ public:
     // project
     void CollectTracks();
     void CollectSelectedTracks();
+    void CollectTracksWithSelectedItems();
 
     // getters
     TRACK & getSelectedByIdx(int idx);

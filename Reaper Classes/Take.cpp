@@ -106,7 +106,7 @@ TAKE TAKE::move(MediaTrack * track)
     // remove all other takes from new item
     UNSELECT_ITEMS();
     ITEM it;
-    it.selected(true);
+    it.setIsSelected(true);
     it.CollectTakes();
     TAKE actTake = GetActiveTake(it);
     TAKELIST TakeList = it.GetTakes();
@@ -114,7 +114,7 @@ TAKE TAKE::move(MediaTrack * track)
         if (actTake != TakeList[t])
             TakeList[t].remove();
     for (const TAKE & t : TakeList) 
-        ITEM(t).selected(true);
+        ITEM(t).setIsSelected(true);
 
     // remove take from old item
     remove();
@@ -148,13 +148,13 @@ void TAKE::initAudio(double starttime, double endtime)
 
     audioFile = AudioFile((File)m_source->GetFileName());
 
-
     // raw audio file properties
     audioFile.m_srate = m_source->GetSampleRate();
     audioFile.m_samples = m_source->GetLength();
     audioFile.m_bitdepth = m_source->GetBitsPerSample();
     audioFile.m_channels = m_source->GetNumChannels();
-    audioFile.m_frames = audioFile.m_samples / audioFile.m_channels;
+    if (audioFile.m_channels > 0) // occurs if audio file is bad
+      audioFile.m_frames = audioFile.m_samples / audioFile.m_channels;
     
     // take audio properties
     audioFile.m_file = m_source->GetFileName();
@@ -210,4 +210,23 @@ TAKELIST::TAKELIST(MediaItem * item)
     {
         push_back(GetTake(item, i));
     }
+}
+
+void MIDINOTELIST::collectMidiNotes()
+{
+  int notecount;
+  MIDI_CountEvts(take->ptr(), &notecount, nullptr, nullptr);
+  for (int n = 0; n < notecount; ++n)
+  {
+    double ppqStart, ppqEnd;
+    int note, vel, channel;
+    bool selected, muted;
+
+    MIDI_GetNote(take->ptr(), n, &selected, &muted, &ppqStart, &ppqEnd, &channel, &note, &vel);
+
+    double startTime  = MIDI_GetProjTimeFromPPQPos(*take, ppqStart);
+    double endTime = MIDI_GetProjTimeFromPPQPos(*take, ppqEnd);
+
+    push_back({ channel, note, vel, startTime, endTime, muted, selected });
+  }
 }

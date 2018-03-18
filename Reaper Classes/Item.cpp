@@ -1,20 +1,32 @@
 ﻿#include "ReaperClassesHeader.h"
 #include "Item.h"
 
-ITEM::ITEM() { item = nullptr; }
-ITEM::ITEM(MediaItem * item) : item(item) { active_take = GetActiveTake(item); TagManager.WithTags(name()); }
-ITEM::ITEM(MediaItem_Take * take) { item = GetMediaItemTake_Item(take); TagManager.WithTags(name()); }
+ITEM::ITEM() 
+{ 
+  item = nullptr; 
+}
+ITEM::ITEM(MediaItem * item) : item(item) 
+{ 
+  jassert(item != nullptr);
+  active_take = GetActiveTake(item); 
+  TagManager.WithTags(name()); 
+}
+ITEM::ITEM(MediaItem_Take * take) 
+{
+  item = GetMediaItemTake_Item(take); 
+  TagManager.WithTags(name()); 
+}
 
 bool ITEM::is_grouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
 {
     if (must_be_on_same_track && i1.track() != i2.track()) return false;
-    return i1.group() && i1.group() == i2.group();
+    return i1.getGroupIndex() && i1.getGroupIndex() == i2.getGroupIndex();
 }
 
 ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
 ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
-String ITEM::getObjectName() const { return getTake().name(); }
-void ITEM::setObjectName(const String & v) { getTake().name(v); }
+String ITEM::getObjectName() const { return getActiveTake()->name(); }
+void ITEM::setObjectName(const String & v) { getActiveTake()->name(v); }
 double ITEM::getObjectStartPos() const { return GetMediaItemInfo_Value(item, "D_POSITION"); }
 
 void ITEM::setObjectStartPos(double v)
@@ -32,7 +44,26 @@ void ITEM::setObjectColor(int v) {}
 bool ITEM::objectIsValid() const { return item != nullptr; }
 
 void ITEM::remove() { DeleteTrackMediaItem(GetMediaItemTrack(item), item); item = nullptr; }
-void ITEM::split(double v) { SplitMediaItem(item, v); }
+ITEM ITEM::split(double v) 
+{
+  MediaItem * i = SplitMediaItem(item, v);
+  if (i == nullptr)
+    return item;
+
+  return i;
+}
+
+ITEMLIST ITEM::split(vector<double> splitlist)
+{
+  ITEMLIST SplitItems(item);
+
+  stable_sort(splitlist.begin(), splitlist.end(), [](double a, double b) { return a < b; });
+
+  for (const auto & v : splitlist)
+    SplitItems.push_back(SplitItems.back().split(v));
+
+  return SplitItems;
+}
 
 TAKELIST ITEM::GetTakes()
 {
@@ -49,36 +80,38 @@ void ITEM::CollectTakes()
 int ITEM::idx() const { return GetMediaItemInfo_Value(item, "IP_ITEMNUMBER"); }
 MediaTrack * ITEM::track() const { return GetMediaItem_Track(item); }
 int ITEM::track_idx() const { return GetMediaTrackInfo_Value(GetMediaItem_Track(item), "IP_TRACKNUMBER"); }
-double ITEM::snap() const { return GetMediaItemInfo_Value(item, "D_SNAPOFFSET"); }
-bool ITEM::mute() const { return 0.0 != GetMediaItemInfo_Value(item, "B_MUTE"); }
-int ITEM::group() const { return GetMediaItemInfo_Value(item, "I_GROUPID"); }
+double ITEM::getSnapOffset() const { return GetMediaItemInfo_Value(item, "D_SNAPOFFSET"); }
+bool ITEM::getIsMuted() const { return 0.0 != GetMediaItemInfo_Value(item, "B_MUTE"); }
+int ITEM::getGroupIndex() const { return GetMediaItemInfo_Value(item, "I_GROUPID"); }
 double ITEM::vol() const { return GetMediaItemInfo_Value(item, "D_VOL"); }
 double ITEM::fadeinlen() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN"); }
 double ITEM::fadeoutlen() const { return GetMediaItemInfo_Value(item, "D_FADEOUTLEN"); }
 double ITEM::fadeinlen_auto() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO"); }
 double ITEM::fadeoutlen_auto() const { return GetMediaItemInfo_Value(item, "D_FADEOUTLEN_AUTO"); }
-int ITEM::fadein_shape() const { return GetMediaItemInfo_Value(item, "C_FADEINSHAPE"); }
-int ITEM::fadeout_shape() const { return GetMediaItemInfo_Value(item, "C_FADEOUTSHAPE"); }
+int ITEM::setFadeInShape() const { return GetMediaItemInfo_Value(item, "C_FADEINSHAPE"); }
+int ITEM::setFadeOutShape() const { return GetMediaItemInfo_Value(item, "C_FADEOUTSHAPE"); }
 double ITEM::fadein_curve() const { return GetMediaItemInfo_Value(item, "D_FADEINDIR"); }
 double ITEM::fadeout_curve() const { return GetMediaItemInfo_Value(item, "D_FADEOUTDIR"); }
-bool ITEM::selected() const { return 0.0 != GetMediaItemInfo_Value(item, "B_UISEL"); }
-const TAKE & ITEM::getActiveTake() const { return active_take; }
-const TAKE & ITEM::take(int i) const
+bool ITEM::getIsSelected() const { return 0.0 != GetMediaItemInfo_Value(item, "B_UISEL"); }
+const TAKE * ITEM::getActiveTake() const { return &active_take; }
+const TAKE * ITEM::getTake(int i) const
 {
     if (i >= TakeList.size())
-        return InvalidTake;
-    return TakeList[i];
+        return &InvalidTake;
+    return &TakeList[i];
 }
-const TAKE & ITEM::getTake() const { return getActiveTake(); }
-TAKE & ITEM::getActiveTake() {  return active_take;  }
-TAKE & ITEM::take(int i) {
+
+TAKE * ITEM::getActiveTake() { return &active_take;  }
+
+TAKE * ITEM::getTake(int i) {
     if (i >= TakeList.size())
-        return InvalidTake;
-    return TakeList[i];
+        return &InvalidTake;
+    return &TakeList[i];
 }
-TAKE & ITEM::getTake() { return getActiveTake(); }
-int ITEM::num_takes() { return CountTakes(item); }
-double ITEM::rate() const { return getActiveTake().rate(); }
+
+int ITEM::getNumTakes() { return CountTakes(item); }
+
+double ITEM::getRate() const { return getActiveTake()->rate(); }
 
 ITEM ITEM::duplicate()
 {
@@ -110,8 +143,8 @@ bool ITEM::track(MediaTrack * track) {
 }
 bool ITEM::track(String name) { return MoveMediaItemToTrack(item, TRACK::get(name)); }
 void ITEM::activeTake(int idx) { SetActiveTake(GetTake(item, idx)); }
-void ITEM::snap(double v) { SetMediaItemInfo_Value(item, "D_SNAPOFFSET", v); }
-void ITEM::mute(bool v) { SetMediaItemInfo_Value(item, "B_MUTE", v); }
+void ITEM::setSnapOffset(double v) { SetMediaItemInfo_Value(item, "D_SNAPOFFSET", v); }
+void ITEM::setIsMuted(bool v) { SetMediaItemInfo_Value(item, "B_MUTE", v); }
 void ITEM::vol(double v) { SetMediaItemInfo_Value(item, "D_VOL", v); }
 void ITEM::move(double v) { SetMediaItemInfo_Value(item, "D_POSITION", GetMediaItemInfo_Value(item, "D_POSITION") + v); }
 
@@ -139,13 +172,13 @@ void ITEM::fadein_shape(int v) { SetMediaItemInfo_Value(item, "C_FADEINSHAPE", v
 void ITEM::fadeout_shape(int v) { SetMediaItemInfo_Value(item, "C_FADEOUTSHAPE", v); }
 void ITEM::fadein_curve(double v) { SetMediaItemInfo_Value(item, "D_FADEINDIR", v); }
 void ITEM::fadeout_curve(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTDIR", v); }
-void ITEM::selected(bool v) { SetMediaItemInfo_Value(item, "B_UISEL", v); }
+void ITEM::setIsSelected(bool v) { SetMediaItemInfo_Value(item, "B_UISEL", v); }
 
 void ITEM::rate(double new_rate, bool warp)
 {
     if (warp)
     {
-        double old_rate = rate();
+        double old_rate = getRate();
         if (old_rate == new_rate) return;
 
         double ratio = old_rate / new_rate;
@@ -154,7 +187,7 @@ void ITEM::rate(double new_rate, bool warp)
         length(length() * ratio);
 
         // set snap offset based on rate change
-        snap(snap() * ratio);
+        setSnapOffset(getSnapOffset() * ratio);
 
         // adjust all takes' rates
         TAKELIST TakesList = GetTakes();
@@ -173,23 +206,23 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     auto iter = method_lookup.find(key);
 
     if (iter == method_lookup.end())
-        return getActiveTake().getTag(key);
+        return getActiveTake()->getTag(key);
 
     switch (iter->second)
     {
     case __name:
-        return getActiveTake().nameNoTags();
+        return getActiveTake()->nameNoTags();
     case __track:
         if (get_value) return (String)TRACK(track()).idx();
         else return TRACK(track()).name();
     case __length:
         return (String)length();
     case __rate:
-        return (String)rate();
+        return (String)getRate();
     case __volume:
         return (String)vol();
     case __snapoffset:
-        return (String)snap();
+        return (String)getSnapOffset();
     case __position:
         return (String)startPos();
     case __fadeinlen:
@@ -197,13 +230,13 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __fadeoutlen:
         return (String)fadeoutlen();
     case __startoffset:
-        return (String)getActiveTake().offset();
+        return (String)getActiveTake()->offset();
     case __tags:
-        return getActiveTake().nameTagsOnly();
+        return getActiveTake()->nameTagsOnly();
     case __pitch:
-        return (String)getActiveTake().pitch();
+        return (String)getActiveTake()->pitch();
     case __file_extension:
-        return getActiveTake().file().getFileExtension();
+        return getActiveTake()->file().getFileExtension();
     }
 
     return String();
@@ -240,7 +273,7 @@ void ITEMLIST::CollectSelectedItems()
 double ITEMLIST::startPos() const { return front().startPos(); }
 double ITEMLIST::endPos() const { return back().endPos(); }
 double ITEMLIST::length() const { return back().endPos() - front().startPos(); }
-double ITEMLIST::snap() const { return front().snap(); }
+double ITEMLIST::snap() const { return front().getSnapOffset(); }
 double ITEMLIST::fadeinlen() const { return front().fadeinlen(); }
 double ITEMLIST::fadeoutlen() const { return back().fadeoutlen(); }
 String ITEMLIST::GetPropertyStringFromKey(const String & key, bool use_value) const
@@ -251,7 +284,7 @@ String ITEMLIST::GetPropertyStringFromKey(const String & key, bool use_value) co
 bool ITEMLIST::selected() const
 {
     for (const auto & i : list)
-        if (!i.selected())
+        if (!i.getIsSelected())
             return false;
 
     return true;
@@ -284,17 +317,17 @@ void ITEMLIST::endPos(double v)
     list.back().endPos(v);
 }
 
-void ITEMLIST::snap(double v)
+void ITEMLIST::setSnapOffset(double v)
 {
     int i = 0;
     while (i < list.size() && !RANGE::is_touching(list[i], v))
         ++i;
     if (i < list.size())
-        list[i].snap(v);
+        list[i].setSnapOffset(v);
     else if (v < front().startPos())
-        front().snap(v);
+        front().setSnapOffset(v);
     else
-        list.back().snap(v);
+        list.back().setSnapOffset(v);
 }
 
 void ITEMLIST::move(double v)
@@ -312,14 +345,15 @@ void ITEMLIST::remove()
 void ITEMLIST::selected(bool select) 
 { 
     for (auto& item : list) 
-        item.selected(select); 
+        item.setIsSelected(select); 
 }
 
 // functions
 
 void ITEMLIST::InitAudio()
 {
-    for (auto & item : list) item.getActiveTake().initAudio();
+    for (auto & item : list) 
+      item.getActiveTake()->initAudio();
 }
 
 void ITEMGROUPLIST::collect_donotgroup(bool selected_only)
@@ -353,7 +387,7 @@ void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 
     for (ITEM & i : il)
     {        
-        int grp = i.group();
+        int grp = i.getGroupIndex();
         if (grp == 0) grp = non_group_counter--;
         group_map[grp].push_back(i);
         group_set.insert(grp);
@@ -376,17 +410,17 @@ void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_ov
 
         // go through each item in track
         push_back(ITEMLIST());
-        back().reserve(t.selectedItemsList().size());
+        back().reserve(t.getSelectedItemList()->size());
 
         // get either selected list or normal list
-        ITEMLIST il;
+        ITEMLIST * il;
         if (selected_only)
-            il = t.selectedItemList();
+            il = t.getSelectedItemList();
         else
-            il = t.ItemList();
+            il = dynamic_cast<ITEMLIST *>(t.getItemList());
 
         if (must_be_overlapping)
-            for (const ITEM & i : il)
+            for (const ITEM & i : *il)
             {
                 // if last item overlaps current item, add to last group
                 if (RANGE::is_overlapping(last_item, i))
@@ -397,7 +431,7 @@ void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_ov
                 last_item = i;
             }
         else
-            for (const ITEM & i : il)
+            for (const ITEM & i : *il)
             {
                 // if last item touching current item, add to last group
                 if (RANGE::is_touching(last_item, i))

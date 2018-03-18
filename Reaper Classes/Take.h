@@ -1,6 +1,60 @@
 #pragma once
 
+#include "../Elan Classes/MidiHelper.h"
+
 using juce::File;
+
+class MIDINOTE : public OBJECT_MOVABLE
+{
+public:
+
+  MIDINOTE() {};
+  MIDINOTE(int channel, int pitch, int velocity, double startTime, double endTime, bool selected = false, bool muted = false) 
+    : channel(channel), pitch(pitch), velocity(velocity), startTime(startTime), endTime(endTime), selected(selected), muted(muted) { }
+
+  int getPitch() { return pitch; };
+  String getPitchString() { return MIDI(pitch).getName(); }
+  double getStartTime() { return startTime; };
+  double getEndTime() { return endTime; };
+
+  int setPitch() {};
+  double setStartTime() {};
+  double setEndTime() {};
+
+private:
+  bool selected;
+  bool muted;
+
+  int channel;
+  int pitch;
+  int velocity;
+
+  double startTime;
+  double endTime;
+
+  double getObjectStartPos() const override { return startTime; }
+  double getObjectEndPos() const override { return endTime; }
+  double getObjectLength() const override { return endTime - startTime; }
+  
+  //void setObjectStartPos(double v) override {}
+  //void setObjectEndPos(double v) override { setObjectLength(getObjectLength() - getObjectStartPos()); } 
+  //void setObjectLength(double v) override {}
+  //void setObjectPosition(double v) override {}
+};
+
+class TAKE;
+
+class MIDINOTELIST : public LIST<MIDINOTE>
+{
+public:
+  MIDINOTELIST() {};
+  MIDINOTELIST(TAKE * take) : take(take) {};
+
+  void collectMidiNotes();
+
+private:
+  TAKE * take;
+};
 
 class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
@@ -22,17 +76,21 @@ public:
 
     struct envelope
     {
-        ENVELOPE Volume;
-        ENVELOPE Pan;
-        ENVELOPE Mute;
-        ENVELOPE Pitch;
+      ENVELOPE Volume;
+      ENVELOPE Pan;
+      ENVELOPE Mute;
+      ENVELOPE Pitch;
     } envelope;
 
     // getter
+    bool isMidi() const { return TakeIsMIDI(take); }
+
+    MediaItem_Take * ptr() { return take; }
+
     AudioFile & audio();
     int idx() const;
-    MediaItem* item() const;
-    MediaTrack* track() const;
+    MediaItem * item() const;
+    MediaTrack * track() const;
     int chanmode() const;
     int firstCh() const;
     int lastCh() const;
@@ -62,6 +120,16 @@ public:
     void remove();
     TAKE move(MediaTrack* track);
     TAKE move(MediaItem* new_item);
+
+    /* MIDI FUNCTIONS */
+    void initMidi()
+    {
+      note_list = MIDINOTELIST(this);
+      note_list.collectMidiNotes();
+    }
+
+    MIDINOTELIST * getMidiNoteList() { return &note_list; }
+    const MIDINOTELIST * getMidiNoteList() const { return &note_list; }
 
     /* AUDIO FUNCTIONS */
     /*
@@ -108,6 +176,9 @@ private:
   // member
   MediaItem_Take* take;
   AudioFile audioFile;
+
+  /* MIDI FUNCTIONS */
+  MIDINOTELIST note_list;
 
   // audio property
   PCM_source* m_source = nullptr;

@@ -74,18 +74,23 @@ void TRACK::setAsLastFolder()
 
 void TRACK::CollectItems()
 {
-    int num_items = CountTrackMediaItems(track);
-    for (int i = 0; i < num_items; ++i)
-    {
-        list.push_back(GetTrackMediaItem(track, i));
-        if (list.back().selected()) list_selected.push_back(list.back());
-    }
+  int num_items = CountTrackMediaItems(track);
+
+  for (int i = 0; i < num_items; ++i)
+  {    
+    list_all.push_back(GetTrackMediaItem(track, i));
+    list.push_back(list_all.back());
+
+    if (list_all.back().getIsSelected())
+      list_selected.push_back(list.back());
+  }
 }
 
 void TRACK::remove()
 {
     auto prev_track = TRACK(idx()-1);
-    if (!prev_track.is_parent() && prev_track.is_valid()) prev_track.folder(folder());
+    if (!prev_track.is_parent() && prev_track.is_valid()) 
+      prev_track.folder(folder());
     DeleteTrack(track);
     track = nullptr;
 }
@@ -94,18 +99,6 @@ void TRACK::RemoveAllItemsFromProject()
 {
     for (ITEM & item : list)
         item.remove();
-}
-
-TRACKLIST TRACKLIST::GetTracksWithSelectedItems()
-{
-    TRACKLIST TrackList = TRACKLIST::Get();
-    TRACKLIST TrackListOut;
-    for (auto & track : TrackList)
-    {
-        if (track.selectedItemList().empty()) continue;
-        TrackListOut.push_back(track);
-    }
-    return TrackListOut;
 }
 
 TRACKLIST TRACKLIST::CreateTrackAsFirstChild(TRACK parent, int how_many)
@@ -215,6 +208,18 @@ void TRACKLIST::CollectSelectedTracks()
     int num_tracks = CountSelectedTracks(0);
     for (int t = 0; t < num_tracks; ++t)
         push_back(GetSelectedTrack(0, t));
+}
+
+void TRACKLIST::CollectTracksWithSelectedItems()
+{
+  int num_tracks = CountTracks(0);
+  for (int t = 0; t < num_tracks; ++t)
+  {
+    TRACK track = GetTrack(0, t);
+    track.CollectItems();
+    if (track.has_selected_items())
+      push_back(track);
+  }
 }
 
 TRACK & TRACKLIST::getByName(const String & name)

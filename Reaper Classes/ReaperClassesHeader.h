@@ -128,14 +128,16 @@ public:
     // functions
     virtual String GetPropertyStringFromKey(const String & key, bool use_value) const { return String(); }
 
-    // getters
+    /* GETTER */
+
     String getTag(const String & key) const { return TagManager.GetTag(key); }
     String name() const { return getObjectName(); }
     String nameNoTags() const { return TagManager.NoTags(); }
     String nameTagsOnly() const { return TagManager.TagsOnly(); }
     String nameWithTags() { TagManager.WithTags(); }
 
-    // setters
+    /* SETTER */
+
     void removeAllTags() { TagManager.RemoveAllTags(); }
     void setTag(const String & key, const String & value) { TagManager.SetTag(key, value); setObjectName(TagManager.WithTags()); }
     void removeTag(const String & key) { TagManager.RemoveTag(key); }
@@ -190,6 +192,7 @@ template <typename t> class LIST
     friend class ITEMLIST;
     friend class ITEMGROUPLIST;
     friend class TAKELIST;
+    friend class MIDINOTELIST;
 private:
     bool do_sort = true;
 public:
