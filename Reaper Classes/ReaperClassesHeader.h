@@ -131,20 +131,32 @@ public:
     /* GETTER */
 
     String getTag(const String & key) const { return TagManager.GetTag(key); }
-    String name() const { return getObjectName(); }
-    String nameNoTags() const { return TagManager.NoTags(); }
-    String nameTagsOnly() const { return TagManager.TagsOnly(); }
-    String nameWithTags() { TagManager.WithTags(); }
+    // Get full name string of object including the tag string portion
+    String getName() const { return getObjectName(); }
+    // Get name of object without affecting tags
+    String getNameNoTags() const { return TagManager.NoTags(); }
+    // Get name of object only affecting the tag string portion
+    String getNameTagsOnly() const { return TagManager.TagsOnly(); }
 
     /* SETTER */
 
     void removeAllTags() { TagManager.RemoveAllTags(); }
-    void setTag(const String & key, const String & value) { TagManager.SetTag(key, value); setObjectName(TagManager.WithTags()); }
-    void removeTag(const String & key) { TagManager.RemoveTag(key); }
-    void name(const String & v) { TagManager.NoTags(v); setObjectName(TagManager.WithTags()); }
-    void nameNoTags(const String & v) { TagManager.NoTags(v); }
-    void nameTagsOnly(const String & v) { TagManager.TagsOnly(v); }
-    void nameWithTags(const String & v) { TagManager.WithTags(v); }
+    void setTag(const String & key, const String & value) 
+    {
+      TagManager.SetTag(key, value); 
+      setObjectName(TagManager.WithTags());
+    }
+    void removeTag(const String & key) 
+    { 
+      TagManager.RemoveTag(key);
+      setObjectName(TagManager.WithTags());
+    }
+    // Set full name string of object also affecting the tag string portion
+    void setName(const String & v) { setObjectName(v); }
+    // Set name of object without affecting tags
+    void setNameNoTags(const String & v) { TagManager.NoTags(v); }
+    // Set name of object only affecting the tag string portion
+    void setNameTagsOnly(const String & v) { TagManager.TagsOnly(v); }
 
     // boolean
     bool has_tag(const String & tag) const { return TagManager.TagExists(tag); }

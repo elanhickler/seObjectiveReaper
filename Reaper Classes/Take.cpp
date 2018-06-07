@@ -65,14 +65,15 @@ int TAKE::lastCh() const
     if (ch == 0) return GetMediaItemTake_Source(take)->GetNumChannels() - 1;
     if (ch >= 2 || ch <= 66) return first;
     return first + 1;
-
 }
+
 double TAKE::pitch() const { return GetMediaItemTakeInfo_Value(take, "D_PITCH"); }
 bool TAKE::preservepitch() const { return GetMediaItemTakeInfo_Value(take, "B_PPITCH") == 1; }
 double TAKE::rate() const { return GetMediaItemTakeInfo_Value(take, "D_PLAYRATE"); }
-double TAKE::vol() const { return GetMediaItemTakeInfo_Value(take, "D_VOL"); }
-double TAKE::offset() const { return GetMediaItemTakeInfo_Value(take, "D_STARTOFFS"); }
-int TAKE::srate() { return audioFile.m_srate; }
+// Returns volume as a factor of amplitude.
+double TAKE::getVolume() const { return GetMediaItemTakeInfo_Value(take, "D_VOL"); }
+double TAKE::getOffset() const { return GetMediaItemTakeInfo_Value(take, "D_STARTOFFS"); }
+int TAKE::getSampleRate() { return audioFile.m_srate; }
 int TAKE::bitdepth() { return m_bitdepth; }
 int TAKE::nch() { return m_nch; }
 PCM_source * TAKE::pcm_source() const { return m_source; }
@@ -106,7 +107,7 @@ TAKE TAKE::move(MediaTrack * track)
     // remove all other takes from new item
     UNSELECT_ITEMS();
     ITEM it;
-    it.setIsSelected(true);
+    it.setSelected(true);
     it.CollectTakes();
     TAKE actTake = GetActiveTake(it);
     TAKELIST TakeList = it.GetTakes();
@@ -114,7 +115,7 @@ TAKE TAKE::move(MediaTrack * track)
         if (actTake != TakeList[t])
             TakeList[t].remove();
     for (const TAKE & t : TakeList) 
-        ITEM(t).setIsSelected(true);
+        ITEM(t).setSelected(true);
 
     // remove take from old item
     remove();

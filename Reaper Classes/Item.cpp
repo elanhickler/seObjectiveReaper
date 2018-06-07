@@ -9,12 +9,12 @@ ITEM::ITEM(MediaItem * item) : item(item)
 { 
   jassert(item != nullptr);
   active_take = GetActiveTake(item); 
-  TagManager.WithTags(name()); 
+  TagManager.WithTags(getName()); 
 }
 ITEM::ITEM(MediaItem_Take * take) 
 {
   item = GetMediaItemTake_Item(take); 
-  TagManager.WithTags(name()); 
+  TagManager.WithTags(getName()); 
 }
 
 bool ITEM::is_grouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
@@ -25,8 +25,11 @@ bool ITEM::is_grouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_tra
 
 ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
 ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
-String ITEM::getObjectName() const { return getActiveTake()->name(); }
-void ITEM::setObjectName(const String & v) { getActiveTake()->name(v); }
+String ITEM::getObjectName() const { return getActiveTake()->getName(); }
+void ITEM::setObjectName(const String & v) 
+{ 
+  getActiveTake()->setName(v);
+}
 double ITEM::getObjectStartPos() const { return GetMediaItemInfo_Value(item, "D_POSITION"); }
 
 void ITEM::setObjectStartPos(double v)
@@ -83,7 +86,7 @@ int ITEM::track_idx() const { return GetMediaTrackInfo_Value(GetMediaItem_Track(
 double ITEM::getSnapOffset() const { return GetMediaItemInfo_Value(item, "D_SNAPOFFSET"); }
 bool ITEM::getIsMuted() const { return 0.0 != GetMediaItemInfo_Value(item, "B_MUTE"); }
 int ITEM::getGroupIndex() const { return GetMediaItemInfo_Value(item, "I_GROUPID"); }
-double ITEM::vol() const { return GetMediaItemInfo_Value(item, "D_VOL"); }
+double ITEM::getVolume() const { return GetMediaItemInfo_Value(item, "D_VOL"); }
 double ITEM::fadeinlen() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN"); }
 double ITEM::fadeoutlen() const { return GetMediaItemInfo_Value(item, "D_FADEOUTLEN"); }
 double ITEM::fadeinlen_auto() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO"); }
@@ -144,8 +147,8 @@ bool ITEM::track(MediaTrack * track) {
 bool ITEM::track(String name) { return MoveMediaItemToTrack(item, TRACK::get(name)); }
 void ITEM::activeTake(int idx) { SetActiveTake(GetTake(item, idx)); }
 void ITEM::setSnapOffset(double v) { SetMediaItemInfo_Value(item, "D_SNAPOFFSET", v); }
-void ITEM::setIsMuted(bool v) { SetMediaItemInfo_Value(item, "B_MUTE", v); }
-void ITEM::vol(double v) { SetMediaItemInfo_Value(item, "D_VOL", v); }
+void ITEM::setMuted(bool v) { SetMediaItemInfo_Value(item, "B_MUTE", v); }
+void ITEM::setVolume(double v) { SetMediaItemInfo_Value(item, "D_VOL", v); }
 void ITEM::move(double v) { SetMediaItemInfo_Value(item, "D_POSITION", GetMediaItemInfo_Value(item, "D_POSITION") + v); }
 
 bool ITEM::crop(RANGE r, bool move_edge)
@@ -172,7 +175,7 @@ void ITEM::fadein_shape(int v) { SetMediaItemInfo_Value(item, "C_FADEINSHAPE", v
 void ITEM::fadeout_shape(int v) { SetMediaItemInfo_Value(item, "C_FADEOUTSHAPE", v); }
 void ITEM::fadein_curve(double v) { SetMediaItemInfo_Value(item, "D_FADEINDIR", v); }
 void ITEM::fadeout_curve(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTDIR", v); }
-void ITEM::setIsSelected(bool v) { SetMediaItemInfo_Value(item, "B_UISEL", v); }
+void ITEM::setSelected(bool v) { SetMediaItemInfo_Value(item, "B_UISEL", v); }
 
 void ITEM::rate(double new_rate, bool warp)
 {
@@ -211,16 +214,16 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     switch (iter->second)
     {
     case __name:
-        return getActiveTake()->nameNoTags();
+        return getActiveTake()->getNameNoTags();
     case __track:
         if (get_value) return (String)TRACK(track()).idx();
-        else return TRACK(track()).name();
+        else return TRACK(track()).getName();
     case __length:
         return (String)length();
     case __rate:
         return (String)getRate();
     case __volume:
-        return (String)vol();
+        return (String)getVolume();
     case __snapoffset:
         return (String)getSnapOffset();
     case __position:
@@ -230,9 +233,9 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __fadeoutlen:
         return (String)fadeoutlen();
     case __startoffset:
-        return (String)getActiveTake()->offset();
+        return (String)getActiveTake()->getOffset();
     case __tags:
-        return getActiveTake()->nameTagsOnly();
+        return getActiveTake()->getNameTagsOnly();
     case __pitch:
         return (String)getActiveTake()->pitch();
     case __file_extension:
@@ -345,7 +348,7 @@ void ITEMLIST::remove()
 void ITEMLIST::selected(bool select) 
 { 
     for (auto& item : list) 
-        item.setIsSelected(select); 
+        item.setSelected(select); 
 }
 
 // functions

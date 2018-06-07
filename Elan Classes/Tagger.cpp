@@ -67,7 +67,7 @@ String Tagger::TagsOnly() const
 }
 String Tagger::WithTags() const
 {
-    return name + TagsOnly();
+    return NoTags() + TagsOnly();
 }
 String Tagger::ImportantTags() const
 {

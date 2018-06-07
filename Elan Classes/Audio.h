@@ -245,7 +245,7 @@ public:
   int samples() { return m_samples; }
   int channels() { return m_channels; }
   int frames() { return m_frames; }
-  int srate() { return m_srate; }
+  int getSampleRate() { return m_srate; }
   int bitdepth() { return m_bitdepth; }
   double lenght() { return m_length; }
 };

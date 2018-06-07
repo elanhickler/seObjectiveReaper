@@ -97,9 +97,9 @@ public:
     double pitch() const;
     bool preservepitch() const;
     double rate() const;
-    double vol() const;
-    double offset() const;
-    int srate();
+    double getVolume() const;
+    double getOffset() const;
+    int getSampleRate();
     int bitdepth();
     int nch();
     PCM_source* pcm_source() const;

@@ -11,7 +11,7 @@ TRACK TRACK::get(const String & name)
     for (int i = 0; i < num_tracks; ++i)
     {
         TRACK t = GetTrack(0, i);
-        if (name == t.name()) return t;
+        if (name == t.getName()) return t;
     }
     return nullptr;
 }
@@ -27,7 +27,7 @@ TRACK TRACK::getSelected(const String & name)
     for (int i = 0; i < num_tracks; ++i)
     {
         TRACK t = GetSelectedTrack(0, i);
-        if (name == t.name()) return t;
+        if (name == t.getName()) return t;
     }
     return nullptr;
 }
@@ -225,7 +225,7 @@ void TRACKLIST::CollectTracksWithSelectedItems()
 TRACK & TRACKLIST::getByName(const String & name)
 {
     for (auto& t : list) 
-        if (name == t.name()) 
+        if (name == t.getName()) 
             return t;
 
     return TRACK_invalid;
@@ -273,9 +273,9 @@ String TRACK::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __name:
         if (get_value)
             return String(idx());
-        return nameNoTags();
+        return getNameNoTags();
     case __tags:
-        return nameTagsOnly();
+        return getNameTagsOnly();
     }
 
     return String();

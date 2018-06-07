@@ -125,9 +125,9 @@ String MARKER::GetPropertyStringFromKey(const String & key, bool get_value) cons
     case __name:
         if (get_value)
             return String(idx());
-        return nameNoTags();
+        return getNameNoTags();
     case __tags:
-        return nameTagsOnly();
+        return getNameTagsOnly();
     }
 
     return String();

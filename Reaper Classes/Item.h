@@ -81,7 +81,7 @@ public:
   double getSnapOffset() const;
  
   int getGroupIndex() const;
-  double vol() const;
+  double getVolume() const;
   double fadeinlen() const;
   double fadeoutlen() const;
   double fadeinlen_auto() const;
@@ -108,8 +108,8 @@ public:
   bool track(String name);
   void activeTake(int idx);
   void setSnapOffset(double v);
-  void setIsMuted(bool v);
-  void vol(double v);
+  void setMuted(bool v);
+  void setVolume(double v);
   void fadeinlen(double v);
   void fadeoutlen(double v);
   void fadeinlen_auto(double v);
@@ -118,7 +118,7 @@ public:
   void fadeout_shape(int v);
   void fadein_curve(double v);
   void fadeout_curve(double v);
-  void setIsSelected(bool v);
+  void setSelected(bool v);
   void rate(double new_rate, bool warp = true);
 
   //~ITEM() { jassert(false); };
