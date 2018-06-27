@@ -16,10 +16,10 @@ private:
 public:
     // conversion
     static int count();
-    static TRACK get(int idx);
-    static TRACK get(const String & name);
-    static TRACK getSelected(int idx);
-    static TRACK getSelected(const String & name);
+    static TRACK getByIndex(int idx);
+    static TRACK getByName(const String & name);
+    static TRACK getSelectedByIndex(int idx);
+    static TRACK getSelectedByName(const String & name);
     static TRACK insertBeforeIndex(int i);
     static TRACK insertAfterIndex(int i);
 

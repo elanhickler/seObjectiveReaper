@@ -6,9 +6,20 @@ class ITEM : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDAT
 {
   //static functions
 public:
-  static bool is_grouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
+  static bool isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
   static ITEM get(int idx);
   static ITEM getSelected(int idx);
+
+  enum FADESHAPE
+  {
+    LIN,
+    LOG,
+    EXPO,
+    LOG_2,
+    EXPO_2,
+    SCURV,
+    SCURV_2
+  };
 
 private:
   friend class ITEMLIST;
@@ -55,7 +66,10 @@ public:
 
   /* FUNCTIONS */
 
+  ITEM duplicate();
   void remove();
+  void move(double v);
+  bool crop(RANGE r, bool move_edge);
 
   // returns the item created from the right-hand-side of the split, or invalid item if split failed
   ITEM split(double v);
@@ -64,64 +78,62 @@ public:
   ITEMLIST split(vector<double> splitlist);
 
   TAKELIST GetTakes();
-  void CollectTakes();
-  ITEM duplicate();
-  void move(double v);
-  bool crop(RANGE r, bool move_edge);
+  void CollectTakes(); 
+
   MediaItem* pointer() { return item; }
 
   /* GETTER */
 
-  bool getIsMuted() const;
-  bool getIsSelected() const;
-
-  int idx() const;
-  MediaTrack* track() const;
-  int track_idx() const;
-  double getSnapOffset() const;
- 
-  int getGroupIndex() const;
-  double getVolume() const;
-  double fadeinlen() const;
-  double fadeoutlen() const;
-  double fadeinlen_auto() const;
-  double fadeoutlen_auto() const;
-  int setFadeInShape() const;
-  int setFadeOutShape() const;
-  double fadein_curve() const;
-  double fadeout_curve() const;
-
   const TAKE * getActiveTake() const;
   TAKE * getActiveTake();
-
   const TAKE * getTake(int i) const;
   TAKE * getTake(int i);
+  int getNumTakes(); 
 
-  int getNumTakes();
+  MediaTrack* getTrack() const;
+  int getTrackIndex() const;
+
+  bool isMuted() const;
+  bool isSelected() const;
+
+  int getIndex() const;  
+  int getGroupIndex() const;  
+  
+  double getVolume() const;
   double getRate() const;
+  double getSnapOffset() const;
+
+  double getFadeInLen() const;
+  double getFadeOutLen() const;
+  double getFadeInLenAuto() const;
+  double getFadeOutLenAuto() const;
+  int getFadeInShape() const;
+  int getFadeOutShape() const;
+  double getFadeInCurve() const;
+  double getFadeOutCurve() const; 
 
   /* SETTER */
-  
-  void track_idx(int v);
-  void track(int v);
-  bool track(MediaTrack* track);
-  bool track(String name);
-  void activeTake(int idx);
-  void setSnapOffset(double v);
   void setMuted(bool v);
-  void setVolume(double v);
-  void fadeinlen(double v);
-  void fadeoutlen(double v);
-  void fadeinlen_auto(double v);
-  void fadeoutlen_auto(double v);
-  void fadein_shape(int v);
-  void fadeout_shape(int v);
-  void fadein_curve(double v);
-  void fadeout_curve(double v);
   void setSelected(bool v);
-  void rate(double new_rate, bool warp = true);
 
-  //~ITEM() { jassert(false); };
+  void setActiveTake(int idx);
+
+  bool setTrack(MediaTrack* track);
+  void setTrackByIndex(int v); 
+  bool setTrackByName(String name);
+
+  void setVolume(double v);
+  void setRate(double new_rate, bool warp = true);  
+  void setSnapOffset(double v);  
+  
+  void setFadeInLen(double v);
+  void setFadeOutLen(double v);
+  void setFadeInLenAuto(double v);
+  void setFadeOutLenAuto(double v);
+  void setFadeInShape(int v);
+  void setFadeOutShape(int v);
+  void setFadeInCurve(double v);
+  void setFadeOutCurve(double v);
 
 private:
   enum
@@ -170,7 +182,7 @@ public:
   ITEMLIST(ITEM i)
   {
     push_back(i);
-    r ={ i.startPos(), i.endPos() };
+    r ={ i.getStartPosition(), i.getEndPosition() };
   }
 
   RANGE r;
@@ -182,29 +194,29 @@ public:
   void CollectItems();
   void CollectSelectedItems();
 
+  // functions
+  void InitAudio();
+  void move(double v);
+  void remove();
+  int crop(RANGE r, bool move_edge);
+
   // getters
-  double startPos() const;
-  double endPos() const;
-  double length() const;
-  double snap() const;
-  double fadeinlen() const;
-  double fadeoutlen() const;
+  double getStartPosition() const;
+  double getEndPosition() const;
+  double getLength() const;
+  double getSnapOffset() const;
+  double getFadeInLen() const;
+  double getFadeOutLen() const;
   String GetPropertyStringFromKey(const String & key, bool use_value) const;
-  bool selected() const;
+  bool isSelected() const;
   RANGE range() const { return r; }
 
   // setters
-  int crop(RANGE r, bool move_edge);
-  int track(MediaTrack* track);
-  int track(String name);
-  void endPos(double v);
+  int setTrack(MediaTrack* track);
+  void setEndPosition(double v);
   void setSnapOffset(double v);
-  void move(double v);
-  void remove();
-  void selected(bool select);
-
-  // functions
-  void InitAudio();
+  void setSelected(bool select);
+  
 };
 
 class ITEMGROUPLIST : public LIST<ITEMLIST>

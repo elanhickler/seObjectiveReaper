@@ -182,16 +182,16 @@ public:
     operator RANGE() const { return range(); }
 
     // getters
-    double startPos() const { return getObjectStartPos(); }
-    double endPos() const { return getObjectEndPos(); }
+    double getStartPosition() const { return getObjectStartPos(); }
+    double getEndPosition() const { return getObjectEndPos(); }
     double length() const { return getObjectLength(); }
     int color() const { return getObjectColor(); }
-    RANGE range() const { return { startPos(), endPos() }; }
-    double position() { return getObjectStartPos(); }
+    RANGE range() const { return { getStartPosition(), getEndPosition() }; }
+    double getPosition() { return getObjectStartPos(); }
 
     // setters
-    void startPos(double v) { setObjectStartPos(v); }
-    void endPos(double v) { setObjectEndPos(v); }
+    void getStartPosition(double v) { setObjectStartPos(v); }
+    void getEndPosition(double v) { setObjectEndPos(v); }
     void length(double v) { setObjectLength(v); }
     void color(int v) { setObjectColor(v); }
     void position(double v) { setObjectPosition(v); }
@@ -245,7 +245,7 @@ public:
     //void insert(typename vector<t>::iterator position, typename vector<t>::iterator first, typename vector<t>::iterator last) { insert(position, first, last); }
     void append(const LIST & l) { list.insert(list.end(), l.begin(), l.end()); }
     void clear() { list.clear(); }
-    void sort() { if (do_sort) stable_sort(begin(), end(), [](const t & a, const t & b) { return a.startPos() < b.startPos(); }); }
+    void sort() { if (do_sort) stable_sort(begin(), end(), [](const t & a, const t & b) { return a.getStartPosition() < b.getStartPosition(); }); }
     void resize(size_t size) { list.resize(size); }
 
     // search functions
@@ -325,13 +325,13 @@ void LIST<t>::FilterByRange(RANGE range, bool must_be_completely_inside_range)
     LIST l;
     for (const auto & o : list)
     {
-        if (o.startPos() < range.start())
+        if (o.getStartPosition() < range.start())
             continue;
-        else if (o.startPos() > range.end())
+        else if (o.getStartPosition() > range.end())
             break;
 
         if ((must_be_completely_inside_range && RANGE::is_inside(o, range))  ||
-            (o.startPos() >= range.start() && o.startPos() < range.end()))
+            (o.getStartPosition() >= range.start() && o.getStartPosition() < range.end()))
             l.push_back(o);
     }
 

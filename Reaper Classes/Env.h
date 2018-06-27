@@ -22,7 +22,7 @@ public:
     double tension = 0.0;
     bool selected = false;
 
-    double startPos() { return position; }
+    double getStartPosition() { return position; }
 
     ENVPT() {}
     ENVPT(int idx, double p, double v, int s = 0, double t = 0.0, bool sel = false) : id(idx), position(p), value(v), shape(s), tension(t), selected(sel) {}

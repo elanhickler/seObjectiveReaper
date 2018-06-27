@@ -25,7 +25,7 @@ public:
     }
     static MARKER AddToProject(const MARKER & m)
     {
-        return AddToProject(m.startPos(), m.endPos(), m.getName(), m.id());
+        return AddToProject(m.getStartPosition(), m.getEndPosition(), m.getName(), m.id());
     }
     static MARKER get(int idx) { return std::move(MARKER(idx)); }
     static MARKER createGhost(const RANGE & r)

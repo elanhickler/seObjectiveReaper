@@ -17,9 +17,9 @@ ITEM::ITEM(MediaItem_Take * take)
   TagManager.WithTags(getName()); 
 }
 
-bool ITEM::is_grouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
+bool ITEM::isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
 {
-    if (must_be_on_same_track && i1.track() != i2.track()) return false;
+    if (must_be_on_same_track && i1.getTrack() != i2.getTrack()) return false;
     return i1.getGroupIndex() && i1.getGroupIndex() == i2.getGroupIndex();
 }
 
@@ -80,22 +80,22 @@ void ITEM::CollectTakes()
     active_take = GetActiveTake(item);
 }
 
-int ITEM::idx() const { return GetMediaItemInfo_Value(item, "IP_ITEMNUMBER"); }
-MediaTrack * ITEM::track() const { return GetMediaItem_Track(item); }
-int ITEM::track_idx() const { return GetMediaTrackInfo_Value(GetMediaItem_Track(item), "IP_TRACKNUMBER"); }
+int ITEM::getIndex() const { return GetMediaItemInfo_Value(item, "IP_ITEMNUMBER"); }
+MediaTrack * ITEM::getTrack() const { return GetMediaItem_Track(item); }
+int ITEM::getTrackIndex() const { return GetMediaTrackInfo_Value(GetMediaItem_Track(item), "IP_TRACKNUMBER"); }
 double ITEM::getSnapOffset() const { return GetMediaItemInfo_Value(item, "D_SNAPOFFSET"); }
-bool ITEM::getIsMuted() const { return 0.0 != GetMediaItemInfo_Value(item, "B_MUTE"); }
+bool ITEM::isMuted() const { return 0.0 != GetMediaItemInfo_Value(item, "B_MUTE"); }
 int ITEM::getGroupIndex() const { return GetMediaItemInfo_Value(item, "I_GROUPID"); }
 double ITEM::getVolume() const { return GetMediaItemInfo_Value(item, "D_VOL"); }
-double ITEM::fadeinlen() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN"); }
-double ITEM::fadeoutlen() const { return GetMediaItemInfo_Value(item, "D_FADEOUTLEN"); }
-double ITEM::fadeinlen_auto() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO"); }
-double ITEM::fadeoutlen_auto() const { return GetMediaItemInfo_Value(item, "D_FADEOUTLEN_AUTO"); }
-int ITEM::setFadeInShape() const { return GetMediaItemInfo_Value(item, "C_FADEINSHAPE"); }
-int ITEM::setFadeOutShape() const { return GetMediaItemInfo_Value(item, "C_FADEOUTSHAPE"); }
-double ITEM::fadein_curve() const { return GetMediaItemInfo_Value(item, "D_FADEINDIR"); }
-double ITEM::fadeout_curve() const { return GetMediaItemInfo_Value(item, "D_FADEOUTDIR"); }
-bool ITEM::getIsSelected() const { return 0.0 != GetMediaItemInfo_Value(item, "B_UISEL"); }
+double ITEM::getFadeInLen() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN"); }
+double ITEM::getFadeOutLen() const { return GetMediaItemInfo_Value(item, "D_FADEOUTLEN"); }
+double ITEM::getFadeInLenAuto() const { return GetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO"); }
+double ITEM::getFadeOutLenAuto() const { return GetMediaItemInfo_Value(item, "D_FADEOUTLEN_AUTO"); }
+int ITEM::getFadeInShape() const { return GetMediaItemInfo_Value(item, "C_FADEINSHAPE"); }
+int ITEM::getFadeOutShape() const { return GetMediaItemInfo_Value(item, "C_FADEOUTSHAPE"); }
+double ITEM::getFadeInCurve() const { return GetMediaItemInfo_Value(item, "D_FADEINDIR"); }
+double ITEM::getFadeOutCurve() const { return GetMediaItemInfo_Value(item, "D_FADEOUTDIR"); }
+bool ITEM::isSelected() const { return 0.0 != GetMediaItemInfo_Value(item, "B_UISEL"); }
 const TAKE * ITEM::getActiveTake() const { return &active_take; }
 const TAKE * ITEM::getTake(int i) const
 {
@@ -114,13 +114,13 @@ TAKE * ITEM::getTake(int i) {
 
 int ITEM::getNumTakes() { return CountTakes(item); }
 
-double ITEM::getRate() const { return getActiveTake()->rate(); }
+double ITEM::getRate() const { return getActiveTake()->getRate(); }
 
 ITEM ITEM::duplicate()
 {
 		char* chunk = GetSetObjectState(item, "");
 
-    ITEM copy = SplitMediaItem(item, startPos() + length()/2);
+    ITEM copy = SplitMediaItem(item, getStartPosition() + length()/2);
 
     GetSetObjectState(copy.item, chunk);
 		GetSetObjectState(item, chunk);
@@ -131,21 +131,20 @@ ITEM ITEM::duplicate()
     return copy;
 }
 
-void ITEM::track_idx(int v)
+void ITEM::setTrackByIndex(int v)
 {
     int tracks = CountTracks(0);
     for (int t = tracks; t < v+1; ++t) InsertTrackAtIndex(t, true);
     MoveMediaItemToTrack(item, GetTrack(0, v));
 }
 
-void ITEM::track(int v) { track_idx(v); }
-bool ITEM::track(MediaTrack * track) { 
+bool ITEM::setTrack(MediaTrack * track) { 
     bool t = MoveMediaItemToTrack(item, track);
     UpdateArrange();
     return t;
 }
-bool ITEM::track(String name) { return MoveMediaItemToTrack(item, TRACK::get(name)); }
-void ITEM::activeTake(int idx) { SetActiveTake(GetTake(item, idx)); }
+bool ITEM::setTrackByName(String name) { return MoveMediaItemToTrack(item, TRACK::getByName(name)); }
+void ITEM::setActiveTake(int idx) { SetActiveTake(GetTake(item, idx)); }
 void ITEM::setSnapOffset(double v) { SetMediaItemInfo_Value(item, "D_SNAPOFFSET", v); }
 void ITEM::setMuted(bool v) { SetMediaItemInfo_Value(item, "B_MUTE", v); }
 void ITEM::setVolume(double v) { SetMediaItemInfo_Value(item, "D_VOL", v); }
@@ -154,30 +153,30 @@ void ITEM::move(double v) { SetMediaItemInfo_Value(item, "D_POSITION", GetMediaI
 bool ITEM::crop(RANGE r, bool move_edge)
 {
     bool start_was_moved = false, end_was_moved = false;
-    if (startPos() < r.start())
+    if (getStartPosition() < r.start())
     {
-        startPos(r.start());
+        getStartPosition(r.start());
         start_was_moved = true;
     }
-    if (endPos() > r.end())
+    if (getEndPosition() > r.end())
     {
-        endPos(r.end());
+        getEndPosition(r.end());
         end_was_moved = true;
     }
     return start_was_moved || end_was_moved;
 }
 
-void ITEM::fadeinlen(double v) { SetMediaItemInfo_Value(item, "D_FADEINLEN", v); }
-void ITEM::fadeoutlen(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTLEN", v); }
-void ITEM::fadeinlen_auto(double v) { SetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO", v); }
-void ITEM::fadeoutlen_auto(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTLEN_AUTO", v); }
-void ITEM::fadein_shape(int v) { SetMediaItemInfo_Value(item, "C_FADEINSHAPE", v); }
-void ITEM::fadeout_shape(int v) { SetMediaItemInfo_Value(item, "C_FADEOUTSHAPE", v); }
-void ITEM::fadein_curve(double v) { SetMediaItemInfo_Value(item, "D_FADEINDIR", v); }
-void ITEM::fadeout_curve(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTDIR", v); }
+void ITEM::setFadeInLen(double v) { SetMediaItemInfo_Value(item, "D_FADEINLEN", v); }
+void ITEM::setFadeOutLen(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTLEN", v); }
+void ITEM::setFadeInLenAuto(double v) { SetMediaItemInfo_Value(item, "D_FADEINLEN_AUTO", v); }
+void ITEM::setFadeOutLenAuto(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTLEN_AUTO", v); }
+void ITEM::setFadeInShape(int v) { SetMediaItemInfo_Value(item, "C_FADEINSHAPE", v); }
+void ITEM::setFadeOutShape(int v) { SetMediaItemInfo_Value(item, "C_FADEOUTSHAPE", v); }
+void ITEM::setFadeInCurve(double v) { SetMediaItemInfo_Value(item, "D_FADEINDIR", v); }
+void ITEM::setFadeOutCurve(double v) { SetMediaItemInfo_Value(item, "D_FADEOUTDIR", v); }
 void ITEM::setSelected(bool v) { SetMediaItemInfo_Value(item, "B_UISEL", v); }
 
-void ITEM::rate(double new_rate, bool warp)
+void ITEM::setRate(double new_rate, bool warp)
 {
     if (warp)
     {
@@ -196,12 +195,12 @@ void ITEM::rate(double new_rate, bool warp)
         TAKELIST TakesList = GetTakes();
         for (auto& take : TakesList)
         {
-            take.preservepitch(false);
-            take.rate(new_rate);
+            take.setPreservePitch(false);
+            take.setRate(new_rate);
         }
     }
     else
-        rate(new_rate);
+        setRate(new_rate);
 }
 
 String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
@@ -216,8 +215,8 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __name:
         return getActiveTake()->getNameNoTags();
     case __track:
-        if (get_value) return (String)TRACK(track()).idx();
-        else return TRACK(track()).getName();
+        if (get_value) return (String)TRACK(getTrack()).idx();
+        else return TRACK(getTrack()).getName();
     case __length:
         return (String)length();
     case __rate:
@@ -227,17 +226,17 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __snapoffset:
         return (String)getSnapOffset();
     case __position:
-        return (String)startPos();
+        return (String)getStartPosition();
     case __fadeinlen:
-        return (String)fadeinlen();
+        return (String)getFadeInLen();
     case __fadeoutlen:
-        return (String)fadeoutlen();
+        return (String)getFadeOutLen();
     case __startoffset:
         return (String)getActiveTake()->getOffset();
     case __tags:
         return getActiveTake()->getNameTagsOnly();
     case __pitch:
-        return (String)getActiveTake()->pitch();
+        return (String)getActiveTake()->getPitch();
     case __file_extension:
         return getActiveTake()->file().getFileExtension();
     }
@@ -253,7 +252,7 @@ void ITEMLIST::CollectItems()
     if (do_sort)
     {
         sort();
-        r = RANGE({ front().startPos(), list.back().endPos() });
+        r = RANGE({ front().getStartPosition(), list.back().getEndPosition() });
     }
 }
 
@@ -269,25 +268,25 @@ void ITEMLIST::CollectSelectedItems()
     if (do_sort)
     {
         sort();
-        r = RANGE({ front().startPos(), list.back().endPos() });
+        r = RANGE({ front().getStartPosition(), list.back().getEndPosition() });
     }
 }
 
-double ITEMLIST::startPos() const { return front().startPos(); }
-double ITEMLIST::endPos() const { return back().endPos(); }
-double ITEMLIST::length() const { return back().endPos() - front().startPos(); }
-double ITEMLIST::snap() const { return front().getSnapOffset(); }
-double ITEMLIST::fadeinlen() const { return front().fadeinlen(); }
-double ITEMLIST::fadeoutlen() const { return back().fadeoutlen(); }
+double ITEMLIST::getStartPosition() const { return front().getStartPosition(); }
+double ITEMLIST::getEndPosition() const { return back().getEndPosition(); }
+double ITEMLIST::getLength() const { return back().getEndPosition() - front().getStartPosition(); }
+double ITEMLIST::getSnapOffset() const { return front().getSnapOffset(); }
+double ITEMLIST::getFadeInLen() const { return front().getFadeInLen(); }
+double ITEMLIST::getFadeOutLen() const { return back().getFadeOutLen(); }
 String ITEMLIST::GetPropertyStringFromKey(const String & key, bool use_value) const
 {
     return front().GetPropertyStringFromKey(key, use_value);
 }
 
-bool ITEMLIST::selected() const
+bool ITEMLIST::isSelected() const
 {
     for (const auto & i : list)
-        if (!i.getIsSelected())
+        if (!i.isSelected())
             return false;
 
     return true;
@@ -303,7 +302,7 @@ int ITEMLIST::crop(RANGE rng, bool move_edge)
     return num_cropped;
 }
 
-int ITEMLIST::track(MediaTrack * track)
+int ITEMLIST::setTrack(MediaTrack * track)
 {
     int num_items_moved = 0;
     for (auto& item : list)
@@ -313,11 +312,9 @@ int ITEMLIST::track(MediaTrack * track)
     return num_items_moved;
 }
 
-int ITEMLIST::track(String name) { return TRACK::get(name).idx(); }
-
-void ITEMLIST::endPos(double v)
+void ITEMLIST::setEndPosition(double v)
 {
-    list.back().endPos(v);
+    list.back().getEndPosition(v);
 }
 
 void ITEMLIST::setSnapOffset(double v)
@@ -327,7 +324,7 @@ void ITEMLIST::setSnapOffset(double v)
         ++i;
     if (i < list.size())
         list[i].setSnapOffset(v);
-    else if (v < front().startPos())
+    else if (v < front().getStartPosition())
         front().setSnapOffset(v);
     else
         list.back().setSnapOffset(v);
@@ -345,7 +342,7 @@ void ITEMLIST::remove()
         item.remove();
 }
 
-void ITEMLIST::selected(bool select) 
+void ITEMLIST::setSelected(bool select) 
 { 
     for (auto& item : list) 
         item.setSelected(select); 

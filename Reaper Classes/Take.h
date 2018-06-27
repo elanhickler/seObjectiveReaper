@@ -82,40 +82,43 @@ public:
       ENVELOPE Pitch;
     } envelope;
 
+    AudioFile & audio();
+    MediaItem_Take * ptr() { return take; }
+    PCM_source * pcm_source() const;
+
     // getter
     bool isMidi() const { return TakeIsMIDI(take); }
-
-    MediaItem_Take * ptr() { return take; }
-
-    AudioFile & audio();
+    bool isPitchPreserved() const;
+    bool isPhaseInverted() const;
+    
     int idx() const;
     MediaItem * item() const;
     MediaTrack * track() const;
     int chanmode() const;
     int firstCh() const;
     int lastCh() const;
-    double pitch() const;
-    bool preservepitch() const;
-    double rate() const;
+    double getPitch() const;   
+    double getRate() const;
     double getVolume() const;
     double getOffset() const;
     int getSampleRate();
-    int bitdepth();
-    int nch();
-    PCM_source* pcm_source() const;
+    int getBitDepth();
+    int getNumChannels();
+    
     size_t frames() const;
     size_t samples() const;
     size_t file_frames() const;
     File file() const;
 
     // setter
-    void file(const String & file);
-    void chanmode(int v);
-    void vol(double v);
-    void pitch(double v);
-    void preservepitch(bool v);
-    void rate(double v);
-    void offset(double v);
+    void setFile(const String & file);
+    void setChannelMode(int v);
+    void setVolume(double v);
+    void setPitch(double v);
+    void setPreservePitch(bool v);
+    void setInvertPhase(bool v);
+    void setRate(double v);
+    void setStartOffset(double v);
     TAKE activate();
     void remove();
     TAKE move(MediaTrack* track);

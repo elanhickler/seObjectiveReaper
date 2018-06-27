@@ -3,9 +3,9 @@
 
 int TRACK::count() { return CountTracks(0); }
 
-TRACK TRACK::get(int idx) { return TRACK(idx); }
+TRACK TRACK::getByIndex(int idx) { return TRACK(idx); }
 
-TRACK TRACK::get(const String & name)
+TRACK TRACK::getByName(const String & name)
 {
     int num_tracks = CountTracks(0);
     for (int i = 0; i < num_tracks; ++i)
@@ -16,12 +16,12 @@ TRACK TRACK::get(const String & name)
     return nullptr;
 }
 
-TRACK TRACK::getSelected(int idx)
+TRACK TRACK::getSelectedByIndex(int idx)
 {
     return GetSelectedTrack(0, idx);
 }
 
-TRACK TRACK::getSelected(const String & name)
+TRACK TRACK::getSelectedByName(const String & name)
 {
     int num_tracks = CountSelectedTracks(0);
     for (int i = 0; i < num_tracks; ++i)
@@ -81,7 +81,7 @@ void TRACK::CollectItems()
     list_all.push_back(GetTrackMediaItem(track, i));
     list.push_back(list_all.back());
 
-    if (list_all.back().getIsSelected())
+    if (list_all.back().isSelected())
       list_selected.push_back(list.back());
   }
 }

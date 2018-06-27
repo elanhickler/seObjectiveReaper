@@ -22,8 +22,8 @@ void RemoveTake(MediaItem* item, MediaItem_Take* take)
 String TAKE::getObjectName() const { return GetTakeName(take); }
 
 void TAKE::setObjectName(const String & v) { GetSetMediaItemTakeInfo_String(take, "P_NAME", (char*)v.toRawUTF8(), 1); }
-double TAKE::getObjectStartPos() const { return ITEM(take).startPos(); }
-void TAKE::setObjectStartPos(double v) { ITEM(take).startPos(v); }
+double TAKE::getObjectStartPos() const { return ITEM(take).getStartPosition(); }
+void TAKE::setObjectStartPos(double v) { ITEM(take).getStartPosition(v); }
 double TAKE::getObjectLength() const { return ITEM(take).length(); }
 void TAKE::setObjectLength(double v) { ITEM(take).length(v); }
 int TAKE::getObjectColor() const { return 0; }
@@ -53,8 +53,10 @@ int TAKE::firstCh() const
 {
     int ch = chanmode();
 
-    if (ch >= 67) return ch - 67;
-    if (ch >= 3) return ch - 3;
+    if (ch >= 67)
+      return ch - 67;
+    if (ch >= 3)
+      return ch - 3;
     return 0;
 }
 int TAKE::lastCh() const
@@ -62,33 +64,58 @@ int TAKE::lastCh() const
     int ch = chanmode();
     int first = firstCh();
 
-    if (ch == 0) return GetMediaItemTake_Source(take)->GetNumChannels() - 1;
-    if (ch >= 2 || ch <= 66) return first;
+    if (ch == 0) 
+      return GetMediaItemTake_Source(take)->GetNumChannels() - 1;
+    if (ch >= 2 || ch <= 66) 
+      return first;
     return first + 1;
 }
 
-double TAKE::pitch() const { return GetMediaItemTakeInfo_Value(take, "D_PITCH"); }
-bool TAKE::preservepitch() const { return GetMediaItemTakeInfo_Value(take, "B_PPITCH") == 1; }
-double TAKE::rate() const { return GetMediaItemTakeInfo_Value(take, "D_PLAYRATE"); }
+bool TAKE::isPitchPreserved() const { return GetMediaItemTakeInfo_Value(take, "B_PPITCH"); }
+bool TAKE::isPhaseInverted() const { return GetMediaItemTakeInfo_Value(take, "D_VOL") < 0; }
+
+double TAKE::getPitch() const { return GetMediaItemTakeInfo_Value(take, "D_PITCH"); }
+double TAKE::getRate() const { return GetMediaItemTakeInfo_Value(take, "D_PLAYRATE"); }
 // Returns volume as a factor of amplitude.
-double TAKE::getVolume() const { return GetMediaItemTakeInfo_Value(take, "D_VOL"); }
+double TAKE::getVolume() const { return abs(GetMediaItemTakeInfo_Value(take, "D_VOL")); }
 double TAKE::getOffset() const { return GetMediaItemTakeInfo_Value(take, "D_STARTOFFS"); }
 int TAKE::getSampleRate() { return audioFile.m_srate; }
-int TAKE::bitdepth() { return m_bitdepth; }
-int TAKE::nch() { return m_nch; }
+int TAKE::getBitDepth() { return m_bitdepth; }
+int TAKE::getNumChannels() { return m_nch; }
 PCM_source * TAKE::pcm_source() const { return m_source; }
 size_t TAKE::frames() const { return m_take_frames; }
 size_t TAKE::samples() const { return m_take_samples; }
 size_t TAKE::file_frames() const { return m_file_frames; }
 File TAKE::file() const { return m_file; }
+void TAKE::setFile(const String & file) { SetMediaItemTake_Source(take, PCM_Source_CreateFromFile(file.toRawUTF8())); }
+void TAKE::setChannelMode(int v) { SetMediaItemTakeInfo_Value(take, "I_CHANMODE", v); }
 
-void TAKE::file(const String & file) { SetMediaItemTake_Source(take, PCM_Source_CreateFromFile(file.toRawUTF8())); }
-void TAKE::chanmode(int v) { SetMediaItemTakeInfo_Value(take, "I_CHANMODE", v); }
-void TAKE::vol(double v) { SetMediaItemTakeInfo_Value(take, "D_VOL", v); }
-void TAKE::pitch(double v) { SetMediaItemTakeInfo_Value(take, "D_PITCH", v); }
-void TAKE::preservepitch(bool v) { SetMediaItemTakeInfo_Value(take, "B_PPITCH", v); }
-void TAKE::rate(double v) { SetMediaItemTakeInfo_Value(take, "D_PLAYRATE", v); }
-void TAKE::offset(double v) { SetMediaItemTakeInfo_Value(take, "D_STARTOFFS", v); }
+void TAKE::setVolume(double v) 
+{ 
+  bool phaseIsInverted = GetMediaItemTakeInfo_Value(take, "D_VOL") < 0;
+
+  if (phaseIsInverted)
+    v = -abs(v);
+  else
+    v = abs(v);
+
+  SetMediaItemTakeInfo_Value(take, "D_VOL", v); 
+}
+void TAKE::setPitch(double v) { SetMediaItemTakeInfo_Value(take, "D_PITCH", v); }
+void TAKE::setPreservePitch(bool v) { SetMediaItemTakeInfo_Value(take, "B_PPITCH", v); }
+
+void TAKE::setInvertPhase(bool v) 
+{
+  bool phaseIsInverted = GetMediaItemTakeInfo_Value(take, "D_VOL") < 0;
+
+  if (v != phaseIsInverted)
+  { 
+    SetMediaItemTakeInfo_Value(take, "D_VOL", -GetMediaItemTakeInfo_Value(take, "D_VOL"));
+  }
+}
+
+void TAKE::setRate(double v) { SetMediaItemTakeInfo_Value(take, "D_PLAYRATE", v); }
+void TAKE::setStartOffset(double v) { SetMediaItemTakeInfo_Value(take, "D_STARTOFFS", v); }
 TAKE TAKE::activate() { auto old = GetActiveTake(item()); SetActiveTake(take); return old; }
 void TAKE::remove() { take = nullptr; RemoveTake(item(), take); }
 
@@ -174,14 +201,14 @@ void TAKE::initAudio(double starttime, double endtime)
 void TAKE::loadAudio()
 {
     int initial_chanmode = chanmode();
-    chanmode(0);
+    setChannelMode(0);
 
     vector<double> buffer(m_take_samples, 0);
     AudioAccessor* accessor = CreateTakeAudioAccessor(take);
     GetAudioAccessorSamples(accessor, audioFile.m_srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
     DestroyAudioAccessor(accessor);
 
-    chanmode(initial_chanmode);
+    setChannelMode(initial_chanmode);
 
     m_audiobuf = InterleavedToMultichannel(buffer.data(), m_nch, m_take_frames);
 }
