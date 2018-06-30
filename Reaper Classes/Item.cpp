@@ -25,6 +25,15 @@ bool ITEM::isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_trac
 
 ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
 ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
+
+
+ITEM ITEM::CreateMidi(MediaTrack * track, double position, double length)
+{
+  ITEM item = CreateNewMIDIItemInProj(track, position, position + length, 0);
+  item.getActiveTake()->initMidi();
+  return item;
+}
+
 String ITEM::getObjectName() const { return getActiveTake()->getName(); }
 void ITEM::setObjectName(const String & v) 
 { 

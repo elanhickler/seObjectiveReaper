@@ -9,6 +9,7 @@ public:
   static bool isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
   static ITEM get(int idx);
   static ITEM getSelected(int idx);
+  static ITEM CreateMidi(MediaTrack * track, double position, double length);
 
   enum FADESHAPE
   {

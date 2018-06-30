@@ -71,7 +71,7 @@ int TAKE::lastCh() const
     return first + 1;
 }
 
-bool TAKE::isPitchPreserved() const { return GetMediaItemTakeInfo_Value(take, "B_PPITCH"); }
+bool TAKE::isPitchPreserved() const { return (bool)GetMediaItemTakeInfo_Value(take, "B_PPITCH"); }
 bool TAKE::isPhaseInverted() const { return GetMediaItemTakeInfo_Value(take, "D_VOL") < 0; }
 
 double TAKE::getPitch() const { return GetMediaItemTakeInfo_Value(take, "D_PITCH"); }
@@ -257,4 +257,11 @@ void MIDINOTELIST::collectMidiNotes()
 
     push_back({ channel, note, vel, startTime, endTime, muted, selected });
   }
+}
+
+void MIDINOTELIST::add(int noteNumber, double position, double length)
+{
+  double ppq_start = MIDI_GetPPQPosFromProjTime(take->ptr(), position);
+  double ppq_end = MIDI_GetPPQPosFromProjTime(take->ptr(), position + length);
+  MIDI_InsertNote(take->ptr(), 0, 0, ppq_start, ppq_end, 0, noteNumber, 127, 0);
 }

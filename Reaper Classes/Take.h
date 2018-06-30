@@ -51,6 +51,7 @@ public:
   MIDINOTELIST(TAKE * take) : take(take) {};
 
   void collectMidiNotes();
+  void add(int noteNumber, double position, double length);
 
 private:
   TAKE * take;
@@ -59,121 +60,123 @@ private:
 class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
 public:
-    // constructor
-    TAKE() { take = nullptr; }
-    TAKE(MediaItem_Take* take);
 
-    // conversion
-    operator void*() const { return take; }
-    operator MediaItem_Take*() const { return take; }
+  // constructor
+  TAKE() { take = nullptr; }
+  TAKE(MediaItem_Take* take);
 
-    // operator
-    bool operator==(const MediaItem_Take * rhs) const { return take == rhs; }
-    bool operator!=(const MediaItem_Take * rhs) const { return take != rhs; }
-    bool operator==(const TAKE & rhs) const { return take == rhs.take; }
-    bool operator!=(const TAKE & rhs) const { return take != rhs.take; }
-    vector<double>& operator[](int i) { return m_audiobuf[i]; }
+  // conversion
+  operator void*() const { return take; }
+  operator MediaItem_Take*() const { return take; }
 
-    struct envelope
-    {
-      ENVELOPE Volume;
-      ENVELOPE Pan;
-      ENVELOPE Mute;
-      ENVELOPE Pitch;
-    } envelope;
+  // operator
+  bool operator==(const MediaItem_Take * rhs) const { return take == rhs; }
+  bool operator!=(const MediaItem_Take * rhs) const { return take != rhs; }
+  bool operator==(const TAKE & rhs) const { return take == rhs.take; }
+  bool operator!=(const TAKE & rhs) const { return take != rhs.take; }
+  vector<double>& operator[](int i) { return m_audiobuf[i]; }
 
-    AudioFile & audio();
-    MediaItem_Take * ptr() { return take; }
-    PCM_source * pcm_source() const;
+  struct envelope
+  {
+    ENVELOPE Volume;
+    ENVELOPE Pan;
+    ENVELOPE Mute;
+    ENVELOPE Pitch;
+  } envelope;
 
-    // getter
-    bool isMidi() const { return TakeIsMIDI(take); }
-    bool isPitchPreserved() const;
-    bool isPhaseInverted() const;
-    
-    int idx() const;
-    MediaItem * item() const;
-    MediaTrack * track() const;
-    int chanmode() const;
-    int firstCh() const;
-    int lastCh() const;
-    double getPitch() const;   
-    double getRate() const;
-    double getVolume() const;
-    double getOffset() const;
-    int getSampleRate();
-    int getBitDepth();
-    int getNumChannels();
-    
-    size_t frames() const;
-    size_t samples() const;
-    size_t file_frames() const;
-    File file() const;
+  AudioFile & audio();
+  MediaItem_Take * ptr() { return take; }
+  PCM_source * pcm_source() const;
 
-    // setter
-    void setFile(const String & file);
-    void setChannelMode(int v);
-    void setVolume(double v);
-    void setPitch(double v);
-    void setPreservePitch(bool v);
-    void setInvertPhase(bool v);
-    void setRate(double v);
-    void setStartOffset(double v);
-    TAKE activate();
-    void remove();
-    TAKE move(MediaTrack* track);
-    TAKE move(MediaItem* new_item);
+  // getter
+  bool isMidi() const { return TakeIsMIDI(take); }
+  bool isPitchPreserved() const;
+  bool isPhaseInverted() const;
 
-    /* MIDI FUNCTIONS */
-    void initMidi()
-    {
-      note_list = MIDINOTELIST(this);
-      note_list.collectMidiNotes();
-    }
+  int idx() const;
+  MediaItem * item() const;
+  MediaTrack * track() const;
+  int chanmode() const;
+  int firstCh() const;
+  int lastCh() const;
+  double getPitch() const;
+  double getRate() const;
+  double getVolume() const;
+  double getOffset() const;
+  int getSampleRate();
+  int getBitDepth();
+  int getNumChannels();
 
-    MIDINOTELIST * getMidiNoteList() { return &note_list; }
-    const MIDINOTELIST * getMidiNoteList() const { return &note_list; }
+  size_t frames() const;
+  size_t samples() const;
+  size_t file_frames() const;
+  File file() const;
 
-    /* AUDIO FUNCTIONS */
-    /*
-    Example usage code:
+  // setter
+  void setFile(const String & file);
+  void setChannelMode(int v);
+  void setVolume(double v);
+  void setPitch(double v);
+  void setPreservePitch(bool v);
+  void setInvertPhase(bool v);
+  void setRate(double v);
+  void setStartOffset(double v);
+  TAKE activate();
+  void remove();
+  TAKE move(MediaTrack* track);
+  TAKE move(MediaItem* new_item);
 
-    // set items offline/online to prevent RAM overusag, 
-    // this is optional, but recommended
-    SET_ALL_ITEMS_OFFLINE();
-    UNSELECT_ITEMS();
+  /* MIDI FUNCTIONS */
+  void initMidi()
+  {
+    note_list = MIDINOTELIST(this);
+    note_list.collectMidiNotes();
+  }
 
-    for (auto item : ItemList)
-    {
-      item.selected(true);
-      SET_SELECTED_ITEMS_ONLINE();
-      auto take = item.getActiveTake();
-      take.loadAudio();
+  MIDINOTELIST * getMidiNoteList() { return &note_list; }
+  const MIDINOTELIST * getMidiNoteList() const { return &note_list; }
 
-      int channel = 0;
-      int sample = 0;
-      double value = take.getAudioSample(channel, sample);
 
-      take.unloadAudio();
-      SET_SELECTED_ITEMS_OFFLINE();
-      item.selected(false);
-    }
+  /* AUDIO FUNCTIONS */
+  /*
+  Example usage code:
 
-    SET_ALL_ITEMS_ONLINE();
-    */
+  // set items offline/online to prevent RAM overusag,
+  // this is optional, but recommended
+  SET_ALL_ITEMS_OFFLINE();
+  UNSELECT_ITEMS();
 
-    void initAudio(double starttime = -1, double endtime = -1); 
-    void loadAudio(); 
-    void unloadAudio(); 
+  for (auto item : ItemList)
+  {
+  item.selected(true);
+  SET_SELECTED_ITEMS_ONLINE();
+  auto take = item.getActiveTake();
+  take.loadAudio();
 
-    double getAudioSampleRate() { return audioFile.m_srate; }
-    int getAudioNumChannels() { return m_audiobuf.size(); }
-    int getTakeNumAudioSamplesPerChannel() { return m_take_frames; }
+  int channel = 0;
+  int sample = 0;
+  double value = take.getAudioSample(channel, sample);
 
-    vector<vector<double>> & getAudioMultichannel();
-    vector<double> & getAudioChannel(int channel);
-    double getAudioSample(int channel, int sample);
-   
+  take.unloadAudio();
+  SET_SELECTED_ITEMS_OFFLINE();
+  item.selected(false);
+  }
+
+  SET_ALL_ITEMS_ONLINE();
+  */
+
+  void initAudio(double starttime = -1, double endtime = -1);
+  void loadAudio();
+  void unloadAudio();
+
+  double getAudioSampleRate() { return audioFile.m_srate; }
+  int getAudioNumChannels() { return m_audiobuf.size(); }
+  int getTakeNumAudioSamplesPerChannel() { return m_take_frames; }
+
+  vector<vector<double>> & getAudioMultichannel();
+  vector<double> & getAudioChannel(int channel);
+  double getAudioSample(int channel, int sample);
+
 
 private:
   // member
@@ -220,9 +223,9 @@ extern TAKE InvalidTake;
 class TAKELIST : public LIST<TAKE>
 {
 private:
-    MediaItem* item;
+  MediaItem* item;
 
 public:
-    TAKELIST();
-    TAKELIST(MediaItem* item);
+  TAKELIST();
+  TAKELIST(MediaItem* item);
 };

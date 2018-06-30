@@ -552,20 +552,26 @@ private:
 
 };
 
-inline UserInputsWindow* ShowGenericUserInputs(String windowtitle, String but1txt, StringArray labels, StringArray initialentries,
+struct UIInputBox
+{
+  String name;
+  String defval;
+};
+
+inline UserInputsWindow* ShowGenericUserInputs(String windowtitle, String but1txt, vector<UIInputBox> NameDefVal,
 	std::function<void(UserInputsComponent*, int)> callback)
 {
 	auto dlg = make_window<UserInputsWindow>(windowtitle, 500, 400, true, Colours::grey);
 	dlg->m_comp->ButtonCallbackFunction = callback;
-	for (int i = 0; i < labels.size(); ++i)
+	for (int i = 0; i < NameDefVal.size(); ++i)
 	{
 		String init_entry;
-		if (i < initialentries.size())
-			init_entry = initialentries[i];
-		dlg->m_comp->addEntry(labels[i], init_entry);
+		if (i < NameDefVal.size())
+			init_entry = NameDefVal[i].defval;
+		dlg->m_comp->addEntry(NameDefVal[i].name, init_entry);
 	}
 	dlg->m_comp->loadSettings();
 	dlg->m_comp->setButtonText(1, but1txt);
-	dlg->setSize(500, labels.size() * 25 + 32);
+	dlg->setSize(500, NameDefVal.size() * 25 + 32);
 	return dlg;
 }
