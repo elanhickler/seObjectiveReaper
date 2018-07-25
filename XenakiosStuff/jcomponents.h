@@ -562,14 +562,18 @@ inline UserInputsWindow* ShowGenericUserInputs(String windowtitle, String but1tx
 	std::function<void(UserInputsComponent*, int)> callback)
 {
 	auto dlg = make_window<UserInputsWindow>(windowtitle, 500, 400, true, Colours::grey);
+
 	dlg->m_comp->ButtonCallbackFunction = callback;
+
 	for (int i = 0; i < NameDefVal.size(); ++i)
+
 	{
 		String init_entry;
 		if (i < NameDefVal.size())
 			init_entry = NameDefVal[i].defval;
 		dlg->m_comp->addEntry(NameDefVal[i].name, init_entry);
 	}
+
 	dlg->m_comp->loadSettings();
 	dlg->m_comp->setButtonText(1, but1txt);
 	dlg->setSize(500, NameDefVal.size() * 25 + 32);

@@ -165,6 +165,7 @@ public:
   SET_ALL_ITEMS_ONLINE();
   */
 
+  bool audioIsInitialized = false;
   void initAudio(double starttime = -1, double endtime = -1);
   void loadAudio();
   void unloadAudio();
@@ -176,6 +177,12 @@ public:
   vector<vector<double>> & getAudioMultichannel();
   vector<double> & getAudioChannel(int channel);
   double getAudioSample(int channel, int sample);
+  double getProjectPositionForAudioSample(int sample)
+  {
+    double sr = getSampleRate();
+    double startTime = getStartPosition();
+    return startTime + sample/sr;
+  }
 
 
 private:

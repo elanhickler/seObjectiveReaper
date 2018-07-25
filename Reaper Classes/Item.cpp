@@ -9,22 +9,22 @@ ITEM::ITEM(MediaItem * item) : item(item)
 { 
   jassert(item != nullptr);
   active_take = GetActiveTake(item); 
-  TagManager.WithTags(getName()); 
+  TagManager.setStringWithTags(getName()); 
 }
 ITEM::ITEM(MediaItem_Take * take) 
 {
   item = GetMediaItemTake_Item(take); 
-  TagManager.WithTags(getName()); 
+  TagManager.setStringWithTags(getName()); 
 }
 
-bool ITEM::isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
+bool ITEM::IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
 {
     if (must_be_on_same_track && i1.getTrack() != i2.getTrack()) return false;
     return i1.getGroupIndex() && i1.getGroupIndex() == i2.getGroupIndex();
 }
 
-ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
-ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
+ITEM ITEM::Get(int idx) { return GetMediaItem(0, idx); }
+ITEM ITEM::GetSelected(int idx) { return GetSelectedMediaItem(0, idx); }
 
 
 ITEM ITEM::CreateMidi(MediaTrack * track, double position, double length)
@@ -222,7 +222,7 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     switch (iter->second)
     {
     case __name:
-        return getActiveTake()->getNameNoTags();
+        return getActiveTake()->getStringNoTags();
     case __track:
         if (get_value) return (String)TRACK(getTrack()).idx();
         else return TRACK(getTrack()).getName();
@@ -252,6 +252,10 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 
     return String();
 }
+
+int ITEMLIST::CountSelected() { return CountSelectedMediaItems(0); }
+
+int ITEMLIST::Count() { return CountMediaItems(0); }
 
 void ITEMLIST::CollectItems()
 {
@@ -414,19 +418,19 @@ void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_ov
     // go through each track
     for (TRACK & t : tl)
     {
-        t.CollectItems();
+        t.collectItems();
         ITEM last_item = t[0];
 
         // go through each item in track
         push_back(ITEMLIST());
-        back().reserve(t.getSelectedItemList()->size());
+        back().reserve(t.getSelectedItemList().size());
 
         // get either selected list or normal list
         ITEMLIST * il;
         if (selected_only)
-            il = t.getSelectedItemList();
+            il = &t.getSelectedItemList();
         else
-            il = dynamic_cast<ITEMLIST *>(t.getItemList());
+            il = dynamic_cast<ITEMLIST *>(&t.getItemList());
 
         if (must_be_overlapping)
             for (const ITEM & i : *il)

@@ -6,9 +6,9 @@ class ITEM : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDAT
 {
   //static functions
 public:
-  static bool isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
-  static ITEM get(int idx);
-  static ITEM getSelected(int idx);
+  static bool IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
+  static ITEM Get(int idx);
+  static ITEM GetSelected(int idx);
   static ITEM CreateMidi(MediaTrack * track, double position, double length);
 
   enum FADESHAPE
@@ -174,6 +174,9 @@ private:
 
 class ITEMLIST : public LIST<ITEM>
 {
+public:
+  static int CountSelected();
+  static int Count();
 private:
   int m_group;
 

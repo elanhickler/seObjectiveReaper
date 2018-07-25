@@ -80,7 +80,7 @@ MARKER::MARKER(int i)
     _idx = i;
     _get();
     cache_end();
-    TagManager.WithTags(getObjectName());
+    TagManager.setStringWithTags(getObjectName());
 }
 
 MARKER::MARKER(RANGE range, const String & name)
@@ -90,7 +90,7 @@ MARKER::MARKER(RANGE range, const String & name)
     _is_region = _start < _end;
     is_ghost = true;
     _name = name;
-    TagManager.WithTags(name);
+    TagManager.setStringWithTags(name);
 }
 
 MARKER::MARKER(double position, const String & name)
@@ -100,7 +100,7 @@ MARKER::MARKER(double position, const String & name)
     _is_region = false;
     is_ghost = true;
     _name = name;
-    TagManager.WithTags(name);
+    TagManager.setStringWithTags(name);
 }
 
 MARKER::MARKER(double start, double end, const String & name)
@@ -110,7 +110,7 @@ MARKER::MARKER(double start, double end, const String & name)
     _is_region = _start < _end;
     is_ghost = true;
     _name = name;
-    TagManager.WithTags(name);
+    TagManager.setStringWithTags(name);
 }
 
 String MARKER::GetPropertyStringFromKey(const String & key, bool get_value) const
@@ -125,7 +125,7 @@ String MARKER::GetPropertyStringFromKey(const String & key, bool get_value) cons
     case __name:
         if (get_value)
             return String(idx());
-        return getNameNoTags();
+        return getStringNoTags();
     case __tags:
         return getNameTagsOnly();
     }

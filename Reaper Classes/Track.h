@@ -26,17 +26,17 @@ public:
 private:
     // member
     MediaTrack* track;
-    ITEMLIST list_all;
-    ITEMLIST list_selected;
+    ITEMLIST ItemList_all;
+    ITEMLIST ItemList_selected;
 
 public:
     // constructor
     TRACK() { track = nullptr; }
-    TRACK(MediaTrack* track) : track(track) { TagManager.WithTags(getObjectName()); }
+    TRACK(MediaTrack* track) : track(track) { TagManager.setStringWithTags(getObjectName()); }
     TRACK(int idx) 
     { 
         track = GetTrack(0, idx); 
-        TagManager.WithTags(getObjectName());
+        TagManager.setStringWithTags(getObjectName());
     }
 
     // conversion
@@ -55,22 +55,21 @@ public:
     TRACK getLastChild() const;
     TRACK getFirstChild() const;
     int folder() const { return GetMediaTrackInfo_Value(track, "I_FOLDERDEPTH"); }
-    ITEM & getSelectedItem(int idx) { return list_selected[idx]; }
+    ITEM & getSelectedItem(int idx) { return ItemList_selected[idx]; }
     int countItems() const { return list.size(); }
-    int countSelectedItems() const { return list_selected.size(); }
+    int countSelectedItems() const { return ItemList_selected.size(); }
 
     // setters
     void folder(int mode) { SetMediaTrackInfo_Value(track, "I_FOLDERDEPTH", mode); }
     void setAsLastFolder();
 
     // functions
-    void CollectItems();
+    void collectItems();
     void remove();
     void RemoveAllItemsFromProject();
 
-    ITEMLIST * getItemList() { return &list_all; }
-    ITEMLIST * getSelectedItemList() { return &list_selected; }
-    const ITEMLIST * getSelectedItemList() const { return &list_selected; }
+    ITEMLIST getItemList() { return ItemList_all; }
+    ITEMLIST getSelectedItemList() { return ItemList_selected; }
 
     // getters
     bool sel() const { return GetMediaTrackInfo_Value(track, "I_SELECTED") == 1; }
@@ -83,7 +82,7 @@ public:
     bool is_selected() const { return sel(); }
     bool hasMidiItems() const 
     { 
-      for (const ITEM & item : list_selected)
+      for (const ITEM & item : ItemList_selected)
         if (item.getActiveTake()->isMidi())
           return true;
       return false;

@@ -72,17 +72,17 @@ void TRACK::setAsLastFolder()
     folder(i);
 }
 
-void TRACK::CollectItems()
+void TRACK::collectItems()
 {
   int num_items = CountTrackMediaItems(track);
 
   for (int i = 0; i < num_items; ++i)
   {    
-    list_all.push_back(GetTrackMediaItem(track, i));
-    list.push_back(list_all.back());
+    ItemList_all.push_back(GetTrackMediaItem(track, i));
+    list.push_back(ItemList_all.back());
 
-    if (list_all.back().isSelected())
-      list_selected.push_back(list.back());
+    if (ItemList_all.back().isSelected())
+      ItemList_selected.push_back(list.back());
   }
 }
 
@@ -216,7 +216,7 @@ void TRACKLIST::CollectTracksWithSelectedItems()
   for (int t = 0; t < num_tracks; ++t)
   {
     TRACK track = GetTrack(0, t);
-    track.CollectItems();
+    track.collectItems();
     if (track.has_selected_items())
       push_back(track);
   }
@@ -273,7 +273,7 @@ String TRACK::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __name:
         if (get_value)
             return String(idx());
-        return getNameNoTags();
+        return getStringNoTags();
     case __tags:
         return getNameTagsOnly();
     }

@@ -49,59 +49,50 @@ String Tagger::KeySort(map<String, String> m) const
     return s;
 }
 
-void Tagger::TagsOnly(const String & tagString)
-{
-    vector<String> tempvect = split(tagString, '`', 1, "");
-
-    for (int i = 0; i < tempvect.size(); ++i)
-    {
-        vector<String> temp = split(tempvect[i], '=');
-        if (temp.size() < 2)  continue;
-        tagmap[temp[0]] = temp[1];
-    }
-}
-
-String Tagger::TagsOnly() const
+String Tagger::getStringTagsOnly() const
 {
     return KeySort(tagmap);
 }
-String Tagger::WithTags() const
+String Tagger::getStringWithTags() const
 {
-    return NoTags() + TagsOnly();
+    return getStringNoTags() + getStringTagsOnly();
 }
-String Tagger::ImportantTags() const
+String Tagger::getImportantTagString() const
 {
     auto temp_map = tagmap;
     for (const auto &tag : uniques) temp_map.erase(tag);
     return name + KeySort(temp_map);
 }
 
-String Tagger::NoTags() const
+String Tagger::getStringNoTags() const
 {
     return name;
 }
-void Tagger::WithTags(const String & input)
+void Tagger::setStringWithTags(const String & input)
 {
     setup(input);
 }
 
-void Tagger::NoTags(const String & input)
+void Tagger::setStringNoTags(const String & input)
 {
     name = input;
 }
 
 //returns "" on error
-bool Tagger::TagExists(String tag) const
+bool Tagger::tagExists(String tag) const
 {
     return tagmap.find(tag) != tagmap.end();
 }
-String Tagger::GetTag(const String & tag, char typechar) const
+String Tagger::getTag(const String & tag, char typechar) const
 {
     auto it = tagmap.find(tag);
-    if (it == tagmap.end()) return "";
+
+    if (it == tagmap.end()) 
+      return "";
+
     return it->second;
 }
-void Tagger::RemoveTag(const String& tag)
+void Tagger::removeTags(const String& tag)
 {
     tagmap.erase(tag);
 }
@@ -109,16 +100,16 @@ void Tagger::RemoveAllTags()
 {
     tagmap.clear();
 }
-void Tagger::RemoveTag(const vector<String>& TagList)
+void Tagger::removeTags(const vector<String>& TagList)
 {
-    for (const auto &tag : TagList) RemoveTag(tag);
+    for (const auto &tag : TagList) removeTags(tag);
 }
 
 //String GetNoteTag(bool search_tags, bool use_regex, int search_count) { //todo: support legato note tag style
 //	if (search_tags) {
-//		if (TagExists("n")) return GetTag("n");
-//		else if (TagExists("ne")) return GetTag("ne");
-//		else if (TagExists("ns")) return GetTag("ne");
+//		if (tagExists("n")) return getTag("n");
+//		else if (tagExists("ne")) return getTag("ne");
+//		else if (tagExists("ns")) return getTag("ne");
 //	}
 //	else if (use_regex) {
 //		regex expr(".*([a-gA-G]#?(?:-2|-1|[0-8])).*");
@@ -141,11 +132,11 @@ void Tagger::RemoveTag(const vector<String>& TagList)
 //	double f = 0;
 //	String notename = "";
 //
-//	if (TagExists("h"))	h = stoi(GetTag("h"));
+//	if (tagExists("h"))	h = stoi(getTag("h"));
 //
 //	if (mode == 0 || mode == 1) {
-//		if (TagExists("w")) f = stod(GetTag("w"));
-//		else if (TagExists("f")) f = stod(GetTag("f"));
+//		if (tagExists("w")) f = stod(getTag("w"));
+//		else if (tagExists("f")) f = stod(getTag("f"));
 //	}
 //
 //	if (f == 0 && (mode == 0 || mode == 2))
@@ -214,10 +205,10 @@ void Tagger::RemoveTag(const vector<String>& TagList)
 //
 //	evaluate_legato_str(note_tag, note_start, note_end);
 //
-//	if (TagExists("i")) interval = (ToN)tagmap["i"];
-//	if (TagExists("ns")) note_start = Midi::ToNum(tagmap["ns"]);
-//	if (TagExists("ne")) note_end = Midi::ToNum(tagmap["ne"]);
-//	if (TagExists("d")) dir = evaluate_dir_str(tagmap["d"]);
+//	if (tagExists("i")) interval = (ToN)tagmap["i"];
+//	if (tagExists("ns")) note_start = Midi::ToNum(tagmap["ns"]);
+//	if (tagExists("ne")) note_end = Midi::ToNum(tagmap["ne"]);
+//	if (tagExists("d")) dir = evaluate_dir_str(tagmap["d"]);
 //
 //	if (interval == -1 && note_start == -1 && note_end == -1 && dir == "") return;
 //
@@ -249,15 +240,15 @@ void Tagger::RemoveTag(const vector<String>& TagList)
 //	String d_str = dir == 1 ? "u" : dir == -1 ? "d" : "r";
 //	String int_str = ne != -1 ? ToS(abs(ns-ne)) : "";
 //
-//	if ( int_str.size() && (!shorthand || TagExists("ns") || TagExists("ne")) ) {
-//		RemoveTag("n");
+//	if ( int_str.size() && (!shorthand || tagExists("ns") || tagExists("ne")) ) {
+//		removeTags("n");
 //		SetTag("ns", ns_str);
 //		SetTag("ne", ne_str);
 //		SetTag("i", int_str);
 //		SetTag("d", dir_str);
 //	}
-//	else if (TagExists("n") || TagExists("ns")) {
-//		RemoveTag("ns");
+//	else if (tagExists("n") || tagExists("ns")) {
+//		removeTags("ns");
 //		if (ne != -1) SetTag("n", ns_str + d_str + ne_str);
 //		else SetTag("n", ns_str);
 //	}

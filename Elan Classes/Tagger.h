@@ -15,7 +15,7 @@ rr = #/@ repeitition            4  / d
 */
 
 static vector<String> define_order({ "ls", "le", "a", "no", "d", "i", "n", "ns", "ne", "lv", "hv", "vl", "rr" });
-static vector<String> define_uniques({ "ls", "le", "f", "r", "clip", "so", "sn", "v" });
+static vector<String> define_uniques({ "ls", "le", "f", "r", "clip", "so", "sn", "v", "pp" });
 
 class Tagger
 {
@@ -32,39 +32,40 @@ public:
     Tagger(String input);    
 
     /* Getters */
-    // Return only tags.
-    String TagsOnly() const;
-    // Return string with tags.
-    String WithTags() const;
-    // Returns string without tags
-    String NoTags() const;
-    // Returns non-unique tags as string
-    String ImportantTags() const;
-    //Get tag string or value, returns "" on error
-    String GetTag(const String & tag, char typechar = '@') const;
 
-    /* Setters */
-    // Set the tag string
-    void TagsOnly(const String & tagString);    
     // Return string with tags.
-    void WithTags(const String & input);
+    String getStringWithTags() const; 
+    // Returns string without tags
+    String getStringNoTags() const;
+    // Return only tags.                             
+    String getStringTagsOnly() const;   
+    // Returns non-unique tags as string
+    String getImportantTagString() const;
+    //Get tag string or value, returns "" on error
+    String getTag(const String & tag, char typechar = '@') const;
+
+    /* Setters */   
+
+    // Set the full string
+    void setStringWithTags(const String & input);
     // Set the non-tag string
-    void NoTags(const String & input);
+    void setStringNoTags(const String & input);    
+    
     // Set tag with value using int/double/string
     template<class t> void SetTag(String tag, t val)
     {
         tagmap[tag] = String(val);
     }
     // Remove tag
-    void RemoveTag(const String& tag);
+    void removeTags(const String& tag);
     // Remove a set of tags
-    void RemoveTag(const vector<String>& TagList);
+    void removeTags(const vector<String>& TagList);
     // Remove all tags
     void RemoveAllTags();
 
     /* Boolean */
     // Check if tag exists
-    bool TagExists(String tag) const;
+    bool tagExists(String tag) const;
 
     ///* Specific tag functions */
 

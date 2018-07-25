@@ -130,13 +130,13 @@ public:
 
     /* GETTER */
 
-    String getTag(const String & key) const { return TagManager.GetTag(key); }
+    String getTag(const String & key) const { return TagManager.getTag(key); }
     // Get full name string of object including the tag string portion
     String getName() const { return getObjectName(); }
     // Get name of object without affecting tags
-    String getNameNoTags() const { return TagManager.NoTags(); }
+    String getStringNoTags() const { return TagManager.getStringNoTags(); }
     // Get name of object only affecting the tag string portion
-    String getNameTagsOnly() const { return TagManager.TagsOnly(); }
+    String getNameTagsOnly() const { return TagManager.getStringTagsOnly(); }
 
     /* SETTER */
 
@@ -144,22 +144,22 @@ public:
     void setTag(const String & key, const String & value) 
     {
       TagManager.SetTag(key, value); 
-      setObjectName(TagManager.WithTags());
+      setObjectName(TagManager.getStringWithTags());
     }
-    void removeTag(const String & key) 
+    void removeTags(const String & key) 
     { 
-      TagManager.RemoveTag(key);
-      setObjectName(TagManager.WithTags());
+      TagManager.removeTags(key);
+      setObjectName(TagManager.getStringWithTags());
     }
     // Set full name string of object also affecting the tag string portion
     void setName(const String & v) { setObjectName(v); }
     // Set name of object without affecting tags
-    void setNameNoTags(const String & v) { TagManager.NoTags(v); }
+    void setNameNoTags(const String & v) { TagManager.setStringNoTags(v); }
     // Set name of object only affecting the tag string portion
-    void setNameTagsOnly(const String & v) { TagManager.TagsOnly(v); }
+    void setNameTagsOnly(const String & v) { TagManager.setStringWithTags(v); }
 
     // boolean
-    bool has_tag(const String & tag) const { return TagManager.TagExists(tag); }
+    bool has_tag(const String & tag) const { return TagManager.tagExists(tag); }
 };
 
 class OBJECT_MOVABLE

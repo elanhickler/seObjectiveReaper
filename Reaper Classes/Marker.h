@@ -40,7 +40,7 @@ public:
         m._is_region = m._start < m._end;
         m.is_ghost = true;
         m._name = name;
-        m.TagManager.WithTags(name);
+        m.TagManager.setStringWithTags(name);
         return m;
     }
 private:

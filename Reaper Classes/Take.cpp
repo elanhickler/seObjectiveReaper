@@ -34,7 +34,7 @@ TAKE::TAKE(MediaItem_Take * take) : take(take)
 {
     jassert(take != nullptr);
     initAudio();
-    TagManager.WithTags(getObjectName());
+    TagManager.setStringWithTags(getObjectName());
 
     envelope.Volume.setTrackEnvelope(take, "Volume");
     envelope.Pan.setTrackEnvelope(take, "Pan");
@@ -172,6 +172,7 @@ TAKE TAKE::move(MediaItem * new_item)
 
 void TAKE::initAudio(double starttime, double endtime)
 {
+  audioIsInitialized = true;
     m_source = GetMediaItemTake_Source(take);
 
     audioFile = AudioFile((File)m_source->GetFileName());
