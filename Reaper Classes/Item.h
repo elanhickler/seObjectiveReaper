@@ -67,6 +67,7 @@ public:
 
   /* FUNCTIONS */
 
+  // copies the item exactly taking the same position and length, thereby overlapping 100%
   ITEM duplicate();
   void remove();
   void move(double v);
@@ -217,6 +218,7 @@ public:
 
   // setters
   int setTrack(MediaTrack* track);
+  void setStartPosition(double v);
   void setEndPosition(double v);
   void setSnapOffset(double v);
   void setSelected(bool select);
@@ -239,6 +241,13 @@ public:
   // project
   void CollectItems(int group_mode);
   void CollectSelectedItems(int group_mode);
+
+  // actions
+  ITEMLIST * addNewList() 
+  {
+    list.push_back(ITEMLIST());
+    return &list.back();
+  }
 
   operator ITEMLIST() { return list[0]; }
 

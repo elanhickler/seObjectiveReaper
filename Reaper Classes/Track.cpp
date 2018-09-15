@@ -210,6 +210,18 @@ void TRACKLIST::CollectSelectedTracks()
         push_back(GetSelectedTrack(0, t));
 }
 
+void TRACKLIST::CollectTracksWithItems()
+{
+  int num_tracks = CountTracks(0);
+  for (int t = 0; t < num_tracks; ++t)
+  {
+    TRACK track = GetTrack(0, t);
+    track.collectItems();
+    if (track.has_items())
+      push_back(track);
+  }
+}
+
 void TRACKLIST::CollectTracksWithSelectedItems()
 {
   int num_tracks = CountTracks(0);

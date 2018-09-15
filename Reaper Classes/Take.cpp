@@ -23,9 +23,9 @@ String TAKE::getObjectName() const { return GetTakeName(take); }
 
 void TAKE::setObjectName(const String & v) { GetSetMediaItemTakeInfo_String(take, "P_NAME", (char*)v.toRawUTF8(), 1); }
 double TAKE::getObjectStartPos() const { return ITEM(take).getStartPosition(); }
-void TAKE::setObjectStartPos(double v) { ITEM(take).getStartPosition(v); }
-double TAKE::getObjectLength() const { return ITEM(take).length(); }
-void TAKE::setObjectLength(double v) { ITEM(take).length(v); }
+void TAKE::setObjectStartPos(double v) { ITEM(take).setStartPosition(v); }
+double TAKE::getObjectLength() const { return ITEM(take).getLength(); }
+void TAKE::setObjectLength(double v) { ITEM(take).setLength(v); }
 int TAKE::getObjectColor() const { return 0; }
 void TAKE::setObjectColor(int v) {}
 bool TAKE::objectIsValid() const { return take != nullptr; }
@@ -76,9 +76,10 @@ bool TAKE::isPhaseInverted() const { return GetMediaItemTakeInfo_Value(take, "D_
 
 double TAKE::getPitch() const { return GetMediaItemTakeInfo_Value(take, "D_PITCH"); }
 double TAKE::getRate() const { return GetMediaItemTakeInfo_Value(take, "D_PLAYRATE"); }
+
 // Returns volume as a factor of amplitude.
 double TAKE::getVolume() const { return abs(GetMediaItemTakeInfo_Value(take, "D_VOL")); }
-double TAKE::getOffset() const { return GetMediaItemTakeInfo_Value(take, "D_STARTOFFS"); }
+double TAKE::getStartOffset() const { return GetMediaItemTakeInfo_Value(take, "D_STARTOFFS"); }
 int TAKE::getSampleRate() { return audioFile.m_srate; }
 int TAKE::getBitDepth() { return m_bitdepth; }
 int TAKE::getNumChannels() { return m_nch; }
@@ -187,13 +188,13 @@ void TAKE::initAudio(double starttime, double endtime)
     
     // take audio properties
     audioFile.m_file = m_source->GetFileName();
-    m_file_frames = length() * audioFile.m_srate;
+    m_file_frames = getLength() * audioFile.m_srate;
     m_file_length = m_source->GetLength();
     m_bitdepth = m_source->GetBitsPerSample();
     m_nch = m_source->GetNumChannels();
 
     if (starttime == -1) starttime = m_audiobuf_starttime = 0;
-    if (endtime == -1) { endtime = m_audiobuf_endtime = length(); }
+    if (endtime == -1) { endtime = m_audiobuf_endtime = getLength(); }
 
     m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)audioFile.m_srate;
     m_take_samples = m_take_frames * m_nch;

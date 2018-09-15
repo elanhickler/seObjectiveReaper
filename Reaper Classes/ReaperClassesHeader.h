@@ -69,6 +69,9 @@ void SET_ALL_ITEMS_OFFLINE();
 void SET_ALL_ITEMS_ONLINE();
 void SET_SELECTED_ITEMS_OFFLINE();
 void SET_SELECTED_ITEMS_ONLINE();
+void PASTE_ITEMS();
+void REMOVE_ITEMS();
+void GLUE_ITEMS();
 
 namespace NUDGE {
 void START(double v, bool move_source = false);
@@ -184,17 +187,17 @@ public:
     // getters
     double getStartPosition() const { return getObjectStartPos(); }
     double getEndPosition() const { return getObjectEndPos(); }
-    double length() const { return getObjectLength(); }
+    double getLength() const { return getObjectLength(); }
     int color() const { return getObjectColor(); }
     RANGE range() const { return { getStartPosition(), getEndPosition() }; }
     double getPosition() { return getObjectStartPos(); }
 
     // setters
-    void getStartPosition(double v) { setObjectStartPos(v); }
-    void getEndPosition(double v) { setObjectEndPos(v); }
-    void length(double v) { setObjectLength(v); }
+    void setStartPosition(double v) { setObjectStartPos(v); }
+    void setEndPosition(double v) { setObjectEndPos(v); }
+    void setLength(double v) { setObjectLength(v); }
     void color(int v) { setObjectColor(v); }
-    void position(double v) { setObjectPosition(v); }
+    void setPosition(double v) { setObjectPosition(v); }
     void move(double v) { setObjectPosition(v + getObjectStartPos()); }
 };
 
@@ -226,7 +229,7 @@ public:
     t & front() { return list.front(); }
     const t & front() const { return list.front(); }
     t & back() { return list.back(); }
-    const t & back() const { return list.front(); }
+    const t & back() const { return list.back(); }
 
     // boolean
     bool empty() const { return list.empty(); }

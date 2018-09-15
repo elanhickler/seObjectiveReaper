@@ -23,7 +23,7 @@ public:
     static TRACK insertBeforeIndex(int i);
     static TRACK insertAfterIndex(int i);
 
-private:
+//private:
     // member
     MediaTrack* track;
     ITEMLIST ItemList_all;
@@ -127,6 +127,7 @@ public:
     // project
     void CollectTracks();
     void CollectSelectedTracks();
+    void CollectTracksWithItems();
     void CollectTracksWithSelectedItems();
 
     // getters

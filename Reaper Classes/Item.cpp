@@ -127,9 +127,9 @@ double ITEM::getRate() const { return getActiveTake()->getRate(); }
 
 ITEM ITEM::duplicate()
 {
-		char* chunk = GetSetObjectState(item, "");
+		char* chunk = GetSetObjectState((MediaItem*)item, "");
 
-    ITEM copy = SplitMediaItem(item, getStartPosition() + length()/2);
+    ITEM copy = SplitMediaItem(item, getStartPosition() + getLength()/2);
 
     GetSetObjectState(copy.item, chunk);
 		GetSetObjectState(item, chunk);
@@ -164,12 +164,12 @@ bool ITEM::crop(RANGE r, bool move_edge)
     bool start_was_moved = false, end_was_moved = false;
     if (getStartPosition() < r.start())
     {
-        getStartPosition(r.start());
+        setStartPosition(r.start());
         start_was_moved = true;
     }
     if (getEndPosition() > r.end())
     {
-        getEndPosition(r.end());
+        setEndPosition(r.end());
         end_was_moved = true;
     }
     return start_was_moved || end_was_moved;
@@ -195,7 +195,7 @@ void ITEM::setRate(double new_rate, bool warp)
         double ratio = old_rate / new_rate;
 
         // set length based on rate change
-        length(length() * ratio);
+        setLength(getLength() * ratio);
 
         // set snap offset based on rate change
         setSnapOffset(getSnapOffset() * ratio);
@@ -227,7 +227,7 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
         if (get_value) return (String)TRACK(getTrack()).idx();
         else return TRACK(getTrack()).getName();
     case __length:
-        return (String)length();
+        return (String)getLength();
     case __rate:
         return (String)getRate();
     case __volume:
@@ -241,7 +241,7 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __fadeoutlen:
         return (String)getFadeOutLen();
     case __startoffset:
-        return (String)getActiveTake()->getOffset();
+        return (String)getActiveTake()->getStartOffset();
     case __tags:
         return getActiveTake()->getNameTagsOnly();
     case __pitch:
@@ -259,25 +259,35 @@ int ITEMLIST::Count() { return CountMediaItems(0); }
 
 void ITEMLIST::CollectItems()
 {
-    int items = CountMediaItems(0);
-    for (int i = 0; i < items; ++i)
-        ITEM item = GetMediaItem(0, i);
-    if (do_sort)
-    {
-        sort();
-        r = RANGE({ front().getStartPosition(), list.back().getEndPosition() });
-    }
+  int items = CountMediaItems(0);
+
+  if (items == 0)
+    return;
+
+  list.reserve(items);
+
+  for (int i = 0; i < items; ++i)
+    push_back(GetMediaItem(0, i));
+
+  if (do_sort)
+  {
+    sort();
+    r = RANGE({ front().getStartPosition(), list.back().getEndPosition() });
+  }
 }
 
 void ITEMLIST::CollectSelectedItems()
 {
     int items = CountSelectedMediaItems(0);
 
-    if (items == 0) return;
+    if (items == 0) 
+      return;
 
     list.reserve(items);
+
     for (int i = 0; i < items; ++i)
         push_back(GetSelectedMediaItem(0, i));
+
     if (do_sort)
     {
         sort();
@@ -325,9 +335,16 @@ int ITEMLIST::setTrack(MediaTrack * track)
     return num_items_moved;
 }
 
+void ITEMLIST::setStartPosition(double v)
+{
+  double posDiff = v - list[0].getPosition();
+  for (ITEM & item : list)
+    item.move(posDiff);
+}
+
 void ITEMLIST::setEndPosition(double v)
 {
-    list.back().getEndPosition(v);
+    list.back().setEndPosition(v);
 }
 
 void ITEMLIST::setSnapOffset(double v)
@@ -412,49 +429,46 @@ void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 
 void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_overlapping)
 {
-    TRACKLIST tl;
-    tl.CollectTracks();
+  TRACKLIST tl;
+  tl.CollectTracks();
 
-    // go through each track
-    for (TRACK & t : tl)
+  // go through each track
+  for (TRACK & t : tl)
+  {
+    t.collectItems();
+
+    if (selected_only)
     {
-        t.collectItems();
-        ITEM last_item = t[0];
-
-        // go through each item in track
-        push_back(ITEMLIST());
-        back().reserve(t.getSelectedItemList().size());
-
-        // get either selected list or normal list
-        ITEMLIST * il;
-        if (selected_only)
-            il = &t.getSelectedItemList();
-        else
-            il = dynamic_cast<ITEMLIST *>(&t.getItemList());
-
-        if (must_be_overlapping)
-            for (const ITEM & i : *il)
-            {
-                // if last item overlaps current item, add to last group
-                if (RANGE::is_overlapping(last_item, i))
-                    back().push_back(i);
-                // otherwise create a new item group with this item
-                else
-                    push_back(ITEMLIST(i));
-                last_item = i;
-            }
-        else
-            for (const ITEM & i : *il)
-            {
-                // if last item touching current item, add to last group
-                if (RANGE::is_touching(last_item, i))
-                    back().push_back(i);
-                // otherwise create a new item group with this item
-                else
-                    push_back(ITEMLIST(i));
-                last_item = i;
-            }
+      if (t.getSelectedItemList().empty())
+        continue;
     }
+    else
+    {
+      if (t.empty())
+        continue;
+    }
+
+    // get either selected list or normal list
+    ITEMLIST * il = selected_only ? &t.ItemList_selected : &t.getItemList();
+    ITEM previous_item = selected_only ? t.getSelectedItemList().front() : t.front();
+    
+    addNewList()->push_back(previous_item);
+
+    for (const ITEM & i : *il)
+    {
+      if (previous_item == i)
+        continue;
+
+      bool do_new_list = must_be_overlapping ? !RANGE::is_overlapping(previous_item, i) : !RANGE::is_touching(previous_item, i);
+
+      if (do_new_list)
+        addNewList()->push_back(i); 
+      else 
+        back().push_back(i);
+
+      previous_item = i;
+    }
+  }
 }
 
 void ITEMGROUPLIST::CollectSelectedItems(int group_mode)
@@ -478,7 +492,8 @@ void ITEMGROUPLIST::CollectSelectedItems(int group_mode)
         break;
     }
 
-    if (do_sort) sort();
+    if (do_sort) 
+      sort();
 }
 
 void ITEMGROUPLIST::CollectItems(int group_mode)

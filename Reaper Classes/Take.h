@@ -101,8 +101,8 @@ public:
   int lastCh() const;
   double getPitch() const;
   double getRate() const;
+  double getStartOffset() const;
   double getVolume() const;
-  double getOffset() const;
   int getSampleRate();
   int getBitDepth();
   int getNumChannels();

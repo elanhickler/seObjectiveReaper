@@ -56,7 +56,8 @@ private:
 
     void _set()
     {
-        if (!is_ghost) SetProjectMarkerByIndex(0, _idx, _is_region, _start, _end, _id, _name.toRawUTF8(), _color);
+        if (!is_ghost) 
+          SetProjectMarkerByIndex(0, _idx, _is_region, _start, _end, _id, _name.toRawUTF8(), _color);
     }
     void _get()
     {
@@ -81,7 +82,7 @@ private:
     double getObjectLength() const override { return _end - _start; }
     void setObjectLength(double v)  override { _end = _start + v; _set(); }
 
-    void setObjectPosition(double v) override { _start = v; _end = length() + _start; _set(); }
+    void setObjectPosition(double v) override { _start = v; _end = getLength() + _start; _set(); }
 
     int getObjectColor() const override { return _color; }
     void setObjectColor(int v) override { _color = v; _set(); }

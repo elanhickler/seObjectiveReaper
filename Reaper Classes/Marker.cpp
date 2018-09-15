@@ -25,21 +25,26 @@ int MARKERLIST::CountMarkersAndRegionsInProject()
 void MARKERLIST::CollectMarkersAndRegions()
 {
     int count = CountMarkersAndRegionsInProject();
+
     for (int i = 0; i < count; ++i)
         list.push_back(MARKER(i));
 }
 
 void MARKERLIST::CollectMarkers()
 {
-    int count = CountMarkersInProject();
+    int count = CountMarkersAndRegionsInProject();
+
     for (int i = 0; i < count; ++i)
+      if (MARKER(i).is_marker())
         list.push_back(MARKER(i));
 }
 
 void MARKERLIST::CollectRegions()
 {
-    int count = CountRegionsInProject();
+    int count = CountMarkersAndRegionsInProject();
+
     for (int i = 0; i < count; ++i)
+      if (MARKER(i).is_region())
         list.push_back(MARKER(i));
 }
 

@@ -136,7 +136,7 @@ public:
     ENVELOPE envelope() const { return _envelope; }
     void simplifyByAverage(double width) { _envelope.simplifyByAverage(width); }
     void simplifyByDifference(double diff) { _envelope.simplifyByDifference(diff); }
-    double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, length()); }
+    double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, getLength()); }
     double create() { InsertAutomationItem(_envelope, _pool_id, _position, _length); }
 };
 

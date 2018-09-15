@@ -428,8 +428,6 @@ public:
 		{
 			m_label.setText(lbl, dontSendNotification);
 			m_line_edit.setText(initial, dontSendNotification);
-			m_line_edit.setColour(TextEditor::textColourId, Colours::black);
-			//m_line_edit.applyColourToAllText(Colours::black, true);
 		}
 		Label m_label;
 		TextEditor m_line_edit;
@@ -439,10 +437,6 @@ public:
 		addAndMakeVisible(&m_ok_button);
 		m_ok_button.setButtonText("OK");
 		m_ok_button.addListener(this);
-		//addAndMakeVisible(&m_cancel_button);
-		//m_cancel_button.setButtonText("Cancel");
-		//m_cancel_button.addListener(this);
-		setLookAndFeel(&m_lookandfeel);
 	}
 	std::function<void(UserInputsComponent*, int)> ButtonCallbackFunction;
 	void setButtonText(int which, String txt)
@@ -494,7 +488,6 @@ public:
 		}
 		m_ok_button.changeWidthToFitText(24);
 		m_ok_button.setTopLeftPosition(1, getHeight() - 25);
-		//m_cancel_button.setBounds(m_ok_button.getRight() + 1, m_ok_button.getY(), 60, 24);
 	}
 	StringArray getResults()
 	{
@@ -533,7 +526,6 @@ private:
 	std::vector<std::shared_ptr<field_t>> m_entries;
 	TextButton m_ok_button;
 	TextButton m_cancel_button;
-	LookAndFeel_V3 m_lookandfeel;
 };
 
 class UserInputsWindow : public MyWindow
