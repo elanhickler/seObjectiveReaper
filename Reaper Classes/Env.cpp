@@ -180,7 +180,7 @@ void ENVELOPE::setTrackEnvelope(MediaItem_Take * take, String name)
 
 void ENVELOPE::setPoints(const ENVELOPE & env)
 {
-  if (!is_valid())
+  if (!isValid())
     envelope = ToggleTakeEnvelopeByName(_take, _name.toStdString(), true);
   removeAllPoints();
   list = env.list;

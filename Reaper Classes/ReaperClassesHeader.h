@@ -51,6 +51,19 @@ template<class T, class U> void setOpt(T* parameter, U&& input)
     if (parameter != nullptr)  *parameter = std::move(input);
 }
 
+class PROJECT
+{
+public:
+	static double getEndTime();
+	static double getGridDivision();
+	static double getGridDivisionTime();
+	static double getTempo();
+
+	static String getFilePath();
+	static String getDirectory();
+};
+
+
 void msg(String s);
 void COMMAND(int action, int flag = 0);
 void COMMAND(const char* action, int flag = 0);
@@ -59,8 +72,6 @@ void COMMAND(const char* action, int flag = 0);
 double SETCURSOR(double time, bool moveview = false, bool seekplay = false);
 double GETCURSOR();
 
-// project general functions
-double GET_PROJECT_END_TIME();
 void UI();
 void UNDO(String undostr = "ACTION ENDED EARLY", ReaProject* project = 0);
 void VIEW();
@@ -107,109 +118,88 @@ TrackEnvelope* ToggleTakeEnvelopeByName(MediaItem_Take* take, string env_name, b
 class OBJECT_VALIDATES
 {
     friend class MARKERLIST;
-private:
-    bool _is_valid = true;
-    virtual bool objectIsValid() const { return _is_valid; }
-    void makeInvalid() { _is_valid = false; };
-    void makeValid() { _is_valid = true; };
-
 public:
-    bool is_valid() const { return objectIsValid(); }
-    virtual ~OBJECT_VALIDATES() {}
+	virtual bool isValid() const { return is_valid; }
+	virtual ~OBJECT_VALIDATES() {}
+
+protected:
+    bool is_valid = true;
+    void makeInvalid() { is_valid = false; };
+    void makeValid() { is_valid = true; };
 };
 
 class OBJECT_NAMABLE
 {
-private:
-    virtual String getObjectName() const { return String(); }
-    virtual void setObjectName(const String & v) {}
-
 public:
-    // members
-    Tagger TagManager;
+	virtual String getName() const = 0;
+	// Set full name string of object also affecting the tag string portion
+	virtual void setName(const String & v) = 0;
 
-    // functions
     virtual String GetPropertyStringFromKey(const String & key, bool use_value) const { return String(); }
 
-    /* GETTER */
-
+	// Set a tag within the tag string
     String getTag(const String & key) const { return TagManager.getTag(key); }
-    // Get full name string of object including the tag string portion
-    String getName() const { return getObjectName(); }
-    // Get name of object without affecting tags
-    String getStringNoTags() const { return TagManager.getStringNoTags(); }
+   
+	// Get a tag within the tag string
+	void setTag(const String & key, const String & value)
+	{
+		TagManager.SetTag(key, value);
+		setName(TagManager.getStringWithTags());
+	}
+
+    // Get name of object without tags
+    String getNameNoTags() const { return TagManager.getNameNoTags(); }
+	// Set name of object without affecting tags
+	void setNameNoTags(const String & v) { TagManager.setStringNoTags(v); }
+
     // Get name of object only affecting the tag string portion
-    String getNameTagsOnly() const { return TagManager.getStringTagsOnly(); }
+    String getTagString() const { return TagManager.getStringTagsOnly(); }
+	// Set name of object only affecting the tag string portion
+	void setTagString(const String & v) { TagManager.setStringWithTags(v); }
 
-    /* SETTER */
-
-    void removeAllTags() { TagManager.RemoveAllTags(); }
-    void setTag(const String & key, const String & value) 
-    {
-      TagManager.SetTag(key, value); 
-      setObjectName(TagManager.getStringWithTags());
-    }
-    void removeTags(const String & key) 
+	// Remove a tag from the tag string
+    void removeTag(const String & key) 
     { 
-      TagManager.removeTags(key);
-      setObjectName(TagManager.getStringWithTags());
+      TagManager.removeTag(key);
+      setName(TagManager.getStringWithTags());
     }
-    // Set full name string of object also affecting the tag string portion
-    void setName(const String & v) { setObjectName(v); }
-    // Set name of object without affecting tags
-    void setNameNoTags(const String & v) { TagManager.setStringNoTags(v); }
-    // Set name of object only affecting the tag string portion
-    void setNameTagsOnly(const String & v) { TagManager.setStringWithTags(v); }
+
+	// Remove the entire tag string
+	void removeAllTags() { TagManager.RemoveAllTags(); }
 
     // boolean
-    bool has_tag(const String & tag) const { return TagManager.tagExists(tag); }
+    bool hasTag(const String & tag) const { return TagManager.tagExists(tag); }
+
+protected:
+	// members
+	Tagger TagManager;
 };
 
 class OBJECT_MOVABLE
 {
-private:
-    virtual double getObjectStartPos() const { return 0.0; }
-    virtual void setObjectStartPos(double v) {}
-
-    virtual double getObjectEndPos() const { return getObjectStartPos() + getObjectLength(); }
-    virtual void setObjectEndPos(double v) { setObjectLength(getObjectLength() - getObjectStartPos()); }
-
-    virtual double getObjectLength() const { return 0.0; }
-    virtual void setObjectLength(double v) {}
-
-    virtual void setObjectPosition(double v) {}
-
-    virtual int getObjectColor() const { return 0; }
-    virtual void setObjectColor(int v) {}
 public:
     operator RANGE() const { return range(); }
 
     // getters
-    double getStartPosition() const { return getObjectStartPos(); }
-    double getEndPosition() const { return getObjectEndPos(); }
-    double getLength() const { return getObjectLength(); }
-    int color() const { return getObjectColor(); }
-    RANGE range() const { return { getStartPosition(), getEndPosition() }; }
-    double getPosition() { return getObjectStartPos(); }
+    virtual double getStart() const { return 0.0; }
+	virtual double getEnd() const { return 0.0; }
+	virtual double getLength() const { return 0.0; }
+	virtual int getColor() const { return 0; }
+
+	RANGE range() const { return { getStart(), getEnd() }; }
 
     // setters
-    void setStartPosition(double v) { setObjectStartPos(v); }
-    void setEndPosition(double v) { setObjectEndPos(v); }
-    void setLength(double v) { setObjectLength(v); }
-    void color(int v) { setObjectColor(v); }
-    void setPosition(double v) { setObjectPosition(v); }
-    void move(double v) { setObjectPosition(v + getObjectStartPos()); }
+	virtual void setPosition(double v) { }
+	virtual void setStart(double v) { }
+	virtual void setEnd(double v) { }
+	virtual void setLength(double v) { }
+	virtual void setColor(int v) { }
+
+	void move(double v) { setPosition(v + getStart()); }
 };
 
 template <typename t> class LIST
 {
-    friend class MARKERLIST;
-    friend class ITEMLIST;
-    friend class ITEMGROUPLIST;
-    friend class TAKELIST;
-    friend class MIDINOTELIST;
-private:
-    bool do_sort = true;
 public:
     // members
     vector<t> list;
@@ -248,7 +238,7 @@ public:
     //void insert(typename vector<t>::iterator position, typename vector<t>::iterator first, typename vector<t>::iterator last) { insert(position, first, last); }
     void append(const LIST & l) { list.insert(list.end(), l.begin(), l.end()); }
     void clear() { list.clear(); }
-    void sort() { if (do_sort) stable_sort(begin(), end(), [](const t & a, const t & b) { return a.getStartPosition() < b.getStartPosition(); }); }
+    void sort() { if (do_sort) stable_sort(begin(), end(), [](const t & a, const t & b) { return a.getStart() < b.getStart(); }); }
     void resize(size_t size) { list.resize(size); }
 
     // search functions
@@ -262,6 +252,9 @@ public:
 
     // setters
     void disableSort() { do_sort = false; }
+
+protected:
+	bool do_sort = true;
 };
 
 #include "ActionEntry.h"
@@ -328,13 +321,13 @@ void LIST<t>::FilterByRange(RANGE range, bool must_be_completely_inside_range)
     LIST l;
     for (const auto & o : list)
     {
-        if (o.getStartPosition() < range.start())
+        if (o.getStart() < range.start())
             continue;
-        else if (o.getStartPosition() > range.end())
+        else if (o.getStart() > range.end())
             break;
 
         if ((must_be_completely_inside_range && RANGE::is_inside(o, range))  ||
-            (o.getStartPosition() >= range.start() && o.getStartPosition() < range.end()))
+            (o.getStart() >= range.start() && o.getStart() < range.end()))
             l.push_back(o);
     }
 
@@ -376,75 +369,3 @@ void LIST<t>::FilterByPattern(char do_not_filter, const String & pattern, bool f
 //MARKERLIST GetMarkersInRange(RANGE range, MARKERLIST & MarkerListIn, bool createGhostMarkers);
 ////MARKER GetPreviousMarkerOrProjectStart(double time);
 //MARKER GetNextMarkerOrProjectEnd(double time, MARKERLIST & MarkerListIn, int starting_idx = 0);
-
-//class REAPEROBJECT
-//{
-//private:
-//    enum class objtype { unassigned, envpt, envelope, take, item, track, marker };
-//    objtype type = objtype::unassigned;
-//
-//public:
-//    ENVPT * EnvPt = nullptr;
-//    ENVELOPE * Envelope = nullptr;
-//    TAKE * Take = nullptr;
-//    ITEM * Item = nullptr;
-//    TRACK * Track = nullptr;
-//    MARKER * Marker = nullptr;
-//
-//    REAPEROBJECT(ENVPT & o) : EnvPt(&o) { type = objtype::envpt; }
-//    REAPEROBJECT(ENVELOPE & o) : Envelope(&o) { type = objtype::envelope; }
-//    REAPEROBJECT(TAKE & o) : Take(&o) { type = objtype::take; }
-//    REAPEROBJECT(ITEM & o) : Item(&o) { type = objtype::item; }
-//    REAPEROBJECT(TRACK & o) : Track(&o) { type = objtype::track; }
-//    REAPEROBJECT(MARKER & o) : Marker(&o) { type = objtype::marker; }
-//
-//    operator ENVPT*() const { return EnvPt; }
-//    operator ENVELOPE*() const { return Envelope; }
-//    operator TAKE*() const { return Take; }
-//    operator ITEM*() const { return Item; }
-//    operator TRACK*() const { return Track; }
-//    operator MARKER*() const { return Marker; }
-//
-//    bool is_ENVPT() { return EnvPt != nullptr; }
-//    bool is_ENVELOPE() { return Envelope != nullptr; }
-//    bool is_TAKE() { return Take != nullptr; }
-//    bool is_ITEM() { return Item != nullptr; }
-//    bool is_TRACK() { return Track != nullptr; }
-//    bool is_MARKER() { return Marker != nullptr; }    
-//
-//    double startPos() const
-//    {
-//        switch (type)
-//        {
-//        case objtype::envpt: return EnvPt->startPos();
-//        case objtype::take: return Take->startPos();
-//        case objtype::item: return Item->startPos();
-//        case objtype::marker: return Marker->startPos();
-//        }
-//        return 0.0;
-//    }
-//};
-
-//class REAPEROBJECTLIST
-//{
-//public:
-//    vector<REAPEROBJECT> list;
-//
-//    REAPEROBJECTLIST() {}
-//
-//    template <class t> collect(t & objectlist)
-//    {
-//        for (auto & o : objectlist)
-//            list.push_back(REAPEROBJECT(o));
-//    }
-//
-//    // iteration
-//    vector<REAPEROBJECT>::iterator begin() { return list.begin(); }
-//    vector<REAPEROBJECT>::iterator end() { return list.end(); }
-//    vector<REAPEROBJECT>::const_iterator begin() const { return list.cbegin(); }
-//    vector<REAPEROBJECT>::const_iterator end() const { return list.cend(); }
-//    REAPEROBJECT & back() { return list.back(); }
-//    const REAPEROBJECT & back() const { return list.back(); }
-//
-//    void sort() { stable_sort(begin(), end(), [](const REAPEROBJECT & a, const REAPEROBJECT & b) { return a.startPos() < b.startPos(); }); }
-//};

@@ -4,45 +4,53 @@
 
 using juce::File;
 
+class TAKE;
+
 class MIDINOTE : public OBJECT_MOVABLE
 {
-public:
+	friend class MIDINOTELIST;
 
-  MIDINOTE() {};
-  MIDINOTE(int channel, int pitch, int velocity, double startTime, double endTime, bool selected = false, bool muted = false) 
-    : channel(channel), pitch(pitch), velocity(velocity), startTime(startTime), endTime(endTime), selected(selected), muted(muted) { }
+public:
+	MIDINOTE(int pitch, double position, double length)
+		: pitch(pitch), startTime(position), endTime(position + length)
+	{ }
+	MIDINOTE(int pitch, double startTime, double endTime, int velocity, int channel, bool selected, bool muted)
+		: pitch(pitch), startTime(startTime), endTime(endTime), velocity(velocity), channel(channel), selected(selected), muted(muted)
+	{ }
 
   int getPitch() { return pitch; };
   String getPitchString() { return MIDI(pitch).getName(); }
-  double getStartTime() { return startTime; };
-  double getEndTime() { return endTime; };
 
-  int setPitch() {};
-  double setStartTime() {};
-  double setEndTime() {};
+  void setPitch(int v);
 
-private:
-  bool selected;
-  bool muted;
+  void setPosition(double v) override;
 
-  int channel;
-  int pitch;
-  int velocity;
+  void setLength(double v) override;
 
-  double startTime;
-  double endTime;
+  void setStart(double v) override;
 
-  double getObjectStartPos() const override { return startTime; }
-  double getObjectEndPos() const override { return endTime; }
-  double getObjectLength() const override { return endTime - startTime; }
-  
-  //void setObjectStartPos(double v) override {}
-  //void setObjectEndPos(double v) override { setObjectLength(getObjectLength() - getObjectStartPos()); } 
-  //void setObjectLength(double v) override {}
-  //void setObjectPosition(double v) override {}
+  void setEnd(double v) override;
+
+  double getStart() const override { return startTime; }
+  double getEnd() const override { return endTime; }
+  double getLength() const override { return endTime - startTime; }
+  bool getIsSelected() { return selected; }
+  bool getIsMuted() { return muted; }
+
+protected:
+  TAKE * take;
+  int index = -1;
+
+  int pitch = 36;
+  double startTime = 0;
+  double endTime = 0.25;
+
+  bool selected = false;
+  bool muted = false;
+
+  int channel = 1;
+  int velocity = 127;
 };
-
-class TAKE;
 
 class MIDINOTELIST : public LIST<MIDINOTE>
 {
@@ -51,9 +59,11 @@ public:
   MIDINOTELIST(TAKE * take) : take(take) {};
 
   void collectMidiNotes();
-  void add(int noteNumber, double position, double length);
 
-private:
+  //position in seconds relative to take
+  void add(MIDINOTE midinote);
+
+protected:
   TAKE * take;
 };
 
@@ -62,18 +72,18 @@ class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDAT
 public:
 
   // constructor
-  TAKE() { take = nullptr; }
+  TAKE() {}
   TAKE(MediaItem_Take* take);
 
   // conversion
-  operator void*() const { return take; }
-  operator MediaItem_Take*() const { return take; }
+  operator void*() const { return takePtr; }
+  operator MediaItem_Take*() const { return takePtr; }
 
   // operator
-  bool operator==(const MediaItem_Take * rhs) const { return take == rhs; }
-  bool operator!=(const MediaItem_Take * rhs) const { return take != rhs; }
-  bool operator==(const TAKE & rhs) const { return take == rhs.take; }
-  bool operator!=(const TAKE & rhs) const { return take != rhs.take; }
+  bool operator==(const MediaItem_Take * rhs) const { return takePtr == rhs; }
+  bool operator!=(const MediaItem_Take * rhs) const { return takePtr != rhs; }
+  bool operator==(const TAKE & rhs) const { return takePtr == rhs.takePtr; }
+  bool operator!=(const TAKE & rhs) const { return takePtr != rhs.takePtr; }
   vector<double>& operator[](int i) { return m_audiobuf[i]; }
 
   struct envelope
@@ -85,11 +95,19 @@ public:
   } envelope;
 
   AudioFile & audio();
-  MediaItem_Take * ptr() { return take; }
+  MediaItem_Take * ptr() 
+  { 
+	  jassert(takePtr != nullptr);
+	  return takePtr; 
+  }
   PCM_source * pcm_source() const;
 
+  String getName() const override;
+  void setName(const String & v) override;
+
   // getter
-  bool isMidi() const { return TakeIsMIDI(take); }
+  bool isMidi() const { return TakeIsMIDI(takePtr); }
+  bool isAudio() const { return !isMidi(); }
   bool isPitchPreserved() const;
   bool isPhaseInverted() const;
 
@@ -127,15 +145,12 @@ public:
   TAKE move(MediaItem* new_item);
 
   /* MIDI FUNCTIONS */
-  void initMidi()
-  {
-    note_list = MIDINOTELIST(this);
-    note_list.collectMidiNotes();
+  MIDINOTELIST * getMidiNoteList() 
+  { 
+	  note_list = MIDINOTELIST(this);
+	  note_list.collectMidiNotes();
+	  return &note_list; 
   }
-
-  MIDINOTELIST * getMidiNoteList() { return &note_list; }
-  const MIDINOTELIST * getMidiNoteList() const { return &note_list; }
-
 
   /* AUDIO FUNCTIONS */
   /*
@@ -180,14 +195,15 @@ public:
   double getProjectPositionForAudioSample(int sample)
   {
     double sr = getSampleRate();
-    double startTime = getStartPosition();
+    double startTime = getStart();
     return startTime + sample/sr;
   }
 
+  bool isValid() const override;
 
-private:
+protected:
   // member
-  MediaItem_Take* take;
+  MediaItem_Take* takePtr = nullptr;
   AudioFile audioFile;
 
   /* MIDI FUNCTIONS */
@@ -210,26 +226,19 @@ private:
   double m_audiobuf_starttime = -1;
   double m_audiobuf_endtime = -1;
 
-  String getObjectName() const override;
-  void setObjectName(const String & v) override;
+  double getStart() const override;
+  void setStart(double v) override;
 
-  double getObjectStartPos() const override;
-  void setObjectStartPos(double v) override;
+  double getLength() const override;
+  void setLength(double v) override;
 
-  double getObjectLength() const override;
-  void setObjectLength(double v) override;
-
-  int getObjectColor() const override;
-  void setObjectColor(int v) override;
-
-  bool objectIsValid() const override;
+  int getColor() const override;
+  void setColor(int v) override;
 };
-
-extern TAKE InvalidTake;
 
 class TAKELIST : public LIST<TAKE>
 {
-private:
+protected:
   MediaItem* item;
 
 public:

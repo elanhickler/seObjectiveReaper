@@ -36,7 +36,7 @@ public:
     // Return string with tags.
     String getStringWithTags() const; 
     // Returns string without tags
-    String getStringNoTags() const;
+    String getNameNoTags() const;
     // Return only tags.                             
     String getStringTagsOnly() const;   
     // Returns non-unique tags as string
@@ -52,12 +52,9 @@ public:
     void setStringNoTags(const String & input);    
     
     // Set tag with value using int/double/string
-    template<class t> void SetTag(String tag, t val)
-    {
-        tagmap[tag] = String(val);
-    }
+    template<class t> void SetTag(String tag, t val) { tagmap[tag] = String(val); }
     // Remove tag
-    void removeTags(const String& tag);
+    void removeTag(const String& tag);
     // Remove a set of tags
     void removeTags(const vector<String>& TagList);
     // Remove all tags

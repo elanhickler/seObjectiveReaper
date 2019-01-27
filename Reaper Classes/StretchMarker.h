@@ -3,12 +3,12 @@
 class STRETCHMARKER
 {
 public:
-private:
+protected:
 };
 
 class STRETCHMARKERLIST
 {
 public:
-private:
+protected:
 };
 

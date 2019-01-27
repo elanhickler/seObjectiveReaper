@@ -55,7 +55,7 @@ String Tagger::getStringTagsOnly() const
 }
 String Tagger::getStringWithTags() const
 {
-    return getStringNoTags() + getStringTagsOnly();
+    return getNameNoTags() + getStringTagsOnly();
 }
 String Tagger::getImportantTagString() const
 {
@@ -64,7 +64,7 @@ String Tagger::getImportantTagString() const
     return name + KeySort(temp_map);
 }
 
-String Tagger::getStringNoTags() const
+String Tagger::getNameNoTags() const
 {
     return name;
 }
@@ -92,7 +92,7 @@ String Tagger::getTag(const String & tag, char typechar) const
 
     return it->second;
 }
-void Tagger::removeTags(const String& tag)
+void Tagger::removeTag(const String& tag)
 {
     tagmap.erase(tag);
 }
@@ -102,7 +102,7 @@ void Tagger::RemoveAllTags()
 }
 void Tagger::removeTags(const vector<String>& TagList)
 {
-    for (const auto &tag : TagList) removeTags(tag);
+    for (const auto &tag : TagList) removeTag(tag);
 }
 
 //String GetNoteTag(bool search_tags, bool use_regex, int search_count) { //todo: support legato note tag style
@@ -241,14 +241,14 @@ void Tagger::removeTags(const vector<String>& TagList)
 //	String int_str = ne != -1 ? ToS(abs(ns-ne)) : "";
 //
 //	if ( int_str.size() && (!shorthand || tagExists("ns") || tagExists("ne")) ) {
-//		removeTags("n");
+//		removeTag("n");
 //		SetTag("ns", ns_str);
 //		SetTag("ne", ne_str);
 //		SetTag("i", int_str);
 //		SetTag("d", dir_str);
 //	}
 //	else if (tagExists("n") || tagExists("ns")) {
-//		removeTags("ns");
+//		removeTag("ns");
 //		if (ne != -1) SetTag("n", ns_str + d_str + ne_str);
 //		else SetTag("n", ns_str);
 //	}

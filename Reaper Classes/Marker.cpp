@@ -74,7 +74,7 @@ void MARKERLIST::RemoveDuplicates()
     }
     MARKERLIST NewMarkerList;
     for (const auto & mr : list)
-        if (mr.is_valid())
+        if (mr.isValid())
             NewMarkerList.push_back(mr);
     *this = std::move(NewMarkerList);
 }
@@ -85,7 +85,7 @@ MARKER::MARKER(int i)
     _idx = i;
     _get();
     cache_end();
-    TagManager.setStringWithTags(getObjectName());
+    TagManager.setStringWithTags(getName());
 }
 
 MARKER::MARKER(RANGE range, const String & name)
@@ -130,9 +130,9 @@ String MARKER::GetPropertyStringFromKey(const String & key, bool get_value) cons
     case __name:
         if (get_value)
             return String(idx());
-        return getStringNoTags();
+        return getNameNoTags();
     case __tags:
-        return getNameTagsOnly();
+        return getTagString();
     }
 
     return String();

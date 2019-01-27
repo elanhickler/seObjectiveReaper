@@ -277,7 +277,7 @@ void PluginChain::setState(ValueTree state)
 		String plugname = plugstate.getProperty("plugname");
 		String plugid = plugstate.getProperty("plugfileorid");
 		String plugfmt = plugstate.getProperty("plugfmt");
-		int pluguid = plugstate.getProperty("pluguid");
+		//int pluguid = plugstate.getProperty("pluguid");
 		PluginDescription desc;
 		desc.pluginFormatName = plugfmt;
 		desc.fileOrIdentifier = plugid;

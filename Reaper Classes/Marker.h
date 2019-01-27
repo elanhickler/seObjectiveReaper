@@ -25,7 +25,7 @@ public:
     }
     static MARKER AddToProject(const MARKER & m)
     {
-        return AddToProject(m.getStartPosition(), m.getEndPosition(), m.getName(), m.id());
+        return AddToProject(m.getStart(), m.getEnd(), m.getName(), m.id());
     }
     static MARKER get(int idx) { return std::move(MARKER(idx)); }
     static MARKER createGhost(const RANGE & r)
@@ -43,7 +43,22 @@ public:
         m.TagManager.setStringWithTags(name);
         return m;
     }
-private:
+
+	double getStart() const override { return _start; }
+	void setStart(double v) override { _start = v; _set(); cache_end(); }
+
+	double getEnd() const override { return _end; }
+	void setEnd(double v) override { _end = v; if (_start != _end) _is_region = true; _set(); }
+
+	double getLength() const override { return _end - _start; }
+	void setLength(double v)  override { _end = _start + v; _set(); }
+
+	void setPosition(double v) override { _start = v; _end = getLength() + _start; _set(); }
+
+	int getColor() const override { return _color; }
+	void setColor(int v) override { _color = v; _set(); }
+
+protected:
     int _idx = -1;
     bool _is_region;
     int _id = -1;
@@ -70,22 +85,6 @@ private:
         _name = c;
         cache_end();
     }
-    String getObjectName() const override { return _name; }
-    void setObjectName(const String & v) override { _name = v; _set(); }
-
-    double getObjectStartPos() const override { return _start; }
-    void setObjectStartPos(double v) override { _start = v; _set(); cache_end(); }
-
-    double getObjectEndPos() const override { return _end; }
-    void setObjectEndPos(double v) override { _end = v; if (_start != _end) _is_region = true; _set(); }
-
-    double getObjectLength() const override { return _end - _start; }
-    void setObjectLength(double v)  override { _end = _start + v; _set(); }
-
-    void setObjectPosition(double v) override { _start = v; _end = getLength() + _start; _set(); }
-
-    int getObjectColor() const override { return _color; }
-    void setObjectColor(int v) override { _color = v; _set(); }
 
 public:
     MARKER();
@@ -104,7 +103,10 @@ public:
     // setter
     void remove() { DeleteProjectMarkerByIndex(0, _idx); _idx = -1; }
 
-private:
+	String getName() const override { return _name; }
+	void setName(const String & v) override { _name = v; _set(); }
+
+protected:
     enum
     {
         __name,
@@ -121,7 +123,7 @@ private:
 
 class MARKERLIST : public LIST<MARKER>
 {
-private:
+protected:
     int num_markers = 0;
     int num_regions = 0;
     int num_markersregions = 0;

@@ -102,18 +102,47 @@ TrackEnvelope * ToggleTakeEnvelopeByName(MediaItem_Take * take, string env_name,
   return off_on ? GetTakeEnvelopeByName(take, env_name.c_str()) : nullptr;
 }
 
-double GET_PROJECT_END_TIME()
+double PROJECT::getEndTime()
 {
     SAVE_CURSOR();
     VIEW();
 
     COMMAND(40043); // Transport: Go to end of project
     double time = GETCURSOR();
-
-    VIEW();
+    
     RESTORE_CURSOR();
+	VIEW();
 
     return time;
+}
+
+double PROJECT::getGridDivision()
+{
+	double division;
+	GetSetProjectGrid(nullptr, false, &division, nullptr, nullptr);
+	return division;
+}
+
+double PROJECT::getGridDivisionTime()
+{
+	return 120.0 / PROJECT::getTempo() * 2.0 * PROJECT::getGridDivision();
+}
+
+double PROJECT::getTempo()
+{
+	return Master_GetTempo();
+}
+
+String PROJECT::getFilePath()
+{
+	char charbuf[1024];
+	EnumProjects(-1, charbuf, 1024);
+	return charbuf;
+}
+
+String PROJECT::getDirectory()
+{
+	return File(PROJECT::getFilePath()).getParentDirectory().getFullPathName();
 }
 
 bool ui_is_updating = true;

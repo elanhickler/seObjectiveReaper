@@ -22,48 +22,32 @@ public:
     SCURV_2
   };
 
-private:
+protected:
   friend class ITEMLIST;
   friend class TagParser;
   // member
-  MediaItem* item;
+  MediaItem* itemPtr;
   TAKELIST TakeList;
   TAKE active_take;
-
-  String getObjectName() const override;
-  void setObjectName(const String & v) override;
-
-  double getObjectStartPos() const override;
-  void setObjectStartPos(double v) override;
-
-  double getObjectLength() const override;
-  void setObjectLength(double v) override;
-
-  void setObjectPosition(double v) override;
-
-  int getObjectColor() const override;
-  void setObjectColor(int v) override;
-
-  bool objectIsValid() const override;
 
 public:
   // constructor
   ITEM();
-  ITEM(int i) { item = GetMediaItem(0, i); }
+  ITEM(int i) { itemPtr = GetMediaItem(0, i); }
   ITEM(MediaItem * item);
   ITEM(MediaItem_Take * take);
 
   // conversion
-  operator void*() const { return item; }
-  operator MediaItem*() const { return item; }
+  operator void*() const { return itemPtr; }
+  operator MediaItem*() const { return itemPtr; }
   operator MediaItem_Take*() const { return *getActiveTake(); }
 
   // operator
-  bool operator==(const MediaItem * rhs) const { return item == rhs; }
-  bool operator!=(const MediaItem * rhs) const { return item != rhs; }
-  bool operator==(const ITEM & rhs) const { return item == rhs.item; }
-  bool operator!=(const ITEM & rhs) const { return item != rhs.item; }
-  TAKE operator[](int i) const { return GetTake(item, i); }
+  bool operator==(const MediaItem * rhs) const { return itemPtr == rhs; }
+  bool operator!=(const MediaItem * rhs) const { return itemPtr != rhs; }
+  bool operator==(const ITEM & rhs) const { return itemPtr == rhs.itemPtr; }
+  bool operator!=(const ITEM & rhs) const { return itemPtr != rhs.itemPtr; }
+  TAKE operator[](int i) const { return GetTake(itemPtr, i); }
 
   /* FUNCTIONS */
 
@@ -82,9 +66,13 @@ public:
   TAKELIST GetTakes();
   void CollectTakes(); 
 
-  MediaItem* pointer() { return item; }
+  MediaItem* pointer() { return itemPtr; }
 
   /* GETTER */
+  String getName() const override;
+  void setName(const String & v) override;
+
+  bool isValid() const override;
 
   const TAKE * getActiveTake() const;
   TAKE * getActiveTake();
@@ -137,7 +125,18 @@ public:
   void setFadeInCurve(double v);
   void setFadeOutCurve(double v);
 
-private:
+  double getStart() const override;
+  void setStart(double v) override;
+
+  double getLength() const override;
+  void setLength(double v) override;
+
+  void setPosition(double v) override;
+
+  int getColor() const override;
+  void setColor(int v) override;
+
+protected:
   enum
   {
     __name,
@@ -178,7 +177,7 @@ class ITEMLIST : public LIST<ITEM>
 public:
   static int CountSelected();
   static int Count();
-private:
+protected:
   int m_group;
 
 public:
@@ -187,7 +186,7 @@ public:
   ITEMLIST(ITEM i)
   {
     push_back(i);
-    r ={ i.getStartPosition(), i.getEndPosition() };
+    r ={ i.getStart(), i.getEnd() };
   }
 
   RANGE r;
@@ -197,7 +196,7 @@ public:
   ITEMLIST operator=(vector<ITEM> rhs) { list = rhs; return *this; }
 
   void CollectItems();
-  void CollectSelectedItems();
+  void collectSelectedItems();
 
   // functions
   void InitAudio();
@@ -206,8 +205,8 @@ public:
   int crop(RANGE r, bool move_edge);
 
   // getters
-  double getStartPosition() const;
-  double getEndPosition() const;
+  double getStart() const;
+  double getEnd() const;
   double getLength() const;
   double getSnapOffset() const;
   double getFadeInLen() const;
@@ -218,8 +217,8 @@ public:
 
   // setters
   int setTrack(MediaTrack* track);
-  void setStartPosition(double v);
-  void setEndPosition(double v);
+  void setStart(double v);
+  void setEnd(double v);
   void setSnapOffset(double v);
   void setSelected(bool select);
   
@@ -227,7 +226,7 @@ public:
 
 class ITEMGROUPLIST : public LIST<ITEMLIST>
 {
-private:
+protected:
   //function
   void collect_donotgroup(bool selected_only);
   void collect_groupgrouped(bool selected_only);
@@ -240,7 +239,7 @@ public:
 
   // project
   void CollectItems(int group_mode);
-  void CollectSelectedItems(int group_mode);
+  void collectSelectedItems(int group_mode);
 
   // actions
   ITEMLIST * addNewList() 

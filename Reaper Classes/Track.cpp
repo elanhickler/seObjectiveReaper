@@ -63,8 +63,8 @@ TRACK TRACK::getFirstChild() const
 void TRACK::setAsLastFolder()
 {
     TRACK t = parent();
-    int i = t.is_valid() ? -1 : 0;
-    while (t.is_valid())
+    int i = t.isValid() ? -1 : 0;
+    while (t.isValid())
     {
         t = t.parent();
         --i;
@@ -89,7 +89,7 @@ void TRACK::collectItems()
 void TRACK::remove()
 {
     auto prev_track = TRACK(idx()-1);
-    if (!prev_track.is_parent() && prev_track.is_valid()) 
+    if (!prev_track.is_parent() && prev_track.isValid()) 
       prev_track.folder(folder());
     DeleteTrack(track);
     track = nullptr;
@@ -178,7 +178,7 @@ TRACKLIST TRACKLIST::GetParentsOfSelected()
     {
         if (ParentTracks.has(track.parent())) continue; //ensure you don't add the same track twice
         TRACK t = track.parent();
-        if (!t.is_valid()) continue;
+        if (!t.isValid()) continue;
         ParentTracks.push_back(t);
     }
 
@@ -285,9 +285,9 @@ String TRACK::GetPropertyStringFromKey(const String & key, bool get_value) const
     case __name:
         if (get_value)
             return String(idx());
-        return getStringNoTags();
+        return getNameNoTags();
     case __tags:
-        return getNameTagsOnly();
+        return getTagString();
     }
 
     return String();

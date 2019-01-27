@@ -2,17 +2,8 @@
 
 class TRACK : public LIST<ITEM>, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
-private:
-    String getObjectName() const override 
-    {
-        char c[4096];
-        GetSetMediaTrackInfo_String(track, "P_NAME", c, false);
-        return c;
-    }
-    void setObjectName(const String & v) override 
-    {
-        GetSetMediaTrackInfo_String(track, "P_NAME", (char*)v.toRawUTF8(), true);
-    }
+	friend class ITEMGROUPLIST;
+
 public:
     // conversion
     static int count();
@@ -23,20 +14,13 @@ public:
     static TRACK insertBeforeIndex(int i);
     static TRACK insertAfterIndex(int i);
 
-//private:
-    // member
-    MediaTrack* track;
-    ITEMLIST ItemList_all;
-    ITEMLIST ItemList_selected;
-
-public:
     // constructor
     TRACK() { track = nullptr; }
-    TRACK(MediaTrack* track) : track(track) { TagManager.setStringWithTags(getObjectName()); }
+    TRACK(MediaTrack* track) : track(track) { TagManager.setStringWithTags(getName()); }
     TRACK(int idx) 
     { 
         track = GetTrack(0, idx); 
-        TagManager.setStringWithTags(getObjectName());
+        TagManager.setStringWithTags(getName());
     }
 
     // conversion
@@ -68,6 +52,17 @@ public:
     void remove();
     void RemoveAllItemsFromProject();
 
+	String getName() const override
+	{
+		char c[4096];
+		GetSetMediaTrackInfo_String(track, "P_NAME", c, false);
+		return c;
+	}
+	void setName(const String & v) override
+	{
+		GetSetMediaTrackInfo_String(track, "P_NAME", (char*)v.toRawUTF8(), true);
+	}
+
     ITEMLIST getItemList() { return ItemList_all; }
     ITEMLIST getSelectedItemList() { return ItemList_selected; }
 
@@ -78,7 +73,7 @@ public:
     void sel(bool state) { SetMediaTrackInfo_Value(track, "I_SELECTED", state); }
 
     // logic
-    bool is_valid() const { return track != nullptr; }
+    bool isValid() const { return track != nullptr; }
     bool is_selected() const { return sel(); }
     bool hasMidiItems() const 
     { 
@@ -105,6 +100,12 @@ public:
         { "t", __tags },
     };
     String GetPropertyStringFromKey(const String & key, bool get_value = false) const override;
+
+protected:
+	// member
+	MediaTrack* track;
+	ITEMLIST ItemList_all;
+	ITEMLIST ItemList_selected;
 };
 static TRACK TRACK_invalid;
 

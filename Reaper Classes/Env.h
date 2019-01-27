@@ -22,7 +22,7 @@ public:
     double tension = 0.0;
     bool selected = false;
 
-    double getStartPosition() { return position; }
+    double getStart() { return position; }
 
     ENVPT() {}
     ENVPT(int idx, double p, double v, int s = 0, double t = 0.0, bool sel = false) : id(idx), position(p), value(v), shape(s), tension(t), selected(sel) {}
@@ -31,7 +31,7 @@ public:
 
 class ENVELOPE : public LIST<ENVPT>
 {
-private:
+protected:
     bool no_sort = true;
     float tent(float x);
     double getDistanceFromLine(double x1, double y1, double x2, double y2, double xp, double yp);
@@ -69,65 +69,11 @@ public:
     void setPoints(const ENVELOPE & env);
 
     // boolean
-    bool is_valid() const { return envelope != nullptr; }
+    bool isValid() const { return envelope != nullptr; }
 };
 
 class AUTOITEM : public OBJECT_MOVABLE, public OBJECT_VALIDATES
 {
-private:
-    ENVELOPE _envelope;
-    int _idx = -1;
-    int _pool_id = -1;
-    double _position = 0;
-    double _length = 0;
-    double _end = 0;
-    double _startoffs = 0;
-    double _playrate = 1;
-    double _baseline = 0;
-    double _amplitude = 100;
-    double _loopsrc = 0;
-    bool _sel = false;
-
-    void _get()
-    {
-        if (!is_valid()) return;
-        _pool_id = GetSetAutomationItemInfo(_envelope, _idx, "D_POOL_ID", 0.0, false);
-        _position = GetSetAutomationItemInfo(_envelope, _idx, "D_POSITION", 0.0, false);
-        _length = GetSetAutomationItemInfo(_envelope, _idx, "D_LENGTH", 0.0, false);
-        _startoffs = GetSetAutomationItemInfo(_envelope, _idx, "D_STARTOFFS", 0.0, false);
-        _playrate = GetSetAutomationItemInfo(_envelope, _idx, "D_PLAYRATE", 0.0, false);
-        _baseline = GetSetAutomationItemInfo(_envelope, _idx, "D_BASELINE", 0.0, false);
-        _amplitude = GetSetAutomationItemInfo(_envelope, _idx, "D_AMPLITUDE", 0.0, false);
-        _loopsrc = GetSetAutomationItemInfo(_envelope, _idx, "D_LOOPSRC", 0.0, false);
-        _sel = GetSetAutomationItemInfo(_envelope, _idx, "D_UISEL", 0.0, false) > 0;
-        _cache_end();
-    }
-
-    void _set()
-    {
-        if (!is_valid()) return;
-        GetSetAutomationItemInfo(_envelope, _idx, "D_POOL_ID", _pool_id, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_POSITION", _position, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_LENGTH", _length, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_STARTOFFS", _startoffs, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_PLAYRATE", _playrate, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_BASELINE", _baseline, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_AMPLITUDE", _amplitude, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_LOOPSRC", _loopsrc, true);
-        GetSetAutomationItemInfo(_envelope, _idx, "D_UISEL", _sel ? 1.0 : 0.0, true);
-    }
-
-    void _cache_end() { _end = _position + _length; }
-
-    double getObjectStartPos() { _get(); return _position; }
-    void setObjectStartPos(double v) override { _position = v; _set(); }
-
-    double getObjectLength() { _get(); return _length; }
-    void setObjectLength(double v) override { _length = v; _set(); }
-
-    void setObjectPosition(double v) override { _position = v; _set(); }
-
-    bool objectIsValid() const override { return _idx != -1; }
 public:
     AUTOITEM() {}
     AUTOITEM(int idx) : _idx(idx) { _get(); }
@@ -138,6 +84,62 @@ public:
     void simplifyByDifference(double diff) { _envelope.simplifyByDifference(diff); }
     double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, getLength()); }
     double create() { InsertAutomationItem(_envelope, _pool_id, _position, _length); }
+
+
+	double getStart() { _get(); return _position; }
+	void setStart(double v) override { _position = v; _set(); }
+
+	double getLength() { _get(); return _length; }
+	void setLength(double v) override { _length = v; _set(); }
+
+	void setPosition(double v) override { _position = v; _set(); }
+
+	bool isValid() const override { return _idx != -1; }
+
+protected:
+	ENVELOPE _envelope;
+	int _idx = -1;
+	int _pool_id = -1;
+	double _position = 0;
+	double _length = 0;
+	double _end = 0;
+	double _startoffs = 0;
+	double _playrate = 1;
+	double _baseline = 0;
+	double _amplitude = 100;
+	double _loopsrc = 0;
+	bool _sel = false;
+
+	void _get()
+	{
+		if (!isValid()) return;
+		_pool_id = GetSetAutomationItemInfo(_envelope, _idx, "D_POOL_ID", 0.0, false);
+		_position = GetSetAutomationItemInfo(_envelope, _idx, "D_POSITION", 0.0, false);
+		_length = GetSetAutomationItemInfo(_envelope, _idx, "D_LENGTH", 0.0, false);
+		_startoffs = GetSetAutomationItemInfo(_envelope, _idx, "D_STARTOFFS", 0.0, false);
+		_playrate = GetSetAutomationItemInfo(_envelope, _idx, "D_PLAYRATE", 0.0, false);
+		_baseline = GetSetAutomationItemInfo(_envelope, _idx, "D_BASELINE", 0.0, false);
+		_amplitude = GetSetAutomationItemInfo(_envelope, _idx, "D_AMPLITUDE", 0.0, false);
+		_loopsrc = GetSetAutomationItemInfo(_envelope, _idx, "D_LOOPSRC", 0.0, false);
+		_sel = GetSetAutomationItemInfo(_envelope, _idx, "D_UISEL", 0.0, false) > 0;
+		_cache_end();
+	}
+
+	void _set()
+	{
+		if (!isValid()) return;
+		GetSetAutomationItemInfo(_envelope, _idx, "D_POOL_ID", _pool_id, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_POSITION", _position, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_LENGTH", _length, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_STARTOFFS", _startoffs, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_PLAYRATE", _playrate, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_BASELINE", _baseline, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_AMPLITUDE", _amplitude, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_LOOPSRC", _loopsrc, true);
+		GetSetAutomationItemInfo(_envelope, _idx, "D_UISEL", _sel ? 1.0 : 0.0, true);
+	}
+
+	void _cache_end() { _end = _position + _length; }
 };
 
 class AUTOITEMLIST : public LIST<AUTOITEM>
