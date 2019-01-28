@@ -1,260 +1,260 @@
-﻿#pragma once
+#pragma once
 
 enum GroupMode { none, grouped, overlapping, touching };
 
 class ITEM : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
-  //static functions
+	//static functions
 public:
-  static bool IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
-  static ITEM Get(int idx);
-  static ITEM GetSelected(int idx);
-  static ITEM CreateMidi(MediaTrack * track, double position, double length);
+	static bool IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
+	static ITEM Get(int idx);
+	static ITEM GetSelected(int idx);
+	static ITEM CreateMidi(MediaTrack * track, double position, double length);
 
-  enum FADESHAPE
-  {
-    LIN,
-    LOG,
-    EXPO,
-    LOG_2,
-    EXPO_2,
-    SCURV,
-    SCURV_2
-  };
+	enum FADESHAPE
+	{
+		LIN,
+		LOG,
+		EXPO,
+		LOG_2,
+		EXPO_2,
+		SCURV,
+		SCURV_2
+	};
 
 protected:
-  friend class ITEMLIST;
-  friend class TagParser;
-  // member
-  MediaItem* itemPtr;
-  TAKELIST TakeList;
-  TAKE active_take;
+	friend class ITEMLIST;
+	friend class TagParser;
+	// member
+	MediaItem* itemPtr;
+	TAKELIST TakeList;
+	TAKE active_take;
 
 public:
-  // constructor
-  ITEM();
-  ITEM(int i) { itemPtr = GetMediaItem(0, i); }
-  ITEM(MediaItem * item);
-  ITEM(MediaItem_Take * take);
+	// constructor
+	ITEM();
+	ITEM(int i) { itemPtr = GetMediaItem(0, i); }
+	ITEM(MediaItem * item);
+	ITEM(MediaItem_Take * take);
 
-  // conversion
-  operator void*() const { return itemPtr; }
-  operator MediaItem*() const { return itemPtr; }
-  operator MediaItem_Take*() const { return *getActiveTake(); }
+	// conversion
+	operator void*() const { return itemPtr; }
+	operator MediaItem*() const { return itemPtr; }
+	operator MediaItem_Take*() const { return *getActiveTake(); }
 
-  // operator
-  bool operator==(const MediaItem * rhs) const { return itemPtr == rhs; }
-  bool operator!=(const MediaItem * rhs) const { return itemPtr != rhs; }
-  bool operator==(const ITEM & rhs) const { return itemPtr == rhs.itemPtr; }
-  bool operator!=(const ITEM & rhs) const { return itemPtr != rhs.itemPtr; }
-  TAKE operator[](int i) const { return GetTake(itemPtr, i); }
+	// operator
+	bool operator==(const MediaItem * rhs) const { return itemPtr == rhs; }
+	bool operator!=(const MediaItem * rhs) const { return itemPtr != rhs; }
+	bool operator==(const ITEM & rhs) const { return itemPtr == rhs.itemPtr; }
+	bool operator!=(const ITEM & rhs) const { return itemPtr != rhs.itemPtr; }
+	TAKE operator[](int i) const { return GetTake(itemPtr, i); }
 
-  /* FUNCTIONS */
+	/* FUNCTIONS */
 
-  // copies the item exactly taking the same position and length, thereby overlapping 100%
-  ITEM duplicate();
-  void remove();
-  void move(double v);
-  bool crop(RANGE r, bool move_edge);
+	// copies the item exactly taking the same position and length, thereby overlapping 100%
+	ITEM duplicate();
+	void remove();
+	void move(double v);
+	bool crop(RANGE r, bool move_edge);
 
-  // returns the item created from the right-hand-side of the split, or invalid item if split failed
-  ITEM split(double v);
+	// returns the item created from the right-hand-side of the split, or invalid item if split failed
+	ITEM split(double v);
 
-  // returns ITEMLIST of items created from splitting including itself
-  ITEMLIST split(vector<double> splitlist);
+	// returns ITEMLIST of items created from splitting including itself using global time.
+	ITEMLIST split(vector<double> splitlist);
 
-  TAKELIST GetTakes();
-  void CollectTakes(); 
+	TAKELIST GetTakes();
+	void CollectTakes();
 
-  MediaItem* pointer() { return itemPtr; }
+	MediaItem* pointer() { return itemPtr; }
 
-  /* GETTER */
-  String getName() const override;
-  void setName(const String & v) override;
+	/* GETTER */
+	String getName() const override;
+	void setName(const String & v) override;
 
-  bool isValid() const override;
+	bool isValid() const override;
 
-  const TAKE * getActiveTake() const;
-  TAKE * getActiveTake();
-  const TAKE * getTake(int i) const;
-  TAKE * getTake(int i);
-  int getNumTakes(); 
+	const TAKE * getActiveTake() const;
+	TAKE * getActiveTake();
+	const TAKE * getTake(int i) const;
+	TAKE * getTake(int i);
+	int getNumTakes();
 
-  MediaTrack* getTrack() const;
-  int getTrackIndex() const;
+	MediaTrack* getTrack() const;
+	int getTrackIndex() const;
 
-  bool isMuted() const;
-  bool isSelected() const;
+	bool isMuted() const;
+	bool isSelected() const;
 
-  int getIndex() const;  
-  int getGroupIndex() const;  
-  
-  double getVolume() const;
-  double getRate() const;
-  double getSnapOffset() const;
+	int getIndex() const;
+	int getGroupIndex() const;
 
-  double getFadeInLen() const;
-  double getFadeOutLen() const;
-  double getFadeInLenAuto() const;
-  double getFadeOutLenAuto() const;
-  int getFadeInShape() const;
-  int getFadeOutShape() const;
-  double getFadeInCurve() const;
-  double getFadeOutCurve() const; 
+	double getVolume() const;
+	double getRate() const;
+	double getSnapOffset() const;
 
-  /* SETTER */
-  void setMuted(bool v);
-  void setSelected(bool v);
+	double getFadeInLen() const;
+	double getFadeOutLen() const;
+	double getFadeInLenAuto() const;
+	double getFadeOutLenAuto() const;
+	int getFadeInShape() const;
+	int getFadeOutShape() const;
+	double getFadeInCurve() const;
+	double getFadeOutCurve() const;
 
-  void setActiveTake(int idx);
+	/* SETTER */
+	void setMuted(bool v);
+	void setSelected(bool v);
 
-  bool setTrack(MediaTrack* track);
-  void setTrackByIndex(int v); 
-  bool setTrackByName(String name);
+	void setActiveTake(int idx);
 
-  void setVolume(double v);
-  void setRate(double new_rate, bool warp = true);  
-  void setSnapOffset(double v);  
-  
-  void setFadeInLen(double v);
-  void setFadeOutLen(double v);
-  void setFadeInLenAuto(double v);
-  void setFadeOutLenAuto(double v);
-  void setFadeInShape(int v);
-  void setFadeOutShape(int v);
-  void setFadeInCurve(double v);
-  void setFadeOutCurve(double v);
+	bool setTrack(MediaTrack* track);
+	void setTrackByIndex(int v);
+	bool setTrackByName(String name);
 
-  double getStart() const override;
-  void setStart(double v) override;
+	void setVolume(double v);
+	void setRate(double new_rate, bool warp = true);
+	void setSnapOffset(double v);
 
-  double getLength() const override;
-  void setLength(double v) override;
+	void setFadeInLen(double v);
+	void setFadeOutLen(double v);
+	void setFadeInLenAuto(double v);
+	void setFadeOutLenAuto(double v);
+	void setFadeInShape(int v);
+	void setFadeOutShape(int v);
+	void setFadeInCurve(double v);
+	void setFadeOutCurve(double v);
 
-  void setPosition(double v) override;
+	double getStart() const override;
+	void setStart(double v) override;
 
-  int getColor() const override;
-  void setColor(int v) override;
+	double getLength() const override;
+	void setLength(double v) override;
+
+	void setPosition(double v) override;
+
+	int getColor() const override;
+	void setColor(int v) override;
 
 protected:
-  enum
-  {
-    __name,
-    __track,
-    __length,
-    __rate,
-    __volume,
-    __snapoffset,
-    __position,
-    __fadeinlen,
-    __fadeoutlen,
-    __startoffset,
-    __tags,
-    __pitch,
-    __file_extension
-  };
+	enum
+	{
+		__name,
+		__track,
+		__length,
+		__rate,
+		__volume,
+		__snapoffset,
+		__position,
+		__fadeinlen,
+		__fadeoutlen,
+		__startoffset,
+		__tags,
+		__pitch,
+		__file_extension
+	};
 
-  map<String, int> method_lookup ={
-      { "N", __name },
-      { "T", __track },
-      { "L", __length },
-      { "R", __rate },
-      { "V", __volume },
-      { "SN", __snapoffset },
-      { "PP", __position },
-      { "FI", __fadeinlen },
-      { "FO", __fadeoutlen },
-      { "SO", __startoffset },
-      { "t", __tags },
-      { "ext", __file_extension }
-  };
+	map<String, int> method_lookup = {
+			{ "N", __name },
+			{ "T", __track },
+			{ "L", __length },
+			{ "R", __rate },
+			{ "V", __volume },
+			{ "SN", __snapoffset },
+			{ "PP", __position },
+			{ "FI", __fadeinlen },
+			{ "FO", __fadeoutlen },
+			{ "SO", __startoffset },
+			{ "t", __tags },
+			{ "ext", __file_extension }
+	};
 
-  String GetPropertyStringFromKey(const String & key, bool get_value = false) const override;
+	String GetPropertyStringFromKey(const String & key, bool get_value = false) const override;
 };
 
 class ITEMLIST : public LIST<ITEM>
 {
 public:
-  static int CountSelected();
-  static int Count();
+	static int CountSelected();
+	static int Count();
 protected:
-  int m_group;
+	int m_group;
 
 public:
-  // constructor
-  ITEMLIST() {}
-  ITEMLIST(ITEM i)
-  {
-    push_back(i);
-    r ={ i.getStart(), i.getEnd() };
-  }
+	// constructor
+	ITEMLIST() {}
+	ITEMLIST(ITEM i)
+	{
+		push_back(i);
+		r = { i.getStart(), i.getEnd() };
+	}
 
-  RANGE r;
+	RANGE r;
 
-  operator MediaItem*() const { return list[0]; }
-  operator ITEM() const { return list[0]; }
-  ITEMLIST operator=(vector<ITEM> rhs) { list = rhs; return *this; }
+	operator MediaItem*() const { return list[0]; }
+	operator ITEM() const { return list[0]; }
+	ITEMLIST operator=(vector<ITEM> rhs) { list = rhs; return *this; }
 
-  void CollectItems();
-  void collectSelectedItems();
+	void CollectItems();
+	void collectSelectedItems();
 
-  // functions
-  void InitAudio();
-  void move(double v);
-  void remove();
-  int crop(RANGE r, bool move_edge);
+	// functions
+	void InitAudio();
+	void move(double v);
+	void remove();
+	int crop(RANGE r, bool move_edge);
 
-  // getters
-  double getStart() const;
-  double getEnd() const;
-  double getLength() const;
-  double getSnapOffset() const;
-  double getFadeInLen() const;
-  double getFadeOutLen() const;
-  String GetPropertyStringFromKey(const String & key, bool use_value) const;
-  bool isSelected() const;
-  RANGE range() const { return r; }
+	// getters
+	double getStart() const;
+	double getEnd() const;
+	double getLength() const;
+	double getSnapOffset() const;
+	double getFadeInLen() const;
+	double getFadeOutLen() const;
+	String GetPropertyStringFromKey(const String & key, bool use_value) const;
+	bool isSelected() const;
+	RANGE range() const { return r; }
 
-  // setters
-  int setTrack(MediaTrack* track);
-  void setStart(double v);
-  void setEnd(double v);
-  void setSnapOffset(double v);
-  void setSelected(bool select);
-  
+	// setters
+	int setTrack(MediaTrack* track);
+	void setStart(double v);
+	void setEnd(double v);
+	void setSnapOffset(double v);
+	void setSelected(bool select);
+
 };
 
 class ITEMGROUPLIST : public LIST<ITEMLIST>
 {
 protected:
-  //function
-  void collect_donotgroup(bool selected_only);
-  void collect_groupgrouped(bool selected_only);
-  void collect_groupoverlapping(bool selected_only, bool must_be_overlapping);
+	//function
+	void collect_donotgroup(bool selected_only);
+	void collect_groupgrouped(bool selected_only);
+	void collect_groupoverlapping(bool selected_only, bool must_be_overlapping);
 
 public:
-  // constructor
-  ITEMGROUPLIST() {}
-  ITEMGROUPLIST(ITEMLIST ItemList) { push_back(ItemList); }
+	// constructor
+	ITEMGROUPLIST() {}
+	ITEMGROUPLIST(ITEMLIST ItemList) { push_back(ItemList); }
 
-  // project
-  void CollectItems(int group_mode);
-  void collectSelectedItems(int group_mode);
+	// project
+	void CollectItems(int group_mode);
+	void collectSelectedItems(int group_mode);
 
-  // actions
-  ITEMLIST * addNewList() 
-  {
-    list.push_back(ITEMLIST());
-    return &list.back();
-  }
+	// actions
+	ITEMLIST * addNewList()
+	{
+		list.push_back(ITEMLIST());
+		return &list.back();
+	}
 
-  operator ITEMLIST() { return list[0]; }
+	operator ITEMLIST() { return list[0]; }
 
-  // mode 0 = do not group items
-  // mode 1 = group grouped items
-  // mode 2 = group overlapping items
-  // mode 3 = group touching items
+	// mode 0 = do not group items
+	// mode 1 = group grouped items
+	// mode 2 = group overlapping items
+	// mode 3 = group touching items
 
-  // functions
-  int countItems();
+	// functions
+	int countItems();
 };

@@ -1,20 +1,20 @@
-﻿#include "ReaperClassesHeader.h"
+#include "ReaperClassesHeader.h"
 #include "Take.h"
 
 vector<MediaItem_Take*> GetTakes(MediaItem* item)
 {
-    int takes = CountTakes(item);
-    vector<MediaItem_Take*> list; list.reserve(takes);
-    for (int t = 0; t < takes; ++t) list.push_back(GetTake(item, t));
-    return list;
+	int takes = CountTakes(item);
+	vector<MediaItem_Take*> list; list.reserve(takes);
+	for (int t = 0; t < takes; ++t) list.push_back(GetTake(item, t));
+	return list;
 }
 void RemoveTake(MediaItem* item, MediaItem_Take* take)
 {
-    auto actTake = GetActiveTake(item);
-    SetActiveTake(take);
-    COMMAND(40129); //Delete active take from items
-    COMMAND(41348); //Item: Remove all empty take lanes
-    if (actTake != take) SetActiveTake(actTake);
+	auto actTake = GetActiveTake(item);
+	SetActiveTake(take);
+	COMMAND(40129); //Delete active take from items
+	COMMAND(41348); //Item: Remove all empty take lanes
+	if (actTake != take) SetActiveTake(actTake);
 }
 
 String TAKE::getName() const { return GetTakeName(takePtr); }
@@ -30,14 +30,14 @@ bool TAKE::isValid() const { return takePtr != nullptr; }
 
 TAKE::TAKE(MediaItem_Take * take) : takePtr(take)
 {
-    jassert(take != nullptr);
-    initAudio();
-    TagManager.setStringWithTags(getName());
+	jassert(take != nullptr);
+	initAudio();
+	TagManager.setStringWithTags(getName());
 
-    envelope.Volume.setTrackEnvelope(take, "Volume");
-    envelope.Pan.setTrackEnvelope(take, "Pan");
-    envelope.Mute.setTrackEnvelope(take, "Mute");
-    envelope.Pitch.setTrackEnvelope(take, "Pitch");
+	envelope.Volume.setTrackEnvelope(take, "Volume");
+	envelope.Pan.setTrackEnvelope(take, "Pan");
+	envelope.Mute.setTrackEnvelope(take, "Mute");
+	envelope.Pitch.setTrackEnvelope(take, "Pitch");
 }
 
 // functions
@@ -49,24 +49,24 @@ int TAKE::chanmode() const { return GetMediaItemTakeInfo_Value(takePtr, "I_CHANM
 struct chantype { enum { normal, mono, stereo }; };
 int TAKE::firstCh() const
 {
-    int ch = chanmode();
+	int ch = chanmode();
 
-    if (ch >= 67)
-      return ch - 67;
-    if (ch >= 3)
-      return ch - 3;
-    return 0;
+	if (ch >= 67)
+		return ch - 67;
+	if (ch >= 3)
+		return ch - 3;
+	return 0;
 }
 int TAKE::lastCh() const
 {
-    int ch = chanmode();
-    int first = firstCh();
+	int ch = chanmode();
+	int first = firstCh();
 
-    if (ch == 0) 
-      return GetMediaItemTake_Source(takePtr)->GetNumChannels() - 1;
-    if (ch >= 2 || ch <= 66) 
-      return first;
-    return first + 1;
+	if (ch == 0)
+		return GetMediaItemTake_Source(takePtr)->GetNumChannels() - 1;
+	if (ch >= 2 || ch <= 66)
+		return first;
+	return first + 1;
 }
 
 bool TAKE::isPitchPreserved() const { return GetMediaItemTakeInfo_Value(takePtr, "B_PPITCH") != 0; }
@@ -89,28 +89,28 @@ File TAKE::file() const { return m_file; }
 void TAKE::setFile(const String & file) { SetMediaItemTake_Source(takePtr, PCM_Source_CreateFromFile(file.toRawUTF8())); }
 void TAKE::setChannelMode(int v) { SetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE", v); }
 
-void TAKE::setVolume(double v) 
-{ 
-  bool phaseIsInverted = GetMediaItemTakeInfo_Value(takePtr, "D_VOL") < 0;
+void TAKE::setVolume(double v)
+{
+	bool phaseIsInverted = GetMediaItemTakeInfo_Value(takePtr, "D_VOL") < 0;
 
-  if (phaseIsInverted)
-    v = -abs(v);
-  else
-    v = abs(v);
+	if (phaseIsInverted)
+		v = -abs(v);
+	else
+		v = abs(v);
 
-  SetMediaItemTakeInfo_Value(takePtr, "D_VOL", v); 
+	SetMediaItemTakeInfo_Value(takePtr, "D_VOL", v);
 }
 void TAKE::setPitch(double v) { SetMediaItemTakeInfo_Value(takePtr, "D_PITCH", v); }
 void TAKE::setPreservePitch(bool v) { SetMediaItemTakeInfo_Value(takePtr, "B_PPITCH", v); }
 
-void TAKE::setInvertPhase(bool v) 
+void TAKE::setInvertPhase(bool v)
 {
-  bool phaseIsInverted = GetMediaItemTakeInfo_Value(takePtr, "D_VOL") < 0;
+	bool phaseIsInverted = GetMediaItemTakeInfo_Value(takePtr, "D_VOL") < 0;
 
-  if (v != phaseIsInverted)
-  { 
-    SetMediaItemTakeInfo_Value(takePtr, "D_VOL", -GetMediaItemTakeInfo_Value(takePtr, "D_VOL"));
-  }
+	if (v != phaseIsInverted)
+	{
+		SetMediaItemTakeInfo_Value(takePtr, "D_VOL", -GetMediaItemTakeInfo_Value(takePtr, "D_VOL"));
+	}
 }
 
 void TAKE::setRate(double v) { SetMediaItemTakeInfo_Value(takePtr, "D_PLAYRATE", v); }
@@ -120,97 +120,97 @@ void TAKE::remove() { takePtr = nullptr; RemoveTake(item(), takePtr); }
 
 TAKE TAKE::move(MediaTrack * track)
 {
-    // duplicate item
-    TAKE old_active_take = activate();
-    auto new_item = ITEM(item()).duplicate();
-    old_active_take.activate();
-    MoveMediaItemToTrack(new_item, track);
+	// duplicate item
+	TAKE old_active_take = activate();
+	auto new_item = ITEM(item()).duplicate();
+	old_active_take.activate();
+	MoveMediaItemToTrack(new_item, track);
 
-    // set active take to the new take for item
-    TAKE new_take = GetTake(new_item, idx());
-    SetActiveTake(new_take);
+	// set active take to the new take for item
+	TAKE new_take = GetTake(new_item, idx());
+	SetActiveTake(new_take);
 
-    // remove all other takes from new item
-    UNSELECT_ITEMS();
-    ITEM it;
-    it.setSelected(true);
-    it.CollectTakes();
-    TAKE actTake = GetActiveTake(it);
-    TAKELIST TakeList = it.GetTakes();
-    for (int t = 0; t < TakeList.size(); ++t) 
-        if (actTake != TakeList[t])
-            TakeList[t].remove();
-    for (const TAKE & t : TakeList) 
-        ITEM(t).setSelected(true);
+	// remove all other takes from new item
+	UNSELECT_ITEMS();
+	ITEM it;
+	it.setSelected(true);
+	it.CollectTakes();
+	TAKE actTake = GetActiveTake(it);
+	TAKELIST TakeList = it.GetTakes();
+	for (int t = 0; t < TakeList.size(); ++t)
+		if (actTake != TakeList[t])
+			TakeList[t].remove();
+	for (const TAKE & t : TakeList)
+		ITEM(t).setSelected(true);
 
-    // remove take from old item
-    remove();
+	// remove take from old item
+	remove();
 
-    // overwrite self
-    takePtr = new_take;
+	// overwrite self
+	takePtr = new_take;
 
-    return takePtr;
+	return takePtr;
 }
 
 TAKE TAKE::move(MediaItem * new_item)
 {
-    auto new_take = AddTakeToMediaItem(new_item);
+	auto new_take = AddTakeToMediaItem(new_item);
 
-    char* chunk = GetSetObjectState(takePtr, "");
-    GetSetObjectState(new_take, chunk);
-    FreeHeapPtr(chunk);
+	char* chunk = GetSetObjectState(takePtr, "");
+	GetSetObjectState(new_take, chunk);
+	FreeHeapPtr(chunk);
 
-    // remove take from old item
-    remove();
+	// remove take from old item
+	remove();
 
-    // overwrite self
-    takePtr = new_take;
+	// overwrite self
+	takePtr = new_take;
 
-    return takePtr;
+	return takePtr;
 }
 
 void TAKE::initAudio(double starttime, double endtime)
 {
-  audioIsInitialized = true;
-    m_source = GetMediaItemTake_Source(takePtr);
+	audioIsInitialized = true;
+	m_source = GetMediaItemTake_Source(takePtr);
 
-    audioFile = AudioFile((File)m_source->GetFileName());
+	audioFile = AudioFile((File)m_source->GetFileName());
 
-    // raw audio file properties
-    audioFile.m_srate = m_source->GetSampleRate();
-    audioFile.m_samples = m_source->GetLength();
-    audioFile.m_bitdepth = m_source->GetBitsPerSample();
-    audioFile.m_channels = m_source->GetNumChannels();
-    if (audioFile.m_channels > 0) // occurs if audio file is bad
-      audioFile.m_frames = audioFile.m_samples / audioFile.m_channels;
-    
-    // take audio properties
-    audioFile.m_file = m_source->GetFileName();
-    m_file_frames = getLength() * audioFile.m_srate;
-    m_file_length = m_source->GetLength();
-    m_bitdepth = m_source->GetBitsPerSample();
-    m_nch = m_source->GetNumChannels();
+	// raw audio file properties
+	audioFile.m_srate = m_source->GetSampleRate();
+	audioFile.m_samples = m_source->GetLength();
+	audioFile.m_bitdepth = m_source->GetBitsPerSample();
+	audioFile.m_channels = m_source->GetNumChannels();
+	if (audioFile.m_channels > 0) // occurs if audio file is bad
+		audioFile.m_frames = audioFile.m_samples / audioFile.m_channels;
 
-    if (starttime == -1) starttime = m_audiobuf_starttime = 0;
-    if (endtime == -1) { endtime = m_audiobuf_endtime = getLength(); }
+	// take audio properties
+	audioFile.m_file = m_source->GetFileName();
+	m_file_frames = getLength() * audioFile.m_srate;
+	m_file_length = m_source->GetLength();
+	m_bitdepth = m_source->GetBitsPerSample();
+	m_nch = m_source->GetNumChannels();
 
-    m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)audioFile.m_srate;
-    m_take_samples = m_take_frames * m_nch;
+	if (starttime == -1) starttime = m_audiobuf_starttime = 0;
+	if (endtime == -1) { endtime = m_audiobuf_endtime = getLength(); }
+
+	m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)audioFile.m_srate;
+	m_take_samples = m_take_frames * m_nch;
 }
 
 void TAKE::loadAudio()
 {
-    int initial_chanmode = chanmode();
-    setChannelMode(0);
+	int initial_chanmode = chanmode();
+	setChannelMode(0);
 
-    vector<double> buffer(m_take_samples, 0);
-    AudioAccessor* accessor = CreateTakeAudioAccessor(takePtr);
-    GetAudioAccessorSamples(accessor, audioFile.m_srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
-    DestroyAudioAccessor(accessor);
+	vector<double> buffer(m_take_samples, 0);
+	AudioAccessor* accessor = CreateTakeAudioAccessor(takePtr);
+	GetAudioAccessorSamples(accessor, audioFile.m_srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
+	DestroyAudioAccessor(accessor);
 
-    setChannelMode(initial_chanmode);
+	setChannelMode(initial_chanmode);
 
-    m_audiobuf = InterleavedToMultichannel(buffer.data(), m_nch, m_take_frames);
+	m_audiobuf = InterleavedToMultichannel(buffer.data(), m_nch, m_take_frames);
 }
 
 void TAKE::unloadAudio() { m_audiobuf.clear(); }
@@ -219,58 +219,58 @@ vector<vector<double>> & TAKE::getAudioMultichannel() { return m_audiobuf; }
 
 vector<double>& TAKE::getAudioChannel(int channel)
 {
-  jassert(channel < m_audiobuf.size());
-  return m_audiobuf[channel];
+	jassert(channel < m_audiobuf.size());
+	return m_audiobuf[channel];
 }
 
-double TAKE::getAudioSample(int channel, int sample) 
+double TAKE::getAudioSample(int channel, int sample)
 {
-  jassert(channel < m_audiobuf.size());
-  jassert(sample < m_audiobuf[channel].size());
-  return m_audiobuf[channel][sample];
+	jassert(channel < m_audiobuf.size());
+	jassert(sample < m_audiobuf[channel].size());
+	return m_audiobuf[channel][sample];
 }
 
 TAKELIST::TAKELIST() {}
 TAKELIST::TAKELIST(MediaItem * item)
 {
-    int num_takes = CountTakes(item);
-    for (int i = 0; i < num_takes; ++i)
-    {
-        push_back(GetTake(item, i));
-    }
+	int num_takes = CountTakes(item);
+	for (int i = 0; i < num_takes; ++i)
+	{
+		push_back(GetTake(item, i));
+	}
 }
 
 void MIDINOTELIST::collectMidiNotes()
 {
-  LIST::clear();
+	LIST::clear();
 
-  int notecount;
-  MIDI_CountEvts(take->ptr(), &notecount, nullptr, nullptr);
-  for (int n = 0; n < notecount; ++n)
-  {
-    double ppqStart, ppqEnd;
-    int note, vel, channel;
-    bool selected, muted;
+	int notecount;
+	MIDI_CountEvts(take->ptr(), &notecount, nullptr, nullptr);
+	for (int n = 0; n < notecount; ++n)
+	{
+		double ppqStart, ppqEnd;
+		int note, vel, channel;
+		bool selected, muted;
 
-    MIDI_GetNote(take->ptr(), n, &selected, &muted, &ppqStart, &ppqEnd, &channel, &note, &vel);
+		MIDI_GetNote(take->ptr(), n, &selected, &muted, &ppqStart, &ppqEnd, &channel, &note, &vel);
 
-    double startTime = MIDI_GetProjTimeFromPPQPos(*take, ppqStart) - ITEM(*take).getStart();
-    double endTime = MIDI_GetProjTimeFromPPQPos(*take, ppqEnd) - ITEM(*take).getStart();
+		double startTime = MIDI_GetProjTimeFromPPQPos(*take, ppqStart) - ITEM(*take).getStart();
+		double endTime = MIDI_GetProjTimeFromPPQPos(*take, ppqEnd) - ITEM(*take).getStart();
 
-    push_back({ note, startTime, endTime, vel, channel, muted, selected });
-  }
+		push_back({ note, startTime, endTime, vel, channel, muted, selected });
+	}
 }
 
 void MIDINOTELIST::add(MIDINOTE obj)
 {
-  obj.take = take;
-  double position = obj.getStart() + ITEM(*take).getStart();
+	obj.take = take;
+	double position = obj.getStart() + ITEM(*take).getStart();
 
-  double ppq_start = MIDI_GetPPQPosFromProjTime(take->ptr(), position);
-  double ppq_end = MIDI_GetPPQPosFromProjTime(take->ptr(), position + obj.getLength());
+	double ppq_start = MIDI_GetPPQPosFromProjTime(take->ptr(), position);
+	double ppq_end = MIDI_GetPPQPosFromProjTime(take->ptr(), position + obj.getLength());
 
-  bool noSort = false;
-  MIDI_InsertNote(take->ptr(), obj.selected, obj.muted, ppq_start, ppq_end, obj.channel, obj.pitch, obj.velocity, &noSort);
+	bool noSort = false;
+	MIDI_InsertNote(take->ptr(), obj.selected, obj.muted, ppq_start, ppq_end, obj.channel, obj.pitch, obj.velocity, &noSort);
 }
 
 void MIDINOTE::setPitch(int v)

@@ -3,87 +3,87 @@
 class ENVPT
 {
 public:
-    enum shape { linear, square, s_curve, log, exp, bezier };
-    static ENVPT getByTime(TrackEnvelope * envelope, double time)
-    {
-        int pt_idx = GetEnvelopePointByTime(envelope, time);
-        double position, value, tension;
-        bool selected;
-        int shape;
-        GetEnvelopePoint(envelope, pt_idx, &position, &value, &shape, &tension, &selected);
-        return ENVPT(pt_idx, position, value, shape, tension, selected);
-    }
+	enum shape { linear, square, s_curve, log, exp, bezier };
+	static ENVPT getByTime(TrackEnvelope * envelope, double time)
+	{
+		int pt_idx = GetEnvelopePointByTime(envelope, time);
+		double position, value, tension;
+		bool selected;
+		int shape;
+		GetEnvelopePoint(envelope, pt_idx, &position, &value, &shape, &tension, &selected);
+		return ENVPT(pt_idx, position, value, shape, tension, selected);
+	}
 public:
-    // members
-    int id = -1;
-    double value = -1.0;
-    double position = -1.0;
-    int shape = ENVPT::shape::linear;
-    double tension = 0.0;
-    bool selected = false;
+	// members
+	int id = -1;
+	double value = -1.0;
+	double position = -1.0;
+	int shape = ENVPT::shape::linear;
+	double tension = 0.0;
+	bool selected = false;
 
-    double getStart() { return position; }
+	double getStart() { return position; }
 
-    ENVPT() {}
-    ENVPT(int idx, double p, double v, int s = 0, double t = 0.0, bool sel = false) : id(idx), position(p), value(v), shape(s), tension(t), selected(sel) {}
-    ENVPT(double p, double v, int s = 0, double t = 0.0, bool sel = false) : position(p), value(v), shape(s), tension(t), selected(sel) {}
+	ENVPT() {}
+	ENVPT(int idx, double p, double v, int s = 0, double t = 0.0, bool sel = false) : id(idx), position(p), value(v), shape(s), tension(t), selected(sel) {}
+	ENVPT(double p, double v, int s = 0, double t = 0.0, bool sel = false) : position(p), value(v), shape(s), tension(t), selected(sel) {}
 };
 
 class ENVELOPE : public LIST<ENVPT>
 {
 protected:
-    bool no_sort = true;
-    float tent(float x);
-    double getDistanceFromLine(double x1, double y1, double x2, double y2, double xp, double yp);
-    ENVELOPE simplify(ENVELOPE points, double maxError);
-    void LinearRegression(ENVELOPE p, double & a, double & b);
+	bool no_sort = true;
+	float tent(float x);
+	double getDistanceFromLine(double x1, double y1, double x2, double y2, double xp, double yp);
+	ENVELOPE simplify(ENVELOPE points, double maxError);
+	void LinearRegression(ENVELOPE p, double & a, double & b);
 
-    // members
-    String _name;
-    MediaItem_Take* _take;
-    TrackEnvelope* envelope;
+	// members
+	String _name;
+	MediaItem_Take* _take;
+	TrackEnvelope* envelope;
 
 public:
-    ENVELOPE () {}
-    ENVELOPE(TrackEnvelope * envelope, String name = "") : envelope(envelope), _name(name) {}
+	ENVELOPE() {}
+	ENVELOPE(TrackEnvelope * envelope, String name = "") : envelope(envelope), _name(name) {}
 
-    // conversion
-    operator vector<ENVPT>() { return list; }
-    operator TrackEnvelope*() const { return envelope; }
+	// conversion
+	operator vector<ENVPT>() { return list; }
+	operator TrackEnvelope*() const { return envelope; }
 
-    // operators
-    bool operator==(TrackEnvelope * rhs) const { return envelope == rhs; }
-    bool operator!=(TrackEnvelope * rhs) const { return envelope != rhs; }
-    bool operator==(const ENVELOPE & rhs) const { return envelope == rhs.envelope; }
-    bool operator!=(const ENVELOPE & rhs) const { return envelope != rhs.envelope; }
+	// operators
+	bool operator==(TrackEnvelope * rhs) const { return envelope == rhs; }
+	bool operator!=(TrackEnvelope * rhs) const { return envelope != rhs; }
+	bool operator==(const ENVELOPE & rhs) const { return envelope == rhs.envelope; }
+	bool operator!=(const ENVELOPE & rhs) const { return envelope != rhs.envelope; }
 
-    // functions
-    void collectPoints();
-    void removeAllPoints();
-    void collectAutoItemPoints(int autoitemidx);
-    void simplifyByAverage(double width);
-    void simplifyByDifference(double diff);
-    double centerValueTowardAverage(double min_x, double max_x);
+	// functions
+	void collectPoints();
+	void removeAllPoints();
+	void collectAutoItemPoints(int autoitemidx);
+	void simplifyByAverage(double width);
+	void simplifyByDifference(double diff);
+	double centerValueTowardAverage(double min_x, double max_x);
 
-    void setTrackEnvelope(MediaItem_Take* take, String name);
-    void setPoints(const ENVELOPE & env);
+	void setTrackEnvelope(MediaItem_Take* take, String name);
+	void setPoints(const ENVELOPE & env);
 
-    // boolean
-    bool isValid() const { return envelope != nullptr; }
+	// boolean
+	bool isValid() const { return envelope != nullptr; }
 };
 
 class AUTOITEM : public OBJECT_MOVABLE, public OBJECT_VALIDATES
 {
 public:
-    AUTOITEM() {}
-    AUTOITEM(int idx) : _idx(idx) { _get(); }
+	AUTOITEM() {}
+	AUTOITEM(int idx) : _idx(idx) { _get(); }
 
-    void collectPoints() { _envelope.collectAutoItemPoints(_idx); }
-    ENVELOPE envelope() const { return _envelope; }
-    void simplifyByAverage(double width) { _envelope.simplifyByAverage(width); }
-    void simplifyByDifference(double diff) { _envelope.simplifyByDifference(diff); }
-    double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, getLength()); }
-    double create() { InsertAutomationItem(_envelope, _pool_id, _position, _length); }
+	void collectPoints() { _envelope.collectAutoItemPoints(_idx); }
+	ENVELOPE envelope() const { return _envelope; }
+	void simplifyByAverage(double width) { _envelope.simplifyByAverage(width); }
+	void simplifyByDifference(double diff) { _envelope.simplifyByDifference(diff); }
+	double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, getLength()); }
+	double create() { InsertAutomationItem(_envelope, _pool_id, _position, _length); }
 
 
 	double getStart() { _get(); return _position; }
@@ -145,15 +145,15 @@ protected:
 class AUTOITEMLIST : public LIST<AUTOITEM>
 {
 public:
-    AUTOITEMLIST() {}
+	AUTOITEMLIST() {}
 
-    void collectAutomationItems()
-    {
-        for (const auto & ai : list)
-        {
-            int num_items = CountAutomationItems(ai.envelope());
-            for (int i = 0; i < num_items; ++i) 
-                list.push_back(AUTOITEM(i));
-        }
-    }
+	void collectAutomationItems()
+	{
+		for (const auto & ai : list)
+		{
+			int num_items = CountAutomationItems(ai.envelope());
+			for (int i = 0; i < num_items; ++i)
+				list.push_back(AUTOITEM(i));
+		}
+	}
 };

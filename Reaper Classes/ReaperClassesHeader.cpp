@@ -8,15 +8,15 @@
 extern reaper_plugin_info_t* g_plugin_info;
 
 action_entry::action_entry(std::string description, std::string idstring, toggle_state togst, std::function<void(action_entry&)> func) :
-  m_desc(description), m_id_string(idstring), m_func(func), m_togglestate(togst)
+	m_desc(description), m_id_string(idstring), m_func(func), m_togglestate(togst)
 {
-  if (g_plugin_info != nullptr)
-  {
-    m_accel_reg.accel ={ 0,0,0 };
-    m_accel_reg.desc = m_desc.c_str();
-    m_accel_reg.accel.cmd = m_command_id = g_plugin_info->Register("command_id", (void*)m_id_string.c_str());
-    g_plugin_info->Register("gaccel", &m_accel_reg);
-  }
+	if (g_plugin_info != nullptr)
+	{
+		m_accel_reg.accel = { 0,0,0 };
+		m_accel_reg.desc = m_desc.c_str();
+		m_accel_reg.accel.cmd = m_command_id = g_plugin_info->Register("command_id", (void*)m_id_string.c_str());
+		g_plugin_info->Register("gaccel", &m_accel_reg);
+	}
 }
 
 void msg(String s) { ShowConsoleMsg(s.toRawUTF8()); }
@@ -36,84 +36,84 @@ MediaItem* SELECT_ITEM_UNDER_MOUSE() { Main_OnCommand(40528, 0); return GetSelec
 
 void SplitTakeChunks(MediaItem * item, string chunk_c, string & header, string & footer, vector<string>& take_chunks, int & act_take_num)
 {
-  string chunk = chunk_c;
+	string chunk = chunk_c;
 
-  // Split item chunk
-  match_results<string::const_iterator> m;
-  regex_search(chunk, m, chunk_to_sections);
-  header = m[1];
-  string data = m[2];
-  footer = m[3];
+	// Split item chunk
+	match_results<string::const_iterator> m;
+	regex_search(chunk, m, chunk_to_sections);
+	header = m[1];
+	string data = m[2];
+	footer = m[3];
 
-  // Split data into take chunks
-  sregex_token_iterator i(data.begin(), data.end(), separate_take_chunks, { -1, 0 });
-  sregex_token_iterator j;
-  act_take_num = 0;
-  ++i;
-  while (i != j)
-  {
-    take_chunks.push_back(*i++);
-    if (i != j) take_chunks.back() += *i++;
-    if (!act_take_num) act_take_num = take_chunks.back().substr(0, 8) == "TAKE SEL" ? take_chunks.size()-1 : 0;
-  }
+	// Split data into take chunks
+	sregex_token_iterator i(data.begin(), data.end(), separate_take_chunks, { -1, 0 });
+	sregex_token_iterator j;
+	act_take_num = 0;
+	++i;
+	while (i != j)
+	{
+		take_chunks.push_back(*i++);
+		if (i != j) take_chunks.back() += *i++;
+		if (!act_take_num) act_take_num = take_chunks.back().substr(0, 8) == "TAKE SEL" ? take_chunks.size() - 1 : 0;
+	}
 }
 
 // envelope functions
 TrackEnvelope * ToggleTakeEnvelopeByName(MediaItem_Take * take, string env_name, bool off_on)
 {
-  bool update_chunk = false;
-  bool env_is_enabled = false;
-  string header, footer, chunk;
-  vector<string> take_chunks;
-  int act_take_num;
-  int take_num = GetMediaItemTakeInfo_Value(take, "IP_TAKENUMBER");
-  auto item = (MediaItem*)GetSetMediaItemTakeInfo(take, "P_ITEM", 0);
+	bool update_chunk = false;
+	bool env_is_enabled = false;
+	string header, footer, chunk;
+	vector<string> take_chunks;
+	int act_take_num;
+	int take_num = GetMediaItemTakeInfo_Value(take, "IP_TAKENUMBER");
+	auto item = (MediaItem*)GetSetMediaItemTakeInfo(take, "P_ITEM", 0);
 
-  char* chunk_c = GetSetObjectState(item, "");
-  SplitTakeChunks(item, chunk_c, header, footer, take_chunks, act_take_num);
+	char* chunk_c = GetSetObjectState(item, "");
+	SplitTakeChunks(item, chunk_c, header, footer, take_chunks, act_take_num);
 
-  auto idx = TakeEnvMap[env_name];
+	auto idx = TakeEnvMap[env_name];
 
-  if (regex_search(take_chunks[take_num], idx.r_search)) env_is_enabled = true;
+	if (regex_search(take_chunks[take_num], idx.r_search)) env_is_enabled = true;
 
-  if (off_on && !env_is_enabled)
-  {
-    take_chunks[take_num] += idx.defchunk;
-    update_chunk = true;
-  }
-  else if (!off_on && env_is_enabled)
-  {
-    take_chunks[take_num] = regex_replace(take_chunks[take_num], idx.r_replace, "$1");
-    update_chunk = true;
-  }
+	if (off_on && !env_is_enabled)
+	{
+		take_chunks[take_num] += idx.defchunk;
+		update_chunk = true;
+	}
+	else if (!off_on && env_is_enabled)
+	{
+		take_chunks[take_num] = regex_replace(take_chunks[take_num], idx.r_replace, "$1");
+		update_chunk = true;
+	}
 
-  // Rebuild item chunk
-  if (update_chunk)
-  {
-    chunk = header;
-    for (const auto& c : take_chunks) chunk += c;
-    chunk += footer;
+	// Rebuild item chunk
+	if (update_chunk)
+	{
+		chunk = header;
+		for (const auto& c : take_chunks) chunk += c;
+		chunk += footer;
 
-    GetSetObjectState(item, chunk.c_str());
+		GetSetObjectState(item, chunk.c_str());
 
-    FreeHeapPtr(chunk_c);
-  }
+		FreeHeapPtr(chunk_c);
+	}
 
-  return off_on ? GetTakeEnvelopeByName(take, env_name.c_str()) : nullptr;
+	return off_on ? GetTakeEnvelopeByName(take, env_name.c_str()) : nullptr;
 }
 
 double PROJECT::getEndTime()
 {
-    SAVE_CURSOR();
-    VIEW();
-
-    COMMAND(40043); // Transport: Go to end of project
-    double time = GETCURSOR();
-    
-    RESTORE_CURSOR();
+	SAVE_CURSOR();
 	VIEW();
 
-    return time;
+	COMMAND(40043); // Transport: Go to end of project
+	double time = GETCURSOR();
+
+	RESTORE_CURSOR();
+	VIEW();
+
+	return time;
 }
 
 double PROJECT::getGridDivision()
@@ -148,17 +148,17 @@ String PROJECT::getDirectory()
 bool ui_is_updating = true;
 void UI()
 {
-    if (ui_is_updating) { PreventUIRefresh(1); ui_is_updating = false; }
-    else { PreventUIRefresh(-1); ui_is_updating = true; UPDATE(); }
+	if (ui_is_updating) { PreventUIRefresh(1); ui_is_updating = false; }
+	else { PreventUIRefresh(-1); ui_is_updating = true; UPDATE(); }
 }
 
 bool undo_is_active = false;
 void UNDO(String undostr, ReaProject* project)
 {
-    if (!undo_is_active) Undo_BeginBlock2(0);
-    else Undo_EndBlock2(project, undostr.toRawUTF8(), -1);
+	if (!undo_is_active) Undo_BeginBlock2(0);
+	else Undo_EndBlock2(project, undostr.toRawUTF8(), -1);
 
-    flip(undo_is_active);
+	flip(undo_is_active);
 }
 
 bool view_is_being_saved = true;
@@ -166,22 +166,22 @@ double global_save_view_start = 0;
 double global_save_view_end = 0;
 void VIEW()
 {
-    if (view_is_being_saved)
-    {
-        GetSet_ArrangeView2(0, 0, 0, 0, &global_save_view_start, &global_save_view_end);
-        view_is_being_saved = false;
-    }
-    else
-    {
-        GetSet_ArrangeView2(0, 1, 0, 0, &global_save_view_start, &global_save_view_end);
-        view_is_being_saved = true;
-    }
+	if (view_is_being_saved)
+	{
+		GetSet_ArrangeView2(0, 0, 0, 0, &global_save_view_start, &global_save_view_end);
+		view_is_being_saved = false;
+	}
+	else
+	{
+		GetSet_ArrangeView2(0, 1, 0, 0, &global_save_view_start, &global_save_view_end);
+		view_is_being_saved = true;
+	}
 }
 
 void UPDATE()
 {
-    UpdateArrange();
-    TrackList_AdjustWindows(false);
+	UpdateArrange();
+	TrackList_AdjustWindows(false);
 }
 
 void SET_ALL_ITEMS_OFFLINE() { COMMAND(40100); }
@@ -194,9 +194,9 @@ void GLUE_ITEMS() { COMMAND(40362); }
 
 void NUDGE::START(double v, bool move_source)
 {
-    int nudgewhat = 1;
-    if (move_source) nudgewhat = 2;
-    ApplyNudge(0, 0, nudgewhat, 1, v, 0, 0);
+	int nudgewhat = 1;
+	if (move_source) nudgewhat = 2;
+	ApplyNudge(0, 0, nudgewhat, 1, v, 0, 0);
 }
 
 //double GetNextItemStartTime(double time, TRACKLIST & TrackListIn)

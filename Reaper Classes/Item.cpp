@@ -1,26 +1,26 @@
-﻿#include "ReaperClassesHeader.h"
+#include "ReaperClassesHeader.h"
 #include "Item.h"
 
-ITEM::ITEM() 
-{ 
-  itemPtr = nullptr; 
-}
-ITEM::ITEM(MediaItem * item) : itemPtr(item) 
-{ 
-  jassert(item != nullptr);
-  active_take = GetActiveTake(item); 
-  TagManager.setStringWithTags(getName()); 
-}
-ITEM::ITEM(MediaItem_Take * take) 
+ITEM::ITEM()
 {
-  itemPtr = GetMediaItemTake_Item(take); 
-  TagManager.setStringWithTags(getName()); 
+	itemPtr = nullptr;
+}
+ITEM::ITEM(MediaItem * item) : itemPtr(item)
+{
+	jassert(item != nullptr);
+	active_take = GetActiveTake(item);
+	TagManager.setStringWithTags(getName());
+}
+ITEM::ITEM(MediaItem_Take * take)
+{
+	itemPtr = GetMediaItemTake_Item(take);
+	TagManager.setStringWithTags(getName());
 }
 
 bool ITEM::IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
 {
-    if (must_be_on_same_track && i1.getTrack() != i2.getTrack()) return false;
-    return i1.getGroupIndex() && i1.getGroupIndex() == i2.getGroupIndex();
+	if (must_be_on_same_track && i1.getTrack() != i2.getTrack()) return false;
+	return i1.getGroupIndex() && i1.getGroupIndex() == i2.getGroupIndex();
 }
 
 ITEM ITEM::Get(int idx) { return GetMediaItem(0, idx); }
@@ -29,22 +29,22 @@ ITEM ITEM::GetSelected(int idx) { return GetSelectedMediaItem(0, idx); }
 
 ITEM ITEM::CreateMidi(MediaTrack * track, double position, double length)
 {
-  ITEM item = CreateNewMIDIItemInProj(track, position, position + length, 0);
-  return item;
+	ITEM item = CreateNewMIDIItemInProj(track, position, position + length, 0);
+	return item;
 }
 
 String ITEM::getName() const { return getActiveTake()->getName(); }
-void ITEM::setName(const String & v) 
-{ 
-  getActiveTake()->setName(v);
+void ITEM::setName(const String & v)
+{
+	getActiveTake()->setName(v);
 }
 double ITEM::getStart() const { return GetMediaItemInfo_Value(itemPtr, "D_POSITION"); }
 
 void ITEM::setStart(double v)
 {
-    UNSELECT_ITEMS();
-    SetMediaItemInfo_Value(itemPtr, "B_UISEL", true);
-    NUDGE::START(v, false);
+	UNSELECT_ITEMS();
+	SetMediaItemInfo_Value(itemPtr, "B_UISEL", true);
+	NUDGE::START(v, false);
 }
 
 double ITEM::getLength() const { return GetMediaItemInfo_Value(itemPtr, "D_LENGTH"); }
@@ -55,37 +55,37 @@ void ITEM::setColor(int v) {}
 bool ITEM::isValid() const { return itemPtr != nullptr; }
 
 void ITEM::remove() { DeleteTrackMediaItem(GetMediaItemTrack(itemPtr), itemPtr); itemPtr = nullptr; }
-ITEM ITEM::split(double v) 
+ITEM ITEM::split(double v)
 {
-  MediaItem * i = SplitMediaItem(itemPtr, v);
-  if (i == nullptr)
-    return itemPtr;
+	MediaItem * i = SplitMediaItem(itemPtr, v);
+	if (i == nullptr)
+		return itemPtr;
 
-  return i;
+	return i;
 }
 
 ITEMLIST ITEM::split(vector<double> splitlist)
 {
-  ITEMLIST SplitItems(itemPtr);
+	ITEMLIST SplitItems(itemPtr);
 
-  stable_sort(splitlist.begin(), splitlist.end(), [](double a, double b) { return a < b; });
+	stable_sort(splitlist.begin(), splitlist.end(), [](double a, double b) { return a < b; });
 
-  for (const auto & v : splitlist)
-    SplitItems.push_back(SplitItems.back().split(v));
+	for (const auto & v : splitlist)
+		SplitItems.push_back(SplitItems.back().split(v));
 
-  return SplitItems;
+	return SplitItems;
 }
 
 TAKELIST ITEM::GetTakes()
 {
-    return TakeList;
+	return TakeList;
 }
 void ITEM::CollectTakes()
 {
-    TakeList.clear();
-    for (int t = 0; t < CountTakes(itemPtr); ++t) 
-        TakeList.push_back(GetTake(itemPtr, t));
-    active_take = GetActiveTake(itemPtr);
+	TakeList.clear();
+	for (int t = 0; t < CountTakes(itemPtr); ++t)
+		TakeList.push_back(GetTake(itemPtr, t));
+	active_take = GetActiveTake(itemPtr);
 }
 
 int ITEM::getIndex() const { return GetMediaItemInfo_Value(itemPtr, "IP_ITEMNUMBER"); }
@@ -107,17 +107,17 @@ bool ITEM::isSelected() const { return 0.0 != GetMediaItemInfo_Value(itemPtr, "B
 const TAKE * ITEM::getActiveTake() const { return &active_take; }
 const TAKE * ITEM::getTake(int i) const
 {
-    if (i >= TakeList.size())
+	if (i >= TakeList.size())
 		return {};
-    return &TakeList[i];
+	return &TakeList[i];
 }
 
-TAKE * ITEM::getActiveTake() { return &active_take;  }
+TAKE * ITEM::getActiveTake() { return &active_take; }
 
 TAKE * ITEM::getTake(int i) {
-    if (i >= TakeList.size())
+	if (i >= TakeList.size())
 		return {};
-    return &TakeList[i];
+	return &TakeList[i];
 }
 
 int ITEM::getNumTakes() { return CountTakes(itemPtr); }
@@ -126,30 +126,30 @@ double ITEM::getRate() const { return getActiveTake()->getRate(); }
 
 ITEM ITEM::duplicate()
 {
-		char* chunk = GetSetObjectState((MediaItem*)itemPtr, "");
+	char* chunk = GetSetObjectState((MediaItem*)itemPtr, "");
 
-    ITEM copy = SplitMediaItem(itemPtr, getStart() + getLength()/2);
+	ITEM copy = SplitMediaItem(itemPtr, getStart() + getLength() / 2);
 
-    GetSetObjectState(copy.itemPtr, chunk);
-		GetSetObjectState(itemPtr, chunk);
-    FreeHeapPtr(chunk);
+	GetSetObjectState(copy.itemPtr, chunk);
+	GetSetObjectState(itemPtr, chunk);
+	FreeHeapPtr(chunk);
 
-    UpdateArrange();
+	UpdateArrange();
 
-    return copy;
+	return copy;
 }
 
 void ITEM::setTrackByIndex(int v)
 {
-    int tracks = CountTracks(0);
-    for (int t = tracks; t < v+1; ++t) InsertTrackAtIndex(t, true);
-    MoveMediaItemToTrack(itemPtr, GetTrack(0, v));
+	int tracks = CountTracks(0);
+	for (int t = tracks; t < v + 1; ++t) InsertTrackAtIndex(t, true);
+	MoveMediaItemToTrack(itemPtr, GetTrack(0, v));
 }
 
-bool ITEM::setTrack(MediaTrack * track) { 
-    bool t = MoveMediaItemToTrack(itemPtr, track);
-    UpdateArrange();
-    return t;
+bool ITEM::setTrack(MediaTrack * track) {
+	bool t = MoveMediaItemToTrack(itemPtr, track);
+	UpdateArrange();
+	return t;
 }
 bool ITEM::setTrackByName(String name) { return MoveMediaItemToTrack(itemPtr, TRACK::getByName(name)); }
 void ITEM::setActiveTake(int idx) { SetActiveTake(GetTake(itemPtr, idx)); }
@@ -160,18 +160,18 @@ void ITEM::move(double v) { SetMediaItemInfo_Value(itemPtr, "D_POSITION", GetMed
 
 bool ITEM::crop(RANGE r, bool move_edge)
 {
-    bool start_was_moved = false, end_was_moved = false;
-    if (getStart() < r.start())
-    {
-        setStart(r.start());
-        start_was_moved = true;
-    }
-    if (getEnd() > r.end())
-    {
-        setEnd(r.end());
-        end_was_moved = true;
-    }
-    return start_was_moved || end_was_moved;
+	bool start_was_moved = false, end_was_moved = false;
+	if (getStart() < r.start())
+	{
+		setStart(r.start());
+		start_was_moved = true;
+	}
+	if (getEnd() > r.end())
+	{
+		setEnd(r.end());
+		end_was_moved = true;
+	}
+	return start_was_moved || end_was_moved;
 }
 
 void ITEM::setFadeInLen(double v) { SetMediaItemInfo_Value(itemPtr, "D_FADEINLEN", v); }
@@ -186,70 +186,70 @@ void ITEM::setSelected(bool v) { SetMediaItemInfo_Value(itemPtr, "B_UISEL", v); 
 
 void ITEM::setRate(double new_rate, bool warp)
 {
-    if (warp)
-    {
-        double old_rate = getRate();
-        if (old_rate == new_rate) return;
+	if (warp)
+	{
+		double old_rate = getRate();
+		if (old_rate == new_rate) return;
 
-        double ratio = old_rate / new_rate;
+		double ratio = old_rate / new_rate;
 
-        // set length based on rate change
-        setLength(getLength() * ratio);
+		// set length based on rate change
+		setLength(getLength() * ratio);
 
-        // set snap offset based on rate change
-        setSnapOffset(getSnapOffset() * ratio);
+		// set snap offset based on rate change
+		setSnapOffset(getSnapOffset() * ratio);
 
-        // adjust all takes' rates
-        TAKELIST TakesList = GetTakes();
-        for (auto& take : TakesList)
-        {
-            take.setPreservePitch(false);
-            take.setRate(new_rate);
-        }
-    }
-    else
-        setRate(new_rate);
+		// adjust all takes' rates
+		TAKELIST TakesList = GetTakes();
+		for (auto& take : TakesList)
+		{
+			take.setPreservePitch(false);
+			take.setRate(new_rate);
+		}
+	}
+	else
+		setRate(new_rate);
 }
 
 String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 {
-    auto iter = method_lookup.find(key);
+	auto iter = method_lookup.find(key);
 
-    if (iter == method_lookup.end())
-        return getActiveTake()->getTag(key);
+	if (iter == method_lookup.end())
+		return getActiveTake()->getTag(key);
 
-    switch (iter->second)
-    {
-    case __name:
-        return getActiveTake()->getNameNoTags();
-    case __track:
-        if (get_value) return (String)TRACK(getTrack()).idx();
-        else return TRACK(getTrack()).getName();
-    case __length:
-        return (String)getLength();
-    case __rate:
-        return (String)getRate();
-    case __volume:
-        return (String)getVolume();
-    case __snapoffset:
-        return (String)getSnapOffset();
-    case __position:
-        return (String)getStart();
-    case __fadeinlen:
-        return (String)getFadeInLen();
-    case __fadeoutlen:
-        return (String)getFadeOutLen();
-    case __startoffset:
-        return (String)getActiveTake()->getStartOffset();
-    case __tags:
-        return getActiveTake()->getTagString();
-    case __pitch:
-        return (String)getActiveTake()->getPitch();
-    case __file_extension:
-        return getActiveTake()->file().getFileExtension();
-    }
+	switch (iter->second)
+	{
+	case __name:
+		return getActiveTake()->getNameNoTags();
+	case __track:
+		if (get_value) return (String)TRACK(getTrack()).idx();
+		else return TRACK(getTrack()).getName();
+	case __length:
+		return (String)getLength();
+	case __rate:
+		return (String)getRate();
+	case __volume:
+		return (String)getVolume();
+	case __snapoffset:
+		return (String)getSnapOffset();
+	case __position:
+		return (String)getStart();
+	case __fadeinlen:
+		return (String)getFadeInLen();
+	case __fadeoutlen:
+		return (String)getFadeOutLen();
+	case __startoffset:
+		return (String)getActiveTake()->getStartOffset();
+	case __tags:
+		return getActiveTake()->getTagString();
+	case __pitch:
+		return (String)getActiveTake()->getPitch();
+	case __file_extension:
+		return getActiveTake()->file().getFileExtension();
+	}
 
-    return String();
+	return String();
 }
 
 int ITEMLIST::CountSelected() { return CountSelectedMediaItems(0); }
@@ -258,40 +258,40 @@ int ITEMLIST::Count() { return CountMediaItems(0); }
 
 void ITEMLIST::CollectItems()
 {
-  int items = CountMediaItems(0);
+	int items = CountMediaItems(0);
 
-  if (items == 0)
-    return;
+	if (items == 0)
+		return;
 
-  list.reserve(items);
+	list.reserve(items);
 
-  for (int i = 0; i < items; ++i)
-    push_back(GetMediaItem(0, i));
+	for (int i = 0; i < items; ++i)
+		push_back(GetMediaItem(0, i));
 
-  if (do_sort)
-  {
-    sort();
-    r = RANGE({ front().getStart(), list.back().getEnd() });
-  }
+	if (do_sort)
+	{
+		sort();
+		r = RANGE({ front().getStart(), list.back().getEnd() });
+	}
 }
 
 void ITEMLIST::collectSelectedItems()
 {
-    int items = CountSelectedMediaItems(0);
+	int items = CountSelectedMediaItems(0);
 
-    if (items == 0) 
-      return;
+	if (items == 0)
+		return;
 
-    list.reserve(items);
+	list.reserve(items);
 
-    for (int i = 0; i < items; ++i)
-        push_back(GetSelectedMediaItem(0, i));
+	for (int i = 0; i < items; ++i)
+		push_back(GetSelectedMediaItem(0, i));
 
-    if (do_sort)
-    {
-        sort();
-        r = RANGE({ front().getStart(), list.back().getEnd() });
-    }
+	if (do_sort)
+	{
+		sort();
+		r = RANGE({ front().getStart(), list.back().getEnd() });
+	}
 }
 
 double ITEMLIST::getStart() const { return front().getStart(); }
@@ -302,227 +302,227 @@ double ITEMLIST::getFadeInLen() const { return front().getFadeInLen(); }
 double ITEMLIST::getFadeOutLen() const { return back().getFadeOutLen(); }
 String ITEMLIST::GetPropertyStringFromKey(const String & key, bool use_value) const
 {
-    return front().GetPropertyStringFromKey(key, use_value);
+	return front().GetPropertyStringFromKey(key, use_value);
 }
 
 bool ITEMLIST::isSelected() const
 {
-    for (const auto & i : list)
-        if (!i.isSelected())
-            return false;
+	for (const auto & i : list)
+		if (!i.isSelected())
+			return false;
 
-    return true;
+	return true;
 }
 
 int ITEMLIST::crop(RANGE rng, bool move_edge)
 {
-    int num_cropped = 0;
-    for (auto & i : list)
-        if (i.crop(rng, move_edge))
-            ++num_cropped;
+	int num_cropped = 0;
+	for (auto & i : list)
+		if (i.crop(rng, move_edge))
+			++num_cropped;
 
-    return num_cropped;
+	return num_cropped;
 }
 
 int ITEMLIST::setTrack(MediaTrack * track)
 {
-    int num_items_moved = 0;
-    for (auto& item : list)
-        if (MoveMediaItemToTrack(item, track)) 
-            ++num_items_moved;
+	int num_items_moved = 0;
+	for (auto& item : list)
+		if (MoveMediaItemToTrack(item, track))
+			++num_items_moved;
 
-    return num_items_moved;
+	return num_items_moved;
 }
 
 void ITEMLIST::setStart(double v)
 {
-  double posDiff = v - list[0].getStart();
-  for (ITEM & item : list)
-    item.move(posDiff);
+	double posDiff = v - list[0].getStart();
+	for (ITEM & item : list)
+		item.move(posDiff);
 }
 
 void ITEMLIST::setEnd(double v)
 {
-    list.back().setEnd(v);
+	list.back().setEnd(v);
 }
 
 void ITEMLIST::setSnapOffset(double v)
 {
-    int i = 0;
-    while (i < list.size() && !RANGE::is_touching(list[i], v))
-        ++i;
-    if (i < list.size())
-        list[i].setSnapOffset(v);
-    else if (v < front().getStart())
-        front().setSnapOffset(v);
-    else
-        list.back().setSnapOffset(v);
+	int i = 0;
+	while (i < list.size() && !RANGE::is_touching(list[i], v))
+		++i;
+	if (i < list.size())
+		list[i].setSnapOffset(v);
+	else if (v < front().getStart())
+		front().setSnapOffset(v);
+	else
+		list.back().setSnapOffset(v);
 }
 
 void ITEMLIST::move(double v)
 {
-    for (auto & i : list)
-        i.move(v);
+	for (auto & i : list)
+		i.move(v);
 }
 
 void ITEMLIST::remove()
 {
-    for (auto& item : list)
-        item.remove();
+	for (auto& item : list)
+		item.remove();
 }
 
-void ITEMLIST::setSelected(bool select) 
-{ 
-    for (auto& item : list) 
-        item.setSelected(select); 
+void ITEMLIST::setSelected(bool select)
+{
+	for (auto& item : list)
+		item.setSelected(select);
 }
 
 // functions
 
 void ITEMLIST::InitAudio()
 {
-    for (auto & item : list) 
-      item.getActiveTake()->initAudio();
+	for (auto & item : list)
+		item.getActiveTake()->initAudio();
 }
 
 void ITEMGROUPLIST::collect_donotgroup(bool selected_only)
 {
-    ITEMLIST il;
-    if (selected_only) 
-        il.collectSelectedItems();
-    else
-        il.CollectItems();
+	ITEMLIST il;
+	if (selected_only)
+		il.collectSelectedItems();
+	else
+		il.CollectItems();
 
-    push_back(il);
+	push_back(il);
 
-    reserve(il.size());
+	reserve(il.size());
 }
 
 void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 {
-    int items = selected_only ? CountSelectedMediaItems(0) : CountMediaItems(0);
-    reserve(items);
+	int items = selected_only ? CountSelectedMediaItems(0) : CountMediaItems(0);
+	reserve(items);
 
-    ITEMLIST il;
-    if (selected_only)
-        il.collectSelectedItems();
-    else 
-        il.CollectItems();
+	ITEMLIST il;
+	if (selected_only)
+		il.collectSelectedItems();
+	else
+		il.CollectItems();
 
-    map<int, ITEMLIST> group_map;
-    set<int> group_set;
+	map<int, ITEMLIST> group_map;
+	set<int> group_set;
 
-    int non_group_counter = 0;
+	int non_group_counter = 0;
 
-    for (ITEM & i : il)
-    {        
-        int grp = i.getGroupIndex();
-        if (grp == 0) grp = non_group_counter--;
-        group_map[grp].push_back(i);
-        group_set.insert(grp);
-    }
+	for (ITEM & i : il)
+	{
+		int grp = i.getGroupIndex();
+		if (grp == 0) grp = non_group_counter--;
+		group_map[grp].push_back(i);
+		group_set.insert(grp);
+	}
 
-    for (auto it = group_set.begin(); it != group_set.end(); ++it)
-        push_back(group_map[*it]);
+	for (auto it = group_set.begin(); it != group_set.end(); ++it)
+		push_back(group_map[*it]);
 }
 
 void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_overlapping)
 {
-  TRACKLIST tl;
-  tl.CollectTracks();
+	TRACKLIST tl;
+	tl.CollectTracks();
 
-  // go through each track
-  for (TRACK & t : tl)
-  {
-    t.collectItems();
+	// go through each track
+	for (TRACK & t : tl)
+	{
+		t.collectItems();
 
-    if (selected_only)
-    {
-      if (t.getSelectedItemList().empty())
-        continue;
-    }
-    else
-    {
-      if (t.empty())
-        continue;
-    }
+		if (selected_only)
+		{
+			if (t.getSelectedItemList().empty())
+				continue;
+		}
+		else
+		{
+			if (t.empty())
+				continue;
+		}
 
-    // get either selected list or normal list
-    ITEMLIST * il = selected_only ? &t.ItemList_selected : &t.getItemList();
-    ITEM previous_item = selected_only ? t.getSelectedItemList().front() : t.front();
-    
-    addNewList()->push_back(previous_item);
+		// get either selected list or normal list
+		ITEMLIST * il = selected_only ? &t.ItemList_selected : &t.getItemList();
+		ITEM previous_item = selected_only ? t.getSelectedItemList().front() : t.front();
 
-    for (const ITEM & i : *il)
-    {
-      if (previous_item == i)
-        continue;
+		addNewList()->push_back(previous_item);
 
-      bool do_new_list = must_be_overlapping ? !RANGE::is_overlapping(previous_item, i) : !RANGE::is_touching(previous_item, i);
+		for (const ITEM & i : *il)
+		{
+			if (previous_item == i)
+				continue;
 
-      if (do_new_list)
-        addNewList()->push_back(i); 
-      else 
-        back().push_back(i);
+			bool do_new_list = must_be_overlapping ? !RANGE::is_overlapping(previous_item, i) : !RANGE::is_touching(previous_item, i);
 
-      previous_item = i;
-    }
-  }
+			if (do_new_list)
+				addNewList()->push_back(i);
+			else
+				back().push_back(i);
+
+			previous_item = i;
+		}
+	}
 }
 
 void ITEMGROUPLIST::collectSelectedItems(int group_mode)
 {
-    switch (group_mode)
-    {
-    case 0: // do not group items
-        collect_donotgroup(true);
-        break;
+	switch (group_mode)
+	{
+	case 0: // do not group items
+		collect_donotgroup(true);
+		break;
 
-    case 1: // group grouped items
-        collect_groupgrouped(true);
-        break;
+	case 1: // group grouped items
+		collect_groupgrouped(true);
+		break;
 
-    case 2: // group overlapping items
-        collect_groupoverlapping(true, true);
-        break;
+	case 2: // group overlapping items
+		collect_groupoverlapping(true, true);
+		break;
 
-    case 3: // group touching items
-        collect_groupoverlapping(true, false);
-        break;
-    }
+	case 3: // group touching items
+		collect_groupoverlapping(true, false);
+		break;
+	}
 
-    if (do_sort) 
-      sort();
+	if (do_sort)
+		sort();
 }
 
 void ITEMGROUPLIST::CollectItems(int group_mode)
 {
-    switch (group_mode)
-    {
-    case 0: // do not group items
-        collect_donotgroup(false);
-        break;
+	switch (group_mode)
+	{
+	case 0: // do not group items
+		collect_donotgroup(false);
+		break;
 
-    case 1: // group grouped items
-        collect_groupgrouped(false);
-        break;
+	case 1: // group grouped items
+		collect_groupgrouped(false);
+		break;
 
-    case 2: // group overlapping items
-        collect_groupoverlapping(false, true);
-        break;
+	case 2: // group overlapping items
+		collect_groupoverlapping(false, true);
+		break;
 
-    case 3: // group touching items
-        collect_groupoverlapping(false, false);
-        break;
-    }
+	case 3: // group touching items
+		collect_groupoverlapping(false, false);
+		break;
+	}
 
-    if (do_sort) sort();
+	if (do_sort) sort();
 }
 
 int ITEMGROUPLIST::countItems()
 {
-    int c = 0;
-    for (const auto & itemgroup : list)
-        c += itemgroup.size();
-    return c;
+	int c = 0;
+	for (const auto & itemgroup : list)
+		c += itemgroup.size();
+	return c;
 }

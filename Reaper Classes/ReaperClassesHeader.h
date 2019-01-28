@@ -25,22 +25,22 @@ enum toggle_state { CannotToggle, ToggleOff, ToggleOn };
 class action_entry
 { //class for registering actions
 public:
-  action_entry(string description, string idstring, toggle_state togst, std::function<void(action_entry&)> func);
-  action_entry(const action_entry&) = delete; // prevent copying
-  action_entry& operator=(const action_entry&) = delete; // prevent copying
-  action_entry(action_entry&&) = delete; // prevent moving
-  action_entry& operator=(action_entry&&) = delete; // prevent moving
+	action_entry(string description, string idstring, toggle_state togst, std::function<void(action_entry&)> func);
+	action_entry(const action_entry&) = delete; // prevent copying
+	action_entry& operator=(const action_entry&) = delete; // prevent copying
+	action_entry(action_entry&&) = delete; // prevent moving
+	action_entry& operator=(action_entry&&) = delete; // prevent moving
 
-  int m_command_id = 0;
-  gaccel_register_t m_accel_reg;
-  function<void(action_entry&)> m_func;
-  string m_desc;
-  string m_id_string;
-  toggle_state m_togglestate = CannotToggle;
+	int m_command_id = 0;
+	gaccel_register_t m_accel_reg;
+	function<void(action_entry&)> m_func;
+	string m_desc;
+	string m_id_string;
+	toggle_state m_togglestate = CannotToggle;
 
-  void* m_data=nullptr;
-  template<typename T>
-  T* getDataAs() { return static_cast<T*>(m_data); }
+	void* m_data = nullptr;
+	template<typename T>
+	T* getDataAs() { return static_cast<T*>(m_data); }
 };
 
 
@@ -48,7 +48,7 @@ class MyWindow;
 
 template<class T, class U> void setOpt(T* parameter, U&& input)
 {
-    if (parameter != nullptr)  *parameter = std::move(input);
+	if (parameter != nullptr)  *parameter = std::move(input);
 }
 
 class PROJECT
@@ -85,7 +85,7 @@ void REMOVE_ITEMS();
 void GLUE_ITEMS();
 
 namespace NUDGE {
-void START(double v, bool move_source = false);
+	void START(double v, bool move_source = false);
 }
 
 // item functions
@@ -105,10 +105,10 @@ void SplitTakeChunks(MediaItem* item, string chunk_c, string& header, string& fo
 struct TakeEnvMapStruct { regex r_search, r_replace; string defchunk; };
 static map<string, TakeEnvMapStruct> TakeEnvMap =
 {
-  { "Mute",{ (regex)"<MUTEENV\n", (regex)"<MUTEENV\n[\\s\\S]*?>\\s*", "<MUTEENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 1 -1 -1\nPT 0 1 1\n>\n" } },
-  { "Pitch",{ (regex)"<PITCHENV\n", (regex)"<PITCHENV\n[\\s\\S]*?>\\s*", "<PITCHENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 1 1\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
-  { "Pan",{ (regex)"><PANENV\n", (regex)"<PANENV\n[\\s\\S]*?>\\s*", "<PANENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
-  { "Volume",{ (regex)"<VOLENV\n", (regex)"<VOLENV\n[\\s\\S]*?>\\s*", "<VOLENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 1 0\n>\n" } }
+	{ "Mute",{ (regex)"<MUTEENV\n", (regex)"<MUTEENV\n[\\s\\S]*?>\\s*", "<MUTEENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 1 -1 -1\nPT 0 1 1\n>\n" } },
+	{ "Pitch",{ (regex)"<PITCHENV\n", (regex)"<PITCHENV\n[\\s\\S]*?>\\s*", "<PITCHENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 1 1\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
+	{ "Pan",{ (regex)"><PANENV\n", (regex)"<PANENV\n[\\s\\S]*?>\\s*", "<PANENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
+	{ "Volume",{ (regex)"<VOLENV\n", (regex)"<VOLENV\n[\\s\\S]*?>\\s*", "<VOLENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 1 0\n>\n" } }
 };
 static regex get_start_of_env_chunk("(>\\s*)");
 
@@ -117,15 +117,15 @@ TrackEnvelope* ToggleTakeEnvelopeByName(MediaItem_Take* take, string env_name, b
 
 class OBJECT_VALIDATES
 {
-    friend class MARKERLIST;
+	friend class MARKERLIST;
 public:
 	virtual bool isValid() const { return is_valid; }
 	virtual ~OBJECT_VALIDATES() {}
 
 protected:
-    bool is_valid = true;
-    void makeInvalid() { is_valid = false; };
-    void makeValid() { is_valid = true; };
+	bool is_valid = true;
+	void makeInvalid() { is_valid = false; };
+	void makeValid() { is_valid = true; };
 };
 
 class OBJECT_NAMABLE
@@ -135,11 +135,11 @@ public:
 	// Set full name string of object also affecting the tag string portion
 	virtual void setName(const String & v) = 0;
 
-    virtual String GetPropertyStringFromKey(const String & key, bool use_value) const { return String(); }
+	virtual String GetPropertyStringFromKey(const String & key, bool use_value) const { return String(); }
 
 	// Set a tag within the tag string
-    String getTag(const String & key) const { return TagManager.getTag(key); }
-   
+	String getTag(const String & key) const { return TagManager.getTag(key); }
+
 	// Get a tag within the tag string
 	void setTag(const String & key, const String & value)
 	{
@@ -147,28 +147,28 @@ public:
 		setName(TagManager.getStringWithTags());
 	}
 
-    // Get name of object without tags
-    String getNameNoTags() const { return TagManager.getNameNoTags(); }
+	// Get name of object without tags
+	String getNameNoTags() const { return TagManager.getNameNoTags(); }
 	// Set name of object without affecting tags
 	void setNameNoTags(const String & v) { TagManager.setStringNoTags(v); }
 
-    // Get name of object only affecting the tag string portion
-    String getTagString() const { return TagManager.getStringTagsOnly(); }
+	// Get name of object only affecting the tag string portion
+	String getTagString() const { return TagManager.getStringTagsOnly(); }
 	// Set name of object only affecting the tag string portion
 	void setTagString(const String & v) { TagManager.setStringWithTags(v); }
 
 	// Remove a tag from the tag string
-    void removeTag(const String & key) 
-    { 
-      TagManager.removeTag(key);
-      setName(TagManager.getStringWithTags());
-    }
+	void removeTag(const String & key)
+	{
+		TagManager.removeTag(key);
+		setName(TagManager.getStringWithTags());
+	}
 
 	// Remove the entire tag string
 	void removeAllTags() { TagManager.RemoveAllTags(); }
 
-    // boolean
-    bool hasTag(const String & tag) const { return TagManager.tagExists(tag); }
+	// boolean
+	bool hasTag(const String & tag) const { return TagManager.tagExists(tag); }
 
 protected:
 	// members
@@ -178,17 +178,17 @@ protected:
 class OBJECT_MOVABLE
 {
 public:
-    operator RANGE() const { return range(); }
+	operator RANGE() const { return range(); }
 
-    // getters
-    virtual double getStart() const { return 0.0; }
+	// getters
+	virtual double getStart() const { return 0.0; }
 	virtual double getEnd() const { return 0.0; }
 	virtual double getLength() const { return 0.0; }
 	virtual int getColor() const { return 0; }
 
 	RANGE range() const { return { getStart(), getEnd() }; }
 
-    // setters
+	// setters
 	virtual void setPosition(double v) { }
 	virtual void setStart(double v) { }
 	virtual void setEnd(double v) { }
@@ -201,57 +201,57 @@ public:
 template <typename t> class LIST
 {
 public:
-    // members
-    vector<t> list;
+	// members
+	vector<t> list;
 
-    // operators
-    t & operator[](size_t i) { return list[i]; }
-    const t & operator[](size_t i) const { return list[i]; }
+	// operators
+	t & operator[](size_t i) { return list[i]; }
+	const t & operator[](size_t i) const { return list[i]; }
 
-    // properties
-    size_t size() const { return list.size(); }
-    
-    // iteration
-    typename vector<t>::iterator begin() { return list.begin(); }
-    typename vector<t>::iterator end() { return list.end(); }
-    typename vector<t>::const_iterator begin() const { return list.cbegin(); }
-    typename vector<t>::const_iterator end() const { return list.cend(); }
-    t & front() { return list.front(); }
-    const t & front() const { return list.front(); }
-    t & back() { return list.back(); }
-    const t & back() const { return list.back(); }
+	// properties
+	size_t size() const { return list.size(); }
 
-    // boolean
-    bool empty() const { return list.empty(); }
-    bool has(const t & obj) const 
-    {
-        for (const t & i : list)
-            if (obj == i)
-                return true;
-        return false;
-    }
+	// iteration
+	typename vector<t>::iterator begin() { return list.begin(); }
+	typename vector<t>::iterator end() { return list.end(); }
+	typename vector<t>::const_iterator begin() const { return list.cbegin(); }
+	typename vector<t>::const_iterator end() const { return list.cend(); }
+	t & front() { return list.front(); }
+	const t & front() const { return list.front(); }
+	t & back() { return list.back(); }
+	const t & back() const { return list.back(); }
 
-    // vector functions
-    void reserve(size_t s) { list.reserve(s); }
-    void push_back(const t & o) { list.push_back(o); }
-    void pop_back() { list.pop_back(); }
-    //void insert(typename vector<t>::iterator position, typename vector<t>::iterator first, typename vector<t>::iterator last) { insert(position, first, last); }
-    void append(const LIST & l) { list.insert(list.end(), l.begin(), l.end()); }
-    void clear() { list.clear(); }
-    void sort() { if (do_sort) stable_sort(begin(), end(), [](const t & a, const t & b) { return a.getStart() < b.getStart(); }); }
-    void resize(size_t size) { list.resize(size); }
+	// boolean
+	bool empty() const { return list.empty(); }
+	bool has(const t & obj) const
+	{
+		for (const t & i : list)
+			if (obj == i)
+				return true;
+		return false;
+	}
 
-    // search functions
-    t SearchRange(RANGE r, bool find_near_start);
-    t SearchAtOrBeforeTime(double time);
-    t SearchNearestToTime(double time);
+	// vector functions
+	void reserve(size_t s) { list.reserve(s); }
+	void push_back(const t & o) { list.push_back(o); }
+	void pop_back() { list.pop_back(); }
+	//void insert(typename vector<t>::iterator position, typename vector<t>::iterator first, typename vector<t>::iterator last) { insert(position, first, last); }
+	void append(const LIST & l) { list.insert(list.end(), l.begin(), l.end()); }
+	void clear() { list.clear(); }
+	void sort() { if (do_sort) stable_sort(begin(), end(), [](const t & a, const t & b) { return a.getStart() < b.getStart(); }); }
+	void resize(size_t size) { list.resize(size); }
 
-    // filter functions
-    void FilterByRange(RANGE range, bool must_be_completely_inside_range = false);
-    void FilterByPattern(char do_not_filter, const String & pattern, bool full_pattern_must_complete);
+	// search functions
+	t SearchRange(RANGE r, bool find_near_start);
+	t SearchAtOrBeforeTime(double time);
+	t SearchNearestToTime(double time);
 
-    // setters
-    void disableSort() { do_sort = false; }
+	// filter functions
+	void FilterByRange(RANGE range, bool must_be_completely_inside_range = false);
+	void FilterByPattern(char do_not_filter, const String & pattern, bool full_pattern_must_complete);
+
+	// setters
+	void disableSort() { do_sort = false; }
 
 protected:
 	bool do_sort = true;
@@ -268,91 +268,91 @@ protected:
 // search functions
 template<typename t> t LIST<t>::SearchRange(RANGE r, bool find_near_start)
 {
-    int i = 0;
+	int i = 0;
 
-    if (find_near_start)
-    {
-        while (list.size() < i && list[i].start() < r.start()) ++i;
-    }
-    else
-    {
-        while (list.size() < i && list[i].start() < r.end()) ++i;
-        --i;
-    }
+	if (find_near_start)
+	{
+		while (list.size() < i && list[i].start() < r.start()) ++i;
+	}
+	else
+	{
+		while (list.size() < i && list[i].start() < r.end()) ++i;
+		--i;
+	}
 
-    if (r.is_touching(list[i].start()))
-        return list[i];
+	if (r.is_touching(list[i].start()))
+		return list[i];
 
-    return InvalidTake;
+	return InvalidTake;
 }
 
 template<typename t>
 t LIST<t>::SearchAtOrBeforeTime(double time)
 {
-    int i = 0;
-    while (i < list.size() && list[i].start() <= time) ++i;
+	int i = 0;
+	while (i < list.size() && list[i].start() <= time) ++i;
 
-    if (i != 0) --i;
+	if (i != 0) --i;
 
-    if (list[i].start() <= time)
-        return list[i];
-    else
-        return InvalidTake;
+	if (list[i].start() <= time)
+		return list[i];
+	else
+		return InvalidTake;
 }
 
 template<typename t>
 t LIST<t>::SearchNearestToTime(double time)
 {
-    if (!list.size()) return MARKER();
-    if (list.size() == 1) return list[0];
+	if (!list.size()) return MARKER();
+	if (list.size() == 1) return list[0];
 
-    int m = 0;
-    while (m < list.size() && list[m].start() < time) ++m;
+	int m = 0;
+	while (m < list.size() && list[m].start() < time) ++m;
 
-    if (abs(list[m].start() - time) < abs(list[max(0, m-1)].start() - time))
-        return list[m];
-    else
-        return list[max(0, m-1)];
+	if (abs(list[m].start() - time) < abs(list[max(0, m - 1)].start() - time))
+		return list[m];
+	else
+		return list[max(0, m - 1)];
 }
 
 template<typename t>
 void LIST<t>::FilterByRange(RANGE range, bool must_be_completely_inside_range)
 {
-    LIST l;
-    for (const auto & o : list)
-    {
-        if (o.getStart() < range.start())
-            continue;
-        else if (o.getStart() > range.end())
-            break;
+	LIST l;
+	for (const auto & o : list)
+	{
+		if (o.getStart() < range.start())
+			continue;
+		else if (o.getStart() > range.end())
+			break;
 
-        if ((must_be_completely_inside_range && RANGE::is_inside(o, range))  ||
-            (o.getStart() >= range.start() && o.getStart() < range.end()))
-            l.push_back(o);
-    }
+		if ((must_be_completely_inside_range && RANGE::is_inside(o, range)) ||
+			(o.getStart() >= range.start() && o.getStart() < range.end()))
+			l.push_back(o);
+	}
 
-    list = std::move(l.list);
+	list = std::move(l.list);
 }
 
 template<typename t>
 void LIST<t>::FilterByPattern(char do_not_filter, const String & pattern, bool full_pattern_must_complete)
 {
-    LIST l;
-    int mod = 0;
-    int counter = 0;
-    const int len = pattern.length();
-    const int do_full_pattern = full_pattern_must_complete ? len : 0;   
+	LIST l;
+	int mod = 0;
+	int counter = 0;
+	const int len = pattern.length();
+	const int do_full_pattern = full_pattern_must_complete ? len : 0;
 
-    while (counter + do_full_pattern < list.size())
-    {
-        for (int i = 0; i < len; ++i)
-            if (pattern[i] == do_not_filter)
-                l.push_back(list[i+counter]);
+	while (counter + do_full_pattern < list.size())
+	{
+		for (int i = 0; i < len; ++i)
+			if (pattern[i] == do_not_filter)
+				l.push_back(list[i + counter]);
 
-        counter += len;
-    }
+		counter += len;
+	}
 
-    list = std::move(l.list);
+	list = std::move(l.list);
 }
 
 //// Media Item functions
