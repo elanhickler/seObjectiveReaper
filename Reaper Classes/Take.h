@@ -25,15 +25,15 @@ public:
 
 	void setPosition(double v) override;
 
+	double getLength() const override { return getEnd() - getStart(); }
 	void setLength(double v) override;
 
+	double getStart() const override { return startTime; }
 	void setStart(double v) override;
 
+	double getEnd() const override { return endTime; }
 	void setEnd(double v) override;
 
-	double getStart() const override { return startTime; }
-	double getEnd() const override { return endTime; }
-	double getLength() const override { return endTime - startTime; }
 	bool getIsSelected() { return selected; }
 	bool getIsMuted() { return muted; }
 
@@ -54,6 +54,8 @@ protected:
 
 class MIDINOTELIST : public LIST<MIDINOTE>
 {
+	friend class TAKE;
+
 public:
 	MIDINOTELIST() {};
 	MIDINOTELIST(TAKE * take) : take(take) {};
@@ -64,20 +66,22 @@ public:
 	void add(MIDINOTE midinote);
 
 protected:
-	TAKE * take;
+	TAKE * take = nullptr;
 };
 
 class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
-public:
+	friend class ITEM;
+	friend class MIDINOTE;
+	friend class MIDINOTELIST;
 
-	// constructor
+public:
 	TAKE() {}
 	TAKE(MediaItem_Take* take);
 
 	// conversion
-	operator void*() const { return takePtr; }
-	operator MediaItem_Take*() const { return takePtr; }
+	//operator void*() const { return takePtr; }
+	//operator MediaItem_Take*() const { return takePtr; }
 
 	// operator
 	bool operator==(const MediaItem_Take * rhs) const { return takePtr == rhs; }
@@ -95,9 +99,12 @@ public:
 	} envelope;
 
 	AudioFile & audio();
-	MediaItem_Take * ptr()
+	MediaItem_Take * getPointer() const
 	{
-		jassert(takePtr != nullptr);
+		return takePtr;
+	}
+	MediaItem_Take * getPointer()
+	{
 		return takePtr;
 	}
 	PCM_source * pcm_source() const;
@@ -139,18 +146,40 @@ public:
 	void setInvertPhase(bool v);
 	void setRate(double v);
 	void setStartOffset(double v);
-	TAKE activate();
+	void activate();
 	void remove();
+
+	double getStart() const override;
+	void setStart(double v) override;
+
+	double getEnd() const override;
+	void setEnd(double v) override {}
+
+	double getLength() const override;
+	void setLength(double v) override;
+
+	Colour getColor() const override;
+	void setColor(Colour v) override;
+
 	TAKE move(MediaTrack* track);
 	TAKE move(MediaItem* new_item);
 
-	/* MIDI FUNCTIONS */
-	MIDINOTELIST * getMidiNoteList()
+	int countStretchMarkers()
 	{
-		note_list = MIDINOTELIST(this);
-		note_list.collectMidiNotes();
-		return &note_list;
+		return GetTakeNumStretchMarkers(takePtr);
 	}
+	void addStretchMarker(double position)
+	{
+		SetTakeStretchMarker(takePtr, -1, position, nullptr);
+	}
+	void clearStretchMarkers()
+	{
+		int total = countStretchMarkers();
+		DeleteTakeStretchMarkers(takePtr, 0, &total);
+	}
+
+	/* MIDI FUNCTIONS */
+	MIDINOTELIST & getMidiNoteList();
 
 	/* AUDIO FUNCTIONS */
 	/*
@@ -181,13 +210,12 @@ public:
 	*/
 
 	bool audioIsInitialized = false;
-	void initAudio(double starttime = -1, double endtime = -1);
 	void loadAudio();
 	void unloadAudio();
 
 	double getAudioSampleRate() { return audioFile.m_srate; }
 	int getAudioNumChannels() { return m_audiobuf.size(); }
-	int getTakeNumAudioSamplesPerChannel() { return m_take_frames; }
+	int getAudioNumFrames() { return m_take_frames; }
 
 	vector<vector<double>> & getAudioMultichannel();
 	vector<double> & getAudioChannel(int channel);
@@ -204,6 +232,7 @@ public:
 protected:
 	// member
 	MediaItem_Take* takePtr = nullptr;
+	ITEM * itemParent = nullptr;
 	AudioFile audioFile;
 
 	/* MIDI FUNCTIONS */
@@ -226,22 +255,5 @@ protected:
 	double m_audiobuf_starttime = -1;
 	double m_audiobuf_endtime = -1;
 
-	double getStart() const override;
-	void setStart(double v) override;
-
-	double getLength() const override;
-	void setLength(double v) override;
-
-	int getColor() const override;
-	void setColor(int v) override;
-};
-
-class TAKELIST : public LIST<TAKE>
-{
-protected:
-	MediaItem* item;
-
-public:
-	TAKELIST();
-	TAKELIST(MediaItem* item);
+	void initAudio(double starttime = -1, double endtime = -1);
 };

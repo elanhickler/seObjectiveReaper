@@ -60,7 +60,7 @@ String Tagger::getStringWithTags() const
 String Tagger::getImportantTagString() const
 {
     auto temp_map = tagmap;
-    for (const auto &tag : uniques) temp_map.erase(tag);
+    for (const auto& tag : uniques) temp_map.erase(tag);
     return name + KeySort(temp_map);
 }
 
@@ -102,7 +102,7 @@ void Tagger::RemoveAllTags()
 }
 void Tagger::removeTags(const vector<String>& TagList)
 {
-    for (const auto &tag : TagList) removeTag(tag);
+    for (const auto& tag : TagList) removeTag(tag);
 }
 
 //String GetNoteTag(bool search_tags, bool use_regex, int search_count) { //todo: support legato note tag style

@@ -1,15 +1,17 @@
 #pragma once
 
-enum GroupMode { none, grouped, overlapping, touching };
+enum GROUPMODE { none, grouped, overlapping, touching };
 
-class ITEM : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
+class ITEM : public LIST<TAKE>, public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
-	//static functions
+	friend class ITEMLIST;
+	friend class TagParser;
+
 public:
 	static bool IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
-	static ITEM Get(int idx);
-	static ITEM GetSelected(int idx);
-	static ITEM CreateMidi(MediaTrack * track, double position, double length);
+	static ITEM get(int idx);
+	static ITEM getSelected(int idx);
+	static ITEM createMidi(MediaTrack * track, double position, double length);
 
 	enum FADESHAPE
 	{
@@ -22,14 +24,6 @@ public:
 		SCURV_2
 	};
 
-protected:
-	friend class ITEMLIST;
-	friend class TagParser;
-	// member
-	MediaItem* itemPtr;
-	TAKELIST TakeList;
-	TAKE active_take;
-
 public:
 	// constructor
 	ITEM();
@@ -40,14 +34,13 @@ public:
 	// conversion
 	operator void*() const { return itemPtr; }
 	operator MediaItem*() const { return itemPtr; }
-	operator MediaItem_Take*() const { return *getActiveTake(); }
+	operator MediaItem_Take*() const { return getActiveTake().getPointer(); }
 
 	// operator
 	bool operator==(const MediaItem * rhs) const { return itemPtr == rhs; }
 	bool operator!=(const MediaItem * rhs) const { return itemPtr != rhs; }
 	bool operator==(const ITEM & rhs) const { return itemPtr == rhs.itemPtr; }
 	bool operator!=(const ITEM & rhs) const { return itemPtr != rhs.itemPtr; }
-	TAKE operator[](int i) const { return GetTake(itemPtr, i); }
 
 	/* FUNCTIONS */
 
@@ -63,10 +56,7 @@ public:
 	// returns ITEMLIST of items created from splitting including itself using global time.
 	ITEMLIST split(vector<double> splitlist);
 
-	TAKELIST GetTakes();
-	void CollectTakes();
-
-	MediaItem* pointer() { return itemPtr; }
+	MediaItem* getPointer() { return itemPtr; }
 
 	/* GETTER */
 	String getName() const override;
@@ -74,10 +64,11 @@ public:
 
 	bool isValid() const override;
 
-	const TAKE * getActiveTake() const;
-	TAKE * getActiveTake();
-	const TAKE * getTake(int i) const;
-	TAKE * getTake(int i);
+	int getActiveTakeIndex() const;
+	const TAKE & getActiveTake() const;
+	TAKE & getActiveTake();
+	const TAKE & getTake(int i) const;
+	TAKE & getTake(int i);
 	int getNumTakes();
 
 	MediaTrack* getTrack() const;
@@ -88,7 +79,6 @@ public:
 
 	int getIndex() const;
 	int getGroupIndex() const;
-
 	double getVolume() const;
 	double getRate() const;
 	double getSnapOffset() const;
@@ -107,6 +97,7 @@ public:
 	void setSelected(bool v);
 
 	void setActiveTake(int idx);
+	void setActiveTake(const TAKE & take);
 
 	bool setTrack(MediaTrack* track);
 	void setTrackByIndex(int v);
@@ -128,15 +119,22 @@ public:
 	double getStart() const override;
 	void setStart(double v) override;
 
+	double getEnd() const override;
+	void setEnd(double v) override;
+
 	double getLength() const override;
 	void setLength(double v) override;
 
 	void setPosition(double v) override;
 
-	int getColor() const override;
-	void setColor(int v) override;
+	Colour getColor() const override;
+	void setColor(Colour v) override;
 
 protected:
+	MediaItem* itemPtr;
+
+	void collectTakes();
+
 	enum
 	{
 		__name,
@@ -172,7 +170,7 @@ protected:
 	String GetPropertyStringFromKey(const String & key, bool get_value = false) const override;
 };
 
-class ITEMLIST : public LIST<ITEM>
+class ITEMLIST : public LIST<ITEM>, public OBJECT_MOVABLE
 {
 public:
 	static int CountSelected();
@@ -186,42 +184,35 @@ public:
 	ITEMLIST(ITEM i)
 	{
 		push_back(i);
-		r = { i.getStart(), i.getEnd() };
 	}
 
-	RANGE r;
-
-	operator MediaItem*() const { return list[0]; }
-	operator ITEM() const { return list[0]; }
+	operator MediaItem*() { return list[0]; }
+	operator ITEM() { return list[0]; }
 	ITEMLIST operator=(vector<ITEM> rhs) { list = rhs; return *this; }
 
 	void CollectItems();
 	void collectSelectedItems();
 
 	// functions
-	void InitAudio();
 	void move(double v);
 	void remove();
 	int crop(RANGE r, bool move_edge);
 
 	// getters
-	double getStart() const;
-	double getEnd() const;
-	double getLength() const;
+	double getStart() const override;
+	double getEnd() const override;
 	double getSnapOffset() const;
 	double getFadeInLen() const;
 	double getFadeOutLen() const;
 	String GetPropertyStringFromKey(const String & key, bool use_value) const;
 	bool isSelected() const;
-	RANGE range() const { return r; }
 
 	// setters
 	int setTrack(MediaTrack* track);
-	void setStart(double v);
-	void setEnd(double v);
+	void setStart(double v) override;
+	void setEnd(double v) override;
 	void setSnapOffset(double v);
 	void setSelected(bool select);
-
 };
 
 class ITEMGROUPLIST : public LIST<ITEMLIST>
@@ -238,8 +229,8 @@ public:
 	ITEMGROUPLIST(ITEMLIST ItemList) { push_back(ItemList); }
 
 	// project
-	void CollectItems(int group_mode);
-	void collectSelectedItems(int group_mode);
+	void CollectItems(GROUPMODE group_mode);
+	void collectSelectedItems(GROUPMODE group_mode);
 
 	// actions
 	ITEMLIST * addNewList()

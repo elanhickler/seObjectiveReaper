@@ -61,6 +61,8 @@ public:
 
 	static String getFilePath();
 	static String getDirectory();
+
+	static int countMakersAndRegions();
 };
 
 
@@ -91,6 +93,9 @@ namespace NUDGE {
 // item functions
 void UNSELECT_ITEMS(); // Unselect all items
 MediaItem* SELECT_ITEM_UNDER_MOUSE();
+
+int juceToReaperColor(const Colour & v);
+Colour reaperToJuceColor(int v);
 
 // [\\s\\S] replaces . for c++ regex since . does not match any character, only non-newline character
 
@@ -178,13 +183,13 @@ protected:
 class OBJECT_MOVABLE
 {
 public:
-	operator RANGE() const { return range(); }
+	operator RANGE() { return range(); }
 
 	// getters
-	virtual double getStart() const { return 0.0; }
-	virtual double getEnd() const { return 0.0; }
-	virtual double getLength() const { return 0.0; }
-	virtual int getColor() const { return 0; }
+	virtual double getStart() const = 0;
+	virtual double getEnd() const = 0;
+	virtual double getLength() const { return getEnd() - getStart(); }
+	virtual Colour getColor() const { return {}; }
 
 	RANGE range() const { return { getStart(), getEnd() }; }
 
@@ -193,7 +198,7 @@ public:
 	virtual void setStart(double v) { }
 	virtual void setEnd(double v) { }
 	virtual void setLength(double v) { }
-	virtual void setColor(int v) { }
+	virtual void setColor(Colour v) { }
 
 	void move(double v) { setPosition(v + getStart()); }
 };
@@ -319,7 +324,7 @@ template<typename t>
 void LIST<t>::FilterByRange(RANGE range, bool must_be_completely_inside_range)
 {
 	LIST l;
-	for (const auto & o : list)
+	for (const auto& o : list)
 	{
 		if (o.getStart() < range.start())
 			continue;

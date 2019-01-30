@@ -78,7 +78,7 @@ public:
 	bool hasMidiItems() const
 	{
 		for (const ITEM & item : ItemList_selected)
-			if (item.getActiveTake()->isMidi())
+			if (item.getActiveTake().isMidi())
 				return true;
 		return false;
 	}

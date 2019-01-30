@@ -3,6 +3,13 @@
 using std::min;
 using std::max;
 
+bool isEqual(double a, double b, double accuracy = 1.e-7);
+bool isNotEqual(double a, double b, double accuracy = 1.e-7);
+bool isLessThan(double a, double b, double accuracy = 1.e-7);
+bool isMoreThan(double a, double b, double accuracy = 1.e-7);
+bool isLessThanOrEqual(double a, double b, double accuracy = 1.e-7);
+bool isMoreThanOrEqual(double a, double b, double accuracy = 1.e-7);
+
 class RANGE
 {
 private:
@@ -21,17 +28,27 @@ public:
 
   inline bool is_touching(const RANGE & r) const
   {
-    if (s <= r.start())
-      return s <= r.start() && (e >= r.end() || e >= r.start());
+		double a1 = s;
+		double a2 = e;
+		double b1 = r.start();
+		double b2 = r.end();
+
+    if (isLessThanOrEqual(a1,b1))
+      return isLessThanOrEqual(a1, b1) && (isMoreThanOrEqual(a2,b2) || isMoreThanOrEqual(a2,b1));
     else
-      return s >= r.start() && (e <= r.end() || e <= r.start());
+      return isMoreThanOrEqual(a1, b1) && (isLessThanOrEqual(a2,b2) || isLessThanOrEqual(a2, b1));
   }
   inline bool is_overlapping(const RANGE & r) const
   {
-    if (s <= r.start())
-      return s < r.start() && (e > r.end() || e > r.start());
+		double a1 = s;
+		double a2 = e;
+		double b1 = r.start();
+		double b2 = r.end();
+
+    if (isLessThanOrEqual(a1,b1))
+      return isLessThan(a1,b1) && (isMoreThan(a2,b2) || isMoreThan(a2,b1));
     else
-      return s > r.start() && (e < r.end() || e < r.start());
+      return isMoreThan(a1,b1) && (isLessThan(a2,b2) || isLessThan(a2,b1));
   }
   inline bool is_inside(const RANGE & r) const
   {
@@ -39,15 +56,15 @@ public:
   }
   inline bool is_before(const RANGE & r) const
   {
-    return e < r.start();
+    return isLessThan(e,r.start());
   }
   inline bool is_after(const RANGE & r) const
   {
-    return s > r.end();
+    return isMoreThan(s,r.end());
   }
   inline bool is_outside(const RANGE & r) const
   {
-    return e < r.start() || s > r.end();
+    return isLessThan(e,r.start()) || isMoreThan(s,r.end());
   }
 
   static inline bool is_touching(double a, double b) { return RANGE(a).range().is_touching(RANGE(b).range()); }
@@ -80,8 +97,8 @@ public:
 
   // operator
   RANGE operator=(double t) { s = t; e = t; return *this; }
-  RANGE operator=(RANGE r) { s = r.s; e = r.e;  return *this; }
-  bool operator==(const RANGE & rhs) const { return s == rhs.s && e == rhs.e; }
+  RANGE operator=(RANGE r) { s = r.s; e = r.e; return *this; }
+  bool operator==(const RANGE & rhs) const { return isEqual(s,rhs.s) && isEqual(e,rhs.e); }
 
   // getter
   inline double start() const { return s; }
@@ -118,13 +135,13 @@ template<class t> t clamp(t in, t min, t max)
   return in;
 }
 
-template<class t> t AmplitudeToDecibels(t a)
+template<class t> t ampToDb(t a)
 {
   return 20.0*log10(a);
   //return 6.0*log2(a); // faster approximation
 }
 
-template<class t> t DecibelsToAmplitude(t db)
+template<class t> t dbToAmp(t db)
 {
   return pow(10, db/20.0);
   //return pow(2, db/6.0); // faster approximation

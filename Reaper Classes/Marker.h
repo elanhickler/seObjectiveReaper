@@ -10,24 +10,27 @@ class MARKER : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALID
 {
 public:
 	friend class MARKERLIST;
-	// create a marker if only specifying position, or region if specifying start and end
-	static MARKER AddToProject(double start, String name = "", int id = -1)
+	static MARKER addToProject(double start, String name = "", int id = -1)
 	{
-		return AddProjectMarker(0, false, start, start, name.toRawUTF8(), id);
+		int newId = AddProjectMarker(0, false, start, start, name.toRawUTF8(), id);
+		return idToIndex(newId, false);
 	}
-	static MARKER AddToProject(double start, double end, String name = "", int id = -1)
+	static MARKER addToProject(double start, double end, String name = "", int id = -1)
 	{
-		return AddProjectMarker(0, start < end, start, end, name.toRawUTF8(), id);
+		jassert(start <= end);
+		bool doCreateRegion = start < end;
+		int newId = AddProjectMarker(0, doCreateRegion, start, end, name.toRawUTF8(), id);
+		return idToIndex(newId, doCreateRegion);
 	}
-	static MARKER AddToProject(const RANGE & range, const String name = "", int id = -1)
+	static MARKER addToProject(const RANGE & range, const String name = "", int id = -1)
 	{
-		return AddToProject(range.start(), range.end(), name, id);
+		return addToProject(range.start(), range.end(), name, id);
 	}
-	static MARKER AddToProject(const MARKER & m)
+	static MARKER addToProject(const MARKER & m)
 	{
-		return AddToProject(m.getStart(), m.getEnd(), m.getName(), m.id());
+		return addToProject(m.getStart(), m.getEnd(), m.getName(), m.getId());
 	}
-	static MARKER get(int idx) { return std::move(MARKER(idx)); }
+	static MARKER get(int index) { return (MARKER)index; }
 	static MARKER createGhost(const RANGE & r)
 	{
 		return createGhost(r.start(), r.end());
@@ -37,7 +40,7 @@ public:
 		MARKER m;
 		m._start = start;
 		m._end = end;
-		m._is_region = m._start < m._end;
+		m.isRegion = m._start < m._end;
 		m.is_ghost = true;
 		m._name = name;
 		m.TagManager.setStringWithTags(name);
@@ -48,60 +51,63 @@ public:
 	void setStart(double v) override { _start = v; _set(); cache_end(); }
 
 	double getEnd() const override { return _end; }
-	void setEnd(double v) override { _end = v; if (_start != _end) _is_region = true; _set(); }
+	void setEnd(double v) override { _end = v; if (_start != _end) isRegion = true; _set(); }
 
 	double getLength() const override { return _end - _start; }
 	void setLength(double v)  override { _end = _start + v; _set(); }
 
 	void setPosition(double v) override { _start = v; _end = getLength() + _start; _set(); }
 
-	int getColor() const override { return _color; }
-	void setColor(int v) override { _color = v; _set(); }
+	Colour getColor() const override { return _color; }
+	void setColor(Colour v) override { _color = v; _set(); }
 
 protected:
-	int _idx = -1;
-	bool _is_region;
-	int _id = -1;
+	int index = -1;
+	bool isRegion;
+	int id = -1;
 	double _start;
 	double _end;
 	String _name;
-	int _color = -1;
-	void cache_end() { if (!_is_region) _end = _start; }
+	Colour _color;
+	void cache_end() { if (!isRegion) _end = _start; }
 	bool is_ghost = false;
 
 	void _set()
 	{
 		if (!is_ghost)
-			SetProjectMarkerByIndex(0, _idx, _is_region, _start, _end, _id, _name.toRawUTF8(), _color);
+			SetProjectMarkerByIndex(0, index, isRegion, _start, _end, id, _name.toRawUTF8(), juceToReaperColor(_color));
 	}
 	void _get()
 	{
 		const char * c;
-		if (EnumProjectMarkers3(0, _idx, &_is_region, &_start, &_end, &c, &_id, &_color) <= 0)
+		int color;
+		int en = EnumProjectMarkers3(0, index, &isRegion, &_start, &_end, &c, &id, &color);
+		if (en <= 0)
 		{
-			_idx = -1;
+			index = -1;
 			return;
 		}
 		_name = c;
+		_color = reaperToJuceColor(color);
 		cache_end();
 	}
 
 public:
 	MARKER();
-	MARKER(int i);
+	MARKER(int index);
 	MARKER(RANGE range, const String & name = "");
 	MARKER(double position, const String & name = "");
 	MARKER(double start, double end, const String & name = "");
 
 	// getter
-	int idx() const { return _idx; }
-	int id() const { return _id; }
+	int getIndex() const { return index; }
+	int getId() const { return id; }
 
-	bool is_region() const { return _is_region; }
-	bool is_marker() const { return !_is_region; }
+	bool getIsRegion() const { return isRegion; }
+	bool getIsMarker() const { return !isRegion; }
 
 	// setter
-	void remove() { DeleteProjectMarkerByIndex(0, _idx); _idx = -1; }
+	void remove() { DeleteProjectMarkerByIndex(0, index); index = -1; }
 
 	String getName() const override { return _name; }
 	void setName(const String & v) override { _name = v; _set(); }
@@ -119,6 +125,23 @@ protected:
 	};
 
 	String GetPropertyStringFromKey(const String & key, bool get_value) const;
+
+	static int idToIndex(int lookForId, bool lookForRegion)
+	{
+		int idOut;
+		bool isRegionOut;
+		int numMarkersRegions = PROJECT::countMakersAndRegions();
+		for (int i = numMarkersRegions-1; i > -1; --i)
+		{
+			EnumProjectMarkers3(0, i, &isRegionOut, nullptr, nullptr, nullptr, &idOut, nullptr);
+			if (lookForRegion && !isRegionOut)
+				continue;
+			if (lookForId == idOut)
+				return i;
+		}
+
+		return -1;
+	}
 };
 
 class MARKERLIST : public LIST<MARKER>
@@ -127,8 +150,6 @@ protected:
 	int num_markers = 0;
 	int num_regions = 0;
 	int num_markersregions = 0;
-
-	MARKER invalid_marker;
 
 	bool has_markers = false;
 	bool has_regions = false;

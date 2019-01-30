@@ -1,37 +1,26 @@
 #include "ReaperClassesHeader.h"
 #include "Take.h"
 
-vector<MediaItem_Take*> GetTakes(MediaItem* item)
-{
-	int takes = CountTakes(item);
-	vector<MediaItem_Take*> list; list.reserve(takes);
-	for (int t = 0; t < takes; ++t) list.push_back(GetTake(item, t));
-	return list;
-}
-void RemoveTake(MediaItem* item, MediaItem_Take* take)
-{
-	auto actTake = GetActiveTake(item);
-	SetActiveTake(take);
-	COMMAND(40129); //Delete active take from items
-	COMMAND(41348); //Item: Remove all empty take lanes
-	if (actTake != take) SetActiveTake(actTake);
-}
-
 String TAKE::getName() const { return GetTakeName(takePtr); }
-
 void TAKE::setName(const String & v) { GetSetMediaItemTakeInfo_String(takePtr, "P_NAME", (char*)v.toRawUTF8(), 1); }
-double TAKE::getStart() const { return ITEM(takePtr).getStart(); }
-void TAKE::setStart(double v) { ITEM(takePtr).setStart(v); }
-double TAKE::getLength() const { return ITEM(takePtr).getLength(); }
-void TAKE::setLength(double v) { ITEM(takePtr).setLength(v); }
-int TAKE::getColor() const { return 0; }
-void TAKE::setColor(int v) {}
+double TAKE::getStart() const { return GetMediaItemInfo_Value(GetMediaItemTake_Item(takePtr), "D_POSITION"); }
+double TAKE::getEnd() const { return getStart() + getLength(); }
+void TAKE::setStart(double v) { itemParent->setStart(v); }
+double TAKE::getLength() const { return GetMediaItemInfo_Value(GetMediaItemTake_Item(takePtr), "D_LENGTH"); }
+void TAKE::setLength(double v) { SetMediaItemInfo_Value(GetMediaItemTake_Item(takePtr), "D_LENGTH", v); }
+Colour TAKE::getColor() const
+{
+	return reaperToJuceColor(GetMediaItemTakeInfo_Value(takePtr, "I_CUSTOMCOLOR"));
+}
+void TAKE::setColor(Colour v)
+{
+	SetMediaItemTakeInfo_Value(takePtr, "I_CUSTOMCOLOR", juceToReaperColor(v));
+}
 bool TAKE::isValid() const { return takePtr != nullptr; }
 
 TAKE::TAKE(MediaItem_Take * take) : takePtr(take)
 {
 	jassert(take != nullptr);
-	initAudio();
 	TagManager.setStringWithTags(getName());
 
 	envelope.Volume.setTrackEnvelope(take, "Volume");
@@ -115,39 +104,47 @@ void TAKE::setInvertPhase(bool v)
 
 void TAKE::setRate(double v) { SetMediaItemTakeInfo_Value(takePtr, "D_PLAYRATE", v); }
 void TAKE::setStartOffset(double v) { SetMediaItemTakeInfo_Value(takePtr, "D_STARTOFFS", v); }
-TAKE TAKE::activate() { auto old = GetActiveTake(item()); SetActiveTake(takePtr); return old; }
-void TAKE::remove() { takePtr = nullptr; RemoveTake(item(), takePtr); }
+void TAKE::activate() { itemParent->setActiveTake(*this); }
+void TAKE::remove()
+{
+	auto actTake = GetActiveTake(itemParent->getPointer());
+	SetActiveTake(takePtr);
+	COMMAND(40129); //Delete active take from items
+	COMMAND(41348); //Item: Remove all empty take lanes
+	if (actTake != takePtr)
+		SetActiveTake(actTake);
+
+	takePtr = nullptr;
+}
 
 TAKE TAKE::move(MediaTrack * track)
 {
-	// duplicate item
-	TAKE old_active_take = activate();
-	auto new_item = ITEM(item()).duplicate();
-	old_active_take.activate();
-	MoveMediaItemToTrack(new_item, track);
+	//// duplicate item
+	//TAKE old_active_take = activate();
+	//auto new_item = itemParent->duplicate();
+	//old_active_take.activate();
+	//MoveMediaItemToTrack(new_item, track);
 
-	// set active take to the new take for item
-	TAKE new_take = GetTake(new_item, idx());
-	SetActiveTake(new_take);
+	//// set active take to the new take for item
+	//TAKE new_take = GetTake(new_item, idx());
+	//SetActiveTake(new_take);
 
-	// remove all other takes from new item
-	UNSELECT_ITEMS();
-	ITEM it;
-	it.setSelected(true);
-	it.CollectTakes();
-	TAKE actTake = GetActiveTake(it);
-	TAKELIST TakeList = it.GetTakes();
-	for (int t = 0; t < TakeList.size(); ++t)
-		if (actTake != TakeList[t])
-			TakeList[t].remove();
-	for (const TAKE & t : TakeList)
-		ITEM(t).setSelected(true);
+	//// remove all other takes from new item
+	//UNSELECT_ITEMS();
+	//ITEM it;
+	//it.setSelected(true);
+	//TAKE actTake = GetActiveTake(it);
+	//for (int t = 0; t < it.size(); ++t)
+	//	if (actTake != it[t])
+	//		it[t].remove();
+	//for (const TAKE & t : it)
+	//	ITEM(t).setSelected(true);
 
-	// remove take from old item
-	remove();
+	//// remove take from old item
+	//remove();
 
-	// overwrite self
-	takePtr = new_take;
+	//// overwrite self
+	//takePtr = new_take;
 
 	return takePtr;
 }
@@ -169,6 +166,15 @@ TAKE TAKE::move(MediaItem * new_item)
 	return takePtr;
 }
 
+/* MIDI FUNCTIONS */
+
+MIDINOTELIST & TAKE::getMidiNoteList()
+{
+	note_list = MIDINOTELIST(this);
+	note_list.collectMidiNotes();
+	return note_list;
+}
+
 void TAKE::initAudio(double starttime, double endtime)
 {
 	audioIsInitialized = true;
@@ -178,11 +184,12 @@ void TAKE::initAudio(double starttime, double endtime)
 
 	// raw audio file properties
 	audioFile.m_srate = m_source->GetSampleRate();
-	audioFile.m_samples = m_source->GetLength();
-	audioFile.m_bitdepth = m_source->GetBitsPerSample();
 	audioFile.m_channels = m_source->GetNumChannels();
-	if (audioFile.m_channels > 0) // occurs if audio file is bad
-		audioFile.m_frames = audioFile.m_samples / audioFile.m_channels;
+	audioFile.m_samples = m_source->GetLength() * audioFile.m_channels * audioFile.m_srate;
+	audioFile.m_bitdepth = m_source->GetBitsPerSample();
+	audioFile.m_frames = m_source->GetLength() * audioFile.m_srate;
+
+	jassert(audioFile.m_channels > 0); // bad audio file
 
 	// take audio properties
 	audioFile.m_file = m_source->GetFileName();
@@ -230,69 +237,61 @@ double TAKE::getAudioSample(int channel, int sample)
 	return m_audiobuf[channel][sample];
 }
 
-TAKELIST::TAKELIST() {}
-TAKELIST::TAKELIST(MediaItem * item)
-{
-	int num_takes = CountTakes(item);
-	for (int i = 0; i < num_takes; ++i)
-	{
-		push_back(GetTake(item, i));
-	}
-}
-
 void MIDINOTELIST::collectMidiNotes()
 {
 	LIST::clear();
 
 	int notecount;
-	MIDI_CountEvts(take->ptr(), &notecount, nullptr, nullptr);
+	MIDI_CountEvts(take->getPointer(), &notecount, nullptr, nullptr);
 	for (int n = 0; n < notecount; ++n)
 	{
 		double ppqStart, ppqEnd;
 		int note, vel, channel;
 		bool selected, muted;
 
-		MIDI_GetNote(take->ptr(), n, &selected, &muted, &ppqStart, &ppqEnd, &channel, &note, &vel);
+		MIDI_GetNote(take->getPointer(), n, &selected, &muted, &ppqStart, &ppqEnd, &channel, &note, &vel);
 
-		double startTime = MIDI_GetProjTimeFromPPQPos(*take, ppqStart) - ITEM(*take).getStart();
-		double endTime = MIDI_GetProjTimeFromPPQPos(*take, ppqEnd) - ITEM(*take).getStart();
+		double startTime = MIDI_GetProjTimeFromPPQPos(take->getPointer(), ppqStart) - take->getStart();
+		double endTime = MIDI_GetProjTimeFromPPQPos(take->getPointer(), ppqEnd) - take->getStart();
 
 		push_back({ note, startTime, endTime, vel, channel, muted, selected });
+		back().take = take;
+		back().index = n;
 	}
 }
 
 void MIDINOTELIST::add(MIDINOTE obj)
 {
 	obj.take = take;
-	double position = obj.getStart() + ITEM(*take).getStart();
+	double position = obj.getStart() + take->getStart();
 
-	double ppq_start = MIDI_GetPPQPosFromProjTime(take->ptr(), position);
-	double ppq_end = MIDI_GetPPQPosFromProjTime(take->ptr(), position + obj.getLength());
+	double ppq_start = MIDI_GetPPQPosFromProjTime(take->getPointer(), position);
+	double ppq_end = MIDI_GetPPQPosFromProjTime(take->getPointer(), position + obj.getLength());
 
 	bool noSort = false;
-	MIDI_InsertNote(take->ptr(), obj.selected, obj.muted, ppq_start, ppq_end, obj.channel, obj.pitch, obj.velocity, &noSort);
+	MIDI_InsertNote(take->getPointer(), obj.selected, obj.muted, ppq_start, ppq_end, obj.channel, obj.pitch, obj.velocity, &noSort);
 }
 
 void MIDINOTE::setPitch(int v)
 {
 	bool noSort = false;
-	MIDI_SetNote(take->ptr(), index, nullptr, nullptr, nullptr, nullptr, nullptr, &v, nullptr, &noSort);
+	MIDI_SetNote(take->getPointer(), index, nullptr, nullptr, nullptr, nullptr, nullptr, &v, nullptr, &noSort);
 
 	pitch = v;
 }
 
 void MIDINOTE::setPosition(double v)
 {
-	double position = v + ITEM(*take).getStart();
-	double ppq_start = MIDI_GetPPQPosFromProjTime(take->ptr(), position);
+	double position = v + take->getStart();
+	double ppq_start = MIDI_GetPPQPosFromProjTime(take->getPointer(), position);
 
 	double ppq_start_original;
 	double ppq_end_original;
-	MIDI_GetNote(take->ptr(), index, nullptr, nullptr, &ppq_start_original, &ppq_end_original, nullptr, nullptr, nullptr);
+	MIDI_GetNote(take->getPointer(), index, nullptr, nullptr, &ppq_start_original, &ppq_end_original, nullptr, nullptr, nullptr);
 	double ppq_end = ppq_start + (ppq_end_original - ppq_start_original);
 
 	bool noSort = false;
-	MIDI_SetNote(take->ptr(), index, nullptr, nullptr, &ppq_start, &ppq_end, nullptr, nullptr, nullptr, &noSort);
+	MIDI_SetNote(take->getPointer(), index, nullptr, nullptr, &ppq_start, &ppq_end, nullptr, nullptr, nullptr, &noSort);
 
 	startTime = v;
 }
@@ -304,28 +303,28 @@ void MIDINOTE::setLength(double v)
 
 void MIDINOTE::setStart(double v)
 {
-	double start = v + ITEM(*take).getStart();
-	double ppq_start = MIDI_GetPPQPosFromProjTime(take->ptr(), start);
+	double start = v + take->getStart();
+	double ppq_start = MIDI_GetPPQPosFromProjTime(take->getPointer(), start);
 
 	double ppq_end_original;
-	MIDI_GetNote(take->ptr(), index, nullptr, nullptr, nullptr, &ppq_end_original, nullptr, nullptr, nullptr);
+	MIDI_GetNote(take->getPointer(), index, nullptr, nullptr, nullptr, &ppq_end_original, nullptr, nullptr, nullptr);
 
 	bool noSort = false;
-	MIDI_SetNote(take->ptr(), index, nullptr, nullptr, &ppq_start, &ppq_end_original, nullptr, nullptr, nullptr, &noSort);
+	MIDI_SetNote(take->getPointer(), index, nullptr, nullptr, &ppq_start, &ppq_end_original, nullptr, nullptr, nullptr, &noSort);
 
 	startTime = v;
 }
 
-inline void MIDINOTE::setEnd(double v)
+void MIDINOTE::setEnd(double v)
 {
-	double end = v + ITEM(*take).getStart();
-	double ppq_end = MIDI_GetPPQPosFromProjTime(take->ptr(), end);
+	double end = v + take->getStart();
+	double ppq_end = MIDI_GetPPQPosFromProjTime(take->getPointer(), end);
 
 	double ppq_start_original;
-	MIDI_GetNote(take->ptr(), index, nullptr, nullptr, &ppq_start_original, nullptr, nullptr, nullptr, nullptr);
+	MIDI_GetNote(take->getPointer(), index, nullptr, nullptr, &ppq_start_original, nullptr, nullptr, nullptr, nullptr);
 
 	bool noSort = false;
-	MIDI_SetNote(take->ptr(), index, nullptr, nullptr, &ppq_start_original, &ppq_end, nullptr, nullptr, nullptr, &noSort);
+	MIDI_SetNote(take->getPointer(), index, nullptr, nullptr, &ppq_start_original, &ppq_end, nullptr, nullptr, nullptr, &noSort);
 
 	endTime = v;
 }

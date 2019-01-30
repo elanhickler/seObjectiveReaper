@@ -34,6 +34,18 @@ void RESTORE_CURSOR() { SETCURSOR(saved_cursor_position); }
 void UNSELECT_ITEMS() { COMMAND(40289); }
 MediaItem* SELECT_ITEM_UNDER_MOUSE() { Main_OnCommand(40528, 0); return GetSelectedMediaItem(0, 0); }
 
+int juceToReaperColor(const Colour & v)
+{
+	return ColorToNative(v.getRed(), v.getGreen(), v.getBlue()) | 0x01000000;
+}
+
+Colour reaperToJuceColor(int v)
+{
+	int r, g, b;
+	ColorFromNative(v, &r, &g, &b);
+	return Colour(r, g, b);
+}
+
 void SplitTakeChunks(MediaItem * item, string chunk_c, string & header, string & footer, vector<string>& take_chunks, int & act_take_num)
 {
 	string chunk = chunk_c;
@@ -145,6 +157,13 @@ String PROJECT::getDirectory()
 	return File(PROJECT::getFilePath()).getParentDirectory().getFullPathName();
 }
 
+int PROJECT::countMakersAndRegions()
+{
+	int m, r;
+	CountProjectMarkers(nullptr, &m, &r);
+	return m + r;
+}
+
 bool ui_is_updating = true;
 void UI()
 {
@@ -208,7 +227,7 @@ void NUDGE::START(double v, bool move_source)
 //{
 //    ITEMLIST il;
 //
-//    for (auto & track : TrackListIn)
+//    for (auto& track : TrackListIn)
 //    {
 //        if (track.selectedItemList().empty()) continue;
 //        il.push_back(GetNearestItemToTimeBasedOnStart(time, track.selectedItemList()));
@@ -221,7 +240,7 @@ void NUDGE::START(double v, bool move_source)
 //{
 //    ITEMLIST il;
 //
-//    for (auto & track : TrackListIn)
+//    for (auto& track : TrackListIn)
 //    {
 //        if (track.selectedItemList().empty()) continue;
 //        il.push_back(GetNearestItemToTimeBasedOnEnd(time, track.selectedItemList()));
@@ -303,8 +322,8 @@ void NUDGE::START(double v, bool move_source)
 //
 //    RANGE range = TrackListIn[0][0].start();
 //
-//    for (const auto & Track : TrackListIn)
-//        for (const auto & item : Track.selectedItemsList())
+//    for (const auto& Track : TrackListIn)
+//        for (const auto& item : Track.selectedItemsList())
 //            range.expand(item.start(), item.end());
 //
 //    return range;
@@ -315,7 +334,7 @@ void NUDGE::START(double v, bool move_source)
 //    ITEMGROUPLIST ItemGroupList;
 //
 //    // go through each trange
-//    for (const auto & range : list)
+//    for (const auto& range : list)
 //    {
 //        ITEMLIST ItemList;
 //

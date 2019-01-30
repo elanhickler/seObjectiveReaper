@@ -6,7 +6,7 @@ public:
 protected:
 };
 
-class STRETCHMARKERLIST
+class STRETCHMARKERLIST : public LIST<STRETCHMARKER>
 {
 public:
 protected:

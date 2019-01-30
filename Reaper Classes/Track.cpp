@@ -81,7 +81,7 @@ void TRACK::collectItems()
 		ItemList_all.push_back(GetTrackMediaItem(track, i));
 		list.push_back(ItemList_all.back());
 
-		if (ItemList_all.back().isSelected())
+		if (ITEM(GetTrackMediaItem(track, i)).isSelected())
 			ItemList_selected.push_back(list.back());
 	}
 }
@@ -246,7 +246,7 @@ TRACK & TRACKLIST::getByName(const String & name)
 TRACK & TRACKLIST::getSelectedByIdx(int idx)
 {
 	int sel_idx = 0;
-	for (auto & track : list)
+	for (auto& track : list)
 		if (track.is_selected())
 		{
 			++sel_idx;

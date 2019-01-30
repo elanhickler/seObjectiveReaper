@@ -35,7 +35,7 @@ void MARKERLIST::CollectMarkers()
 	int count = CountMarkersAndRegionsInProject();
 
 	for (int i = 0; i < count; ++i)
-		if (MARKER(i).is_marker())
+		if (MARKER(i).getIsMarker())
 			list.push_back(MARKER(i));
 }
 
@@ -44,21 +44,21 @@ void MARKERLIST::CollectRegions()
 	int count = CountMarkersAndRegionsInProject();
 
 	for (int i = 0; i < count; ++i)
-		if (MARKER(i).is_region())
+		if (MARKER(i).getIsRegion())
 			list.push_back(MARKER(i));
 }
 
 void MARKERLIST::RemoveAllFromProject()
 {
 	int deletions = 0;
-	for (auto & m : list)
-		DeleteProjectMarkerByIndex(0, m.idx() - deletions++);
+	for (auto& m : list)
+		DeleteProjectMarkerByIndex(0, m.getIndex() - deletions++);
 }
 
 void MARKERLIST::AddAllToProject()
 {
-	for (const auto & m : list)
-		MARKER::AddToProject(m);
+	for (const auto& m : list)
+		MARKER::addToProject(m);
 }
 
 void MARKERLIST::RemoveDuplicates()
@@ -73,16 +73,15 @@ void MARKERLIST::RemoveDuplicates()
 			list[i].makeInvalid();
 	}
 	MARKERLIST NewMarkerList;
-	for (const auto & mr : list)
+	for (const auto& mr : list)
 		if (mr.isValid())
 			NewMarkerList.push_back(mr);
 	*this = std::move(NewMarkerList);
 }
 
 MARKER::MARKER() {}
-MARKER::MARKER(int i)
+MARKER::MARKER(int index) : index(index)
 {
-	_idx = i;
 	_get();
 	cache_end();
 	TagManager.setStringWithTags(getName());
@@ -92,7 +91,7 @@ MARKER::MARKER(RANGE range, const String & name)
 {
 	_start = range.start();
 	_end = range.end();
-	_is_region = _start < _end;
+	isRegion = _start < _end;
 	is_ghost = true;
 	_name = name;
 	TagManager.setStringWithTags(name);
@@ -102,7 +101,7 @@ MARKER::MARKER(double position, const String & name)
 {
 	_start = position;
 	_end = position;
-	_is_region = false;
+	isRegion = false;
 	is_ghost = true;
 	_name = name;
 	TagManager.setStringWithTags(name);
@@ -112,7 +111,7 @@ MARKER::MARKER(double start, double end, const String & name)
 {
 	_start = start;
 	_end = end;
-	_is_region = _start < _end;
+	isRegion = _start < _end;
 	is_ghost = true;
 	_name = name;
 	TagManager.setStringWithTags(name);
@@ -129,7 +128,7 @@ String MARKER::GetPropertyStringFromKey(const String & key, bool get_value) cons
 	{
 	case __name:
 		if (get_value)
-			return String(idx());
+			return String(getIndex());
 		return getNameNoTags();
 	case __tags:
 		return getTagString();

@@ -74,19 +74,19 @@ void ENVELOPE::LinearRegression(ENVELOPE env, double & a, double & b)
 
 	// x mean
 	double xm = 0;
-	for (const auto & p : list)
+	for (const auto& p : list)
 		xm += p.position;
 	xm /= N;
 
 	// y mean
 	double ym = 0;
-	for (const auto & p : list)
+	for (const auto& p : list)
 		ym += p.value;
 	ym /= N;
 
 	// x of squares
 	double xx = 0;
-	for (const auto & p : list)
+	for (const auto& p : list)
 		xx += p.position * p.position;
 
 	// x y sum of products
@@ -184,7 +184,7 @@ void ENVELOPE::setPoints(const ENVELOPE & env)
 		envelope = ToggleTakeEnvelopeByName(_take, _name.toStdString(), true);
 	removeAllPoints();
 	list = env.list;
-	for (const auto & pt : list)
+	for (const auto& pt : list)
 		InsertEnvelopePoint(envelope, pt.position, pt.value, pt.shape, pt.tension, pt.selected, &no_sort);
 	Envelope_SortPoints(envelope);
 }

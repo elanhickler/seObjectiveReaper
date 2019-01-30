@@ -86,11 +86,14 @@ public:
 	double create() { InsertAutomationItem(_envelope, _pool_id, _position, _length); }
 
 
-	double getStart() { _get(); return _position; }
+	double getStart() const override { return _position; }
 	void setStart(double v) override { _position = v; _set(); }
 
-	double getLength() { _get(); return _length; }
+	double getLength() const { return _length; }
 	void setLength(double v) override { _length = v; _set(); }
+
+	double getEnd() const override { return getStart() + getLength(); }
+	void setEnd(double v) override { jassertfalse; }
 
 	void setPosition(double v) override { _position = v; _set(); }
 
@@ -112,7 +115,9 @@ protected:
 
 	void _get()
 	{
-		if (!isValid()) return;
+		if (!isValid())
+			return;
+
 		_pool_id = GetSetAutomationItemInfo(_envelope, _idx, "D_POOL_ID", 0.0, false);
 		_position = GetSetAutomationItemInfo(_envelope, _idx, "D_POSITION", 0.0, false);
 		_length = GetSetAutomationItemInfo(_envelope, _idx, "D_LENGTH", 0.0, false);
@@ -127,7 +132,9 @@ protected:
 
 	void _set()
 	{
-		if (!isValid()) return;
+		if (!isValid())
+			return;
+
 		GetSetAutomationItemInfo(_envelope, _idx, "D_POOL_ID", _pool_id, true);
 		GetSetAutomationItemInfo(_envelope, _idx, "D_POSITION", _position, true);
 		GetSetAutomationItemInfo(_envelope, _idx, "D_LENGTH", _length, true);
@@ -149,7 +156,7 @@ public:
 
 	void collectAutomationItems()
 	{
-		for (const auto & ai : list)
+		for (const auto& ai : list)
 		{
 			int num_items = CountAutomationItems(ai.envelope());
 			for (int i = 0; i < num_items; ++i)
