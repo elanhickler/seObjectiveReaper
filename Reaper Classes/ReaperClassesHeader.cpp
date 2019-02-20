@@ -169,6 +169,15 @@ int PROJECT::countMakersAndRegions()
 	return m + r;
 }
 
+File PROJECT::getUserFile(const String & title, const String & fileFilter)
+{
+	char charbuffer[4096];
+	if (GetUserFileNameForRead(charbuffer, title.toStdString().c_str(), fileFilter.toStdString().c_str()))
+		return charbuffer;
+	else
+		return {};
+}
+
 bool ui_is_updating = true;
 void UI()
 {

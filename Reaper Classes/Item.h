@@ -149,7 +149,8 @@ protected:
 		__startoffset,
 		__tags,
 		__pitch,
-		__file_extension
+		__file_extension,
+		__noteclass
 	};
 
 	map<String, int> method_lookup = {
@@ -164,7 +165,8 @@ protected:
 			{ "FO", __fadeoutlen },
 			{ "SO", __startoffset },
 			{ "t", __tags },
-			{ "ext", __file_extension }
+			{ "ext", __file_extension },
+			{ "noteclass", __noteclass },
 	};
 
 	String GetPropertyStringFromKey(const String & key, bool get_value = false) const override;

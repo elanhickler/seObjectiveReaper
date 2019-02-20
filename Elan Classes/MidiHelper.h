@@ -23,6 +23,8 @@ public:
   int getNum();
   int getNum(const String & name);
   String getName();
+	String getClass();
+	int getClassValue();
   int getName(int num);
   String applyOffset(int i);
 

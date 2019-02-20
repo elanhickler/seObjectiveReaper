@@ -1,4 +1,4 @@
-﻿
+
 #include "jcomponents.h"
 #include "../reaper plugin/reaper_plugin_functions.h"
 

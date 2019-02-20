@@ -64,6 +64,8 @@ public:
 	static String getName();
 
 	static int countMakersAndRegions();
+
+	static File PROJECT::getUserFile(const String & title = "Choose a file", const String & fileFilter = "*.txt");
 };
 
 
@@ -145,7 +147,6 @@ public:
 
 	// Set a tag within the tag string
 	String getTag(const String & key) const { return TagManager.getTag(key); }
-
 	// Get a tag within the tag string
 	void setTag(const String & key, const String & value)
 	{
@@ -182,7 +183,11 @@ public:
 	void removeAllTags()
 	{
 		TagManager.RemoveAllTags();
+<<<<<<< HEAD
 		setName(TagManager.getNameNoTags());
+=======
+		setName(TagManager.getStringWithTags());
+>>>>>>> aedb30e66caee8b30ba831a116cd602285ee7d78
 	}
 
 	// boolean

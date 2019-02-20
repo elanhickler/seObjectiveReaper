@@ -31,7 +31,9 @@ void ERROR(e err)
 }
 
 map<juce_wchar, int> root_to_value ={ { 'C', 0 },{ 'D',2 },{ 'E',4 },{ 'F',5 },{ 'G',7 },{ 'A',9 },{ 'B',11 } };
-map<int, juce_wchar> value_to_root ={
+map<int, juce_wchar> value_to_root =
+{
+		{ -1, 'B' },
     { 0, 'C' },{ 1, 'C' },
     { 2, 'D' },{ 3, 'D' },
     { 4, 'E' },
@@ -42,7 +44,8 @@ map<int, juce_wchar> value_to_root ={
 };
 Array<int> accidental_numbers = { 1,3,6,8,10 };
 
-map<juce_wchar, int> accidental_to_value = { { 'b', -1 },{ '#',+1 } };
+map<juce_wchar, int> accidental_to_value = { { 'b', -1  },{ '#', +1 } };
+map<int, juce_wchar> value_to_accidental = { {  -1, 'b' },{  +1, '#' } };
 
 MIDI::MIDI() {};
 MIDI::MIDI(String s, int transpose)
@@ -72,13 +75,19 @@ void MIDI::read(String s, int transpose)
         switch (mode)
         {
         case get_root:
-            if (!CHAr::isAnyOf_i(it, "ABCDEFG")) ERROR(e::not_a_root);
+            if (!CHAr::isAnyOf_i(it, "ABCDEFG"))
+							ERROR(e::not_a_root);
             root = root_to_value[CHAr::toUpper(it)];
             mode = get_accidental;
             ++it;
             continue;
         case get_accidental:
-            if (!CHAr::isAnyOf_i(it, "B#")) { accidental = 0; mode = get_sign; continue; }
+            if (!CHAr::isAnyOf_i(it, "B#"))
+						{
+							accidental = 0;
+							mode = get_sign;
+							continue;
+						}
             accidental = accidental_to_value[CHAr::toLower(it)];
             mode = get_sign;
             ++it;
@@ -123,18 +132,29 @@ void MIDI::format(const String& s)
         switch (mode)
         {
         case get_root:
-            if (!CHAr::isAnyOf_i(*p, "ABCDEFG")) { mode = get_accidental; continue; }
+            if (!CHAr::isAnyOf_i(*p, "ABCDEFG"))
+						{
+							mode = get_accidental;
+							continue;
+						}
+
             use_capital_root = CHAr::isUpper(*p);
             ++p;
             mode = get_accidental;
             continue;
+
         case get_accidental:
-            if (!CHAr::isAnyOf(*p, "bB#")) { mode = get_sign; continue; }
+            if (!CHAr::isAnyOf(*p, "bB#"))
+						{
+							mode = get_sign;
+							continue;
+						}
             use_capital_accidental = CHAr::isUpper(*p);
             use_flat = CHAr::isAnyOf(*p, "bB");
             ++p;
             mode = get_sign;
             continue;
+
         case get_sign:
             always_show_sign = *p == '+';
             return;
@@ -149,8 +169,10 @@ String MIDI::getName()
 
     // get root
     int modulo = midi_number % 12;
-    if (use_flat && !(modulo == 4 || modulo == 11)) c = value_to_root[modulo+1];
-    else c = value_to_root[modulo];
+    if (use_flat && !(modulo == 4 || modulo == 11))
+			c = value_to_root[modulo+1];
+    else
+			c = value_to_root[modulo];
     c = use_capital_root ? CHAr::toUpper(c) : CHAr::toLower(c);
     midi_name += c;
 
@@ -164,13 +186,21 @@ String MIDI::getName()
 
     // get numeral sign
     octave = midi_number / 12 + lowest_octave;
-    if (always_show_sign && octave >= 0) midi_name += "+";
+    if (always_show_sign && octave >= 0)
+			midi_name += "+";
 
     // get octave	
     midi_name += toS(octave);
 
     return midi_name;
 }
+
+String MIDI::getClass()
+{
+	return String(String::charToString(value_to_root[root]) + String::charToString(value_to_accidental[accidental]));
+}
+
+int MIDI::getClassValue() { return root + accidental; }
 
 int MIDI::getName(int num)
 {
