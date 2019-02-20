@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "JuceHeader.h"
 
@@ -558,7 +558,6 @@ inline UserInputsWindow* ShowGenericUserInputs(String windowtitle, String but1tx
 	dlg->m_comp->ButtonCallbackFunction = callback;
 
 	for (int i = 0; i < NameDefVal.size(); ++i)
-
 	{
 		String init_entry;
 		if (i < NameDefVal.size())

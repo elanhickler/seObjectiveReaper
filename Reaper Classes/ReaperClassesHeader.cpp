@@ -157,6 +157,11 @@ String PROJECT::getDirectory()
 	return File(PROJECT::getFilePath()).getParentDirectory().getFullPathName();
 }
 
+String PROJECT::getName()
+{
+	return File(PROJECT::getFilePath()).getFileNameWithoutExtension();
+}
+
 int PROJECT::countMakersAndRegions()
 {
 	int m, r;

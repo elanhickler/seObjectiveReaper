@@ -33,40 +33,39 @@ TRACK TRACK::getSelectedByName(const String & name)
 }
 
 TRACK TRACK::insertBeforeIndex(int i) { InsertTrackAtIndex(i, true); TrackList_AdjustWindows(false); return TRACK(i); }
-
 TRACK TRACK::insertAfterIndex(int i) { InsertTrackAtIndex(i + 1, true); TrackList_AdjustWindows(false); return TRACK(i + 1); }
+TRACK TRACK::insertFirst() { InsertTrackAtIndex(0, true); TrackList_AdjustWindows(false); return TRACK(0); }
+TRACK TRACK::insertLast() { InsertTrackAtIndex(GetNumTracks(), true); TrackList_AdjustWindows(false); return TRACK(GetNumTracks() - 1); }
 
-TRACK TRACK::parent() const
+TRACK TRACK::getParent() const
 {
 	TRACK t = GetParentTrack(track);
-	if (t.track == nullptr)
-		return TRACK_invalid;
 	return t;
 }
 
 TRACK TRACK::getLastChild() const
 {
-	int i = idx() + 1;
+	int i = getIndex() + 1;
 	TRACK t(i);
-	while (track == t.parent()) t = TRACK(i++);
+	while (track == t.getParent()) t = TRACK(i++);
 	return TRACK(--i);
 }
 
 TRACK TRACK::getFirstChild() const
 {
-	TRACK supposed_child(idx() + 1);
+	TRACK supposed_child(getIndex() + 1);
 	if (supposed_child.is_child_of(track))
 		return supposed_child;
-	return TRACK_invalid;
+	return {};
 }
 
 void TRACK::setAsLastFolder()
 {
-	TRACK t = parent();
+	TRACK t = getParent();
 	int i = t.isValid() ? -1 : 0;
 	while (t.isValid())
 	{
-		t = t.parent();
+		t = t.getParent();
 		--i;
 	}
 	folder(i);
@@ -78,8 +77,7 @@ void TRACK::collectItems()
 
 	for (int i = 0; i < num_items; ++i)
 	{
-		ItemList_all.push_back(GetTrackMediaItem(track, i));
-		list.push_back(ItemList_all.back());
+		list.push_back(GetTrackMediaItem(track, i));
 
 		if (ITEM(GetTrackMediaItem(track, i)).isSelected())
 			ItemList_selected.push_back(list.back());
@@ -88,7 +86,7 @@ void TRACK::collectItems()
 
 void TRACK::remove()
 {
-	auto prev_track = TRACK(idx() - 1);
+	auto prev_track = TRACK(getIndex() - 1);
 	if (!prev_track.is_parent() && prev_track.isValid())
 		prev_track.folder(folder());
 	DeleteTrack(track);
@@ -109,10 +107,10 @@ TRACKLIST TRACKLIST::CreateTrackAsFirstChild(TRACK parent, int how_many)
 	TRACKLIST tl;
 
 	for (int i = 0; i < how_many; ++i)
-		tl.push_back(TRACK::insertAfterIndex(parent.idx() + i));
+		tl.push_back(TRACK::insertAfterIndex(parent.getIndex() + i));
 
 	if (did_not_have_child)
-		TRACK(parent.idx() + how_many).setAsLastFolder();
+		TRACK(parent.getIndex() + how_many).setAsLastFolder();
 
 	return tl;
 }
@@ -129,7 +127,7 @@ TRACKLIST TRACKLIST::CreateTrackAsLastChild(TRACK parent, int how_many)
 	t.folder(0);
 
 	for (int i = 0; i < how_many; ++i)
-		tl.push_back(TRACK::insertAfterIndex(t.idx() + i));
+		tl.push_back(TRACK::insertAfterIndex(t.getIndex() + i));
 
 	tl.back().folder(orig_folder_mode);
 
@@ -158,7 +156,7 @@ TRACKLIST TRACKLIST::GetChildren(TRACK parent)
 {
 	TRACKLIST TrackList;
 
-	int i = parent.idx() + 1;
+	int i = parent.getIndex() + 1;
 	TRACK t(i);
 	while (parent.is_parent_of(t))
 	{
@@ -176,8 +174,8 @@ TRACKLIST TRACKLIST::GetParentsOfSelected()
 
 	for (TRACK & track : TrackList)
 	{
-		if (ParentTracks.has(track.parent())) continue; //ensure you don't add the same track twice
-		TRACK t = track.parent();
+		if (ParentTracks.has(track.getParent())) continue; //ensure you don't add the same track twice
+		TRACK t = track.getParent();
 		if (!t.isValid()) continue;
 		ParentTracks.push_back(t);
 	}
@@ -189,7 +187,7 @@ int TRACKLIST::CountChildren(TRACK parent)
 {
 	int count = 0;
 
-	int i = parent.idx();
+	int i = parent.getIndex();
 	while (TRACK(++i).is_parent_of(parent))
 		++count;
 
@@ -240,37 +238,42 @@ TRACK & TRACKLIST::getByName(const String & name)
 		if (name == t.getName())
 			return t;
 
-	return TRACK_invalid;
+	return INVALID_TRACK;
 }
 
 TRACK & TRACKLIST::getSelectedByIdx(int idx)
 {
 	int sel_idx = 0;
 	for (auto& track : list)
+	{
 		if (track.is_selected())
 		{
 			++sel_idx;
 			if (sel_idx == idx)
 				return track;
 		}
-	return TRACK_invalid;
+	}
+
+	return INVALID_TRACK;
 }
 
 TRACK TRACKLIST::getSelectedChildByIdx(TRACK parent, int idx)
 {
 	TRACKLIST TrackList;
 
-	int i = parent.idx() + 1;
+	int i = parent.getIndex() + 1;
 	int count = -1;
 	TRACK t(i);
 	while (t.is_parent_of(parent))
 	{
-		if (t.is_selected()) ++count;
-		if (count == idx) return t;
+		if (t.is_selected())
+			++count;
+		if (count == idx)
+			return t;
 		t = TRACK(++i);
 	}
 
-	return TRACK_invalid;
+	return {};
 }
 
 String TRACK::GetPropertyStringFromKey(const String & key, bool get_value) const
@@ -284,11 +287,11 @@ String TRACK::GetPropertyStringFromKey(const String & key, bool get_value) const
 	{
 	case __name:
 		if (get_value)
-			return String(idx());
+			return String(getIndex());
 		return getNameNoTags();
 	case __tags:
 		return getTagString();
 	}
 
-	return String();
+	return {};
 }

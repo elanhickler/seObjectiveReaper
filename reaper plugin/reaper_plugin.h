@@ -847,7 +847,7 @@ typedef struct audio_hook_register_t
   // plug-in should zero these and they will be set by host
   // only call from OnAudioBuffer, nowhere else!!!
   int input_nch, output_nch; 
-  ReaSample *(*GetBuffer)(bool isOutput, int idx); 
+  ReaSample *(*GetBuffer)(bool isOutput, int getIndex); 
 
 } audio_hook_register_t;
 

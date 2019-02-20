@@ -209,10 +209,10 @@ SWELL_API_DEFINE(void, SWELL_HideApp,())
 ** value for the window. Note that SetDlgItemText() for an edit control does NOT send
 ** a WM_COMMAND notification like on win32, so you will have to do this yourself.
 */
-SWELL_API_DEFINE(BOOL, SetDlgItemText,(HWND, int idx, const char *text))
-SWELL_API_DEFINE(BOOL, SetDlgItemInt,(HWND, int idx, int val, int issigned))
-SWELL_API_DEFINE(int, GetDlgItemInt,(HWND, int idx, BOOL *translated, int issigned))
-SWELL_API_DEFINE(BOOL, GetDlgItemText,(HWND, int idx, char *text, int textlen))
+SWELL_API_DEFINE(BOOL, SetDlgItemText,(HWND, int getIndex, const char *text))
+SWELL_API_DEFINE(BOOL, SetDlgItemInt,(HWND, int getIndex, int val, int issigned))
+SWELL_API_DEFINE(int, GetDlgItemInt,(HWND, int getIndex, BOOL *translated, int issigned))
+SWELL_API_DEFINE(BOOL, GetDlgItemText,(HWND, int getIndex, char *text, int textlen))
 
 #ifndef GetWindowText
 #define GetWindowText(hwnd,text,textlen) GetDlgItemText(hwnd,0,text,textlen)
@@ -220,8 +220,8 @@ SWELL_API_DEFINE(BOOL, GetDlgItemText,(HWND, int idx, char *text, int textlen))
 #endif
 
 
-SWELL_API_DEFINE(void, CheckDlgButton,(HWND hwnd, int idx, int check))
-SWELL_API_DEFINE(int, IsDlgButtonChecked,(HWND hwnd, int idx))
+SWELL_API_DEFINE(void, CheckDlgButton,(HWND hwnd, int getIndex, int check))
+SWELL_API_DEFINE(int, IsDlgButtonChecked,(HWND hwnd, int getIndex))
 SWELL_API_DEFINE(void, EnableWindow,(HWND hwnd, int enable))
 SWELL_API_DEFINE(void, SetFocus,(HWND hwnd)) // these take NSWindow/NSView, and return NSView *
 SWELL_API_DEFINE(HWND, GetFocus,())
@@ -353,8 +353,8 @@ SWELL_API_DEFINE(void,UpdateWindow,(HWND hwnd))
 ** windows/dialogs/controls, via (int)getSwellExtraData:(int)idx and 
 ** setSwellExtraData:(int)idx value:(int)val . 
 */
-SWELL_API_DEFINE(LONG_PTR, GetWindowLong,(HWND hwnd, int idx))
-SWELL_API_DEFINE(LONG_PTR, SetWindowLong,(HWND hwnd, int idx, LONG_PTR val))
+SWELL_API_DEFINE(LONG_PTR, GetWindowLong,(HWND hwnd, int getIndex))
+SWELL_API_DEFINE(LONG_PTR, SetWindowLong,(HWND hwnd, int getIndex, LONG_PTR val))
 
 
 SWELL_API_DEFINE(BOOL, ScrollWindow, (HWND hwnd, int xamt, int yamt, const RECT *lpRect, const RECT *lpClipRect))
@@ -486,7 +486,7 @@ SWELL_API_DEFINE(int, SWELL_GetListViewHeaderHeight, (HWND h))
 #define ImageList_Create(x,y,a,b,c) ImageList_CreateEx();
 #endif
 SWELL_API_DEFINE(HIMAGELIST, ImageList_CreateEx,())
-SWELL_API_DEFINE(BOOL, ImageList_Remove, (HIMAGELIST list, int idx))
+SWELL_API_DEFINE(BOOL, ImageList_Remove, (HIMAGELIST list, int getIndex))
 SWELL_API_DEFINE(int, ImageList_ReplaceIcon,(HIMAGELIST list, int offset, HICON image))
 SWELL_API_DEFINE(int, ImageList_Add,(HIMAGELIST list, HBITMAP image, HBITMAP mask))
 SWELL_API_DEFINE(void, ImageList_Destroy, (HIMAGELIST))
@@ -494,9 +494,9 @@ SWELL_API_DEFINE(void, ImageList_Destroy, (HIMAGELIST))
 ** TabCtrl api. 
 */
 SWELL_API_DEFINE(int, TabCtrl_GetItemCount,(HWND hwnd))
-SWELL_API_DEFINE(BOOL, TabCtrl_DeleteItem,(HWND hwnd, int idx))
-SWELL_API_DEFINE(int, TabCtrl_InsertItem,(HWND hwnd, int idx, TCITEM *item))
-SWELL_API_DEFINE(int, TabCtrl_SetCurSel,(HWND hwnd, int idx))
+SWELL_API_DEFINE(BOOL, TabCtrl_DeleteItem,(HWND hwnd, int getIndex))
+SWELL_API_DEFINE(int, TabCtrl_InsertItem,(HWND hwnd, int getIndex, TCITEM *item))
+SWELL_API_DEFINE(int, TabCtrl_SetCurSel,(HWND hwnd, int getIndex))
 SWELL_API_DEFINE(int, TabCtrl_GetCurSel,(HWND hwnd))
 SWELL_API_DEFINE(BOOL, TabCtrl_AdjustRect, (HWND hwnd, BOOL fLarger, RECT *r))
 
@@ -548,13 +548,13 @@ SWELL_API_DEFINE(int, AddMenuItem,(HMENU hMenu, int pos, const char *name, int t
 SWELL_API_DEFINE(HMENU, GetSubMenu,(HMENU hMenu, int pos))
 SWELL_API_DEFINE(int, GetMenuItemCount,(HMENU hMenu))
 SWELL_API_DEFINE(int, GetMenuItemID,(HMENU hMenu, int pos))
-SWELL_API_DEFINE(bool, SetMenuItemModifier,(HMENU hMenu, int idx, int flag, int code, unsigned int mask))
-SWELL_API_DEFINE(bool, SetMenuItemText,(HMENU hMenu, int idx, int flag, const char *text))
-SWELL_API_DEFINE(bool, EnableMenuItem,(HMENU hMenu, int idx, int en))
-SWELL_API_DEFINE(bool, DeleteMenu,(HMENU hMenu, int idx, int flag))
-SWELL_API_DEFINE(bool, CheckMenuItem,(HMENU hMenu, int idx, int chk))
+SWELL_API_DEFINE(bool, SetMenuItemModifier,(HMENU hMenu, int getIndex, int flag, int code, unsigned int mask))
+SWELL_API_DEFINE(bool, SetMenuItemText,(HMENU hMenu, int getIndex, int flag, const char *text))
+SWELL_API_DEFINE(bool, EnableMenuItem,(HMENU hMenu, int getIndex, int en))
+SWELL_API_DEFINE(bool, DeleteMenu,(HMENU hMenu, int getIndex, int flag))
+SWELL_API_DEFINE(bool, CheckMenuItem,(HMENU hMenu, int getIndex, int chk))
 SWELL_API_DEFINE(void, InsertMenuItem,(HMENU hMenu, int pos, BOOL byPos, MENUITEMINFO *mi))
-SWELL_API_DEFINE(void,SWELL_InsertMenu,(HMENU menu, int pos, unsigned int flag, UINT_PTR idx, const char *str))
+SWELL_API_DEFINE(void,SWELL_InsertMenu,(HMENU menu, int pos, unsigned int flag, UINT_PTR getIndex, const char *str))
 #ifdef InsertMenu
 #undef InsertMenu
 #endif
@@ -694,7 +694,7 @@ SWELL_API_DEFINE(int,SWELL_GetDefaultButtonID,(HWND hwndDlg, bool onlyIfEnabled)
 */
 SWELL_API_DEFINE(LRESULT, SendMessage,(HWND, UINT, WPARAM, LPARAM))  
 #ifndef SendDlgItemMessage                                       
-#define SendDlgItemMessage(hwnd,idx,msg,wparam,lparam) SendMessage(GetDlgItem(hwnd,idx),msg,wparam,lparam)
+#define SendDlgItemMessage(hwnd,getIndex,msg,wparam,lparam) SendMessage(GetDlgItem(hwnd,getIndex),msg,wparam,lparam)
 #endif
 
 SWELL_API_DEFINE(void,SWELL_BroadcastMessage,(UINT, WPARAM, LPARAM))
@@ -765,7 +765,7 @@ SWELL_API_DEFINE(DWORD, GetMessagePos,())
 ** Notes: hinstance parameter ignored, currently only supports loading some of the predefined values.
 ** (IDC_SIZEALL etc). If it succeeds value is a NSCursor *
 */
-SWELL_API_DEFINE(HCURSOR, SWELL_LoadCursor,(const char *idx))
+SWELL_API_DEFINE(HCURSOR, SWELL_LoadCursor,(const char *getIndex))
 #ifndef LoadCursor
 #define LoadCursor(a,x) SWELL_LoadCursor(x)
 #endif
@@ -1011,7 +1011,7 @@ SWELL_API_DEFINE(HICON, LoadNamedImage,(const char *name, bool alphaFromMask))
 SWELL_API_DEFINE(void, DrawImageInRect,(HDC ctx, HICON img, const RECT *r))
 SWELL_API_DEFINE(void, BitBlt,(HDC hdcOut, int x, int y, int w, int h, HDC hdcIn, int xin, int yin, int mode))
 SWELL_API_DEFINE(void, StretchBlt,(HDC hdcOut, int x, int y, int w, int h, HDC hdcIn, int xin, int yin, int srcw, int srch, int mode))
-SWELL_API_DEFINE(int, GetSysColor,(int idx))
+SWELL_API_DEFINE(int, GetSysColor,(int getIndex))
 SWELL_API_DEFINE(HBITMAP, CreateBitmap,(int width, int height, int numplanes, int bitsperpixel, unsigned char* bits))
 
 SWELL_API_DEFINE(void, SetOpaque, (HWND h, bool isopaque))
@@ -1069,16 +1069,16 @@ SWELL_API_DEFINE(void,SWELL_PostQuitMessage,(void *sender))
 
 SWELL_API_DEFINE(void, SWELL_MakeSetCurParms,(float xscale, float yscale, float xtrans, float ytrans, HWND parent, bool doauto, bool dosizetofit))
 
-SWELL_API_DEFINE(HWND, SWELL_MakeButton,(int def, const char *label, int idx, int x, int y, int w, int h, int flags))
-SWELL_API_DEFINE(HWND, SWELL_MakeEditField,(int idx, int x, int y, int w, int h, int flags))
-SWELL_API_DEFINE(HWND, SWELL_MakeLabel,(int align, const char *label, int idx, int x, int y, int w, int h, int flags))
-SWELL_API_DEFINE(HWND, SWELL_MakeControl,(const char *cname, int idx, const char *classname, int style, int x, int y, int w, int h, int exstyle))
-SWELL_API_DEFINE(HWND, SWELL_MakeCombo,(int idx, int x, int y, int w, int h, int flags))
-SWELL_API_DEFINE(HWND, SWELL_MakeGroupBox,(const char *name, int idx, int x, int y, int w, int h, int style))
-SWELL_API_DEFINE(HWND, SWELL_MakeCheckBox,(const char *name, int idx, int x, int y, int w, int h, int flags))
-SWELL_API_DEFINE(HWND, SWELL_MakeListBox,(int idx, int x, int y, int w, int h, int styles))
+SWELL_API_DEFINE(HWND, SWELL_MakeButton,(int def, const char *label, int getIndex, int x, int y, int w, int h, int flags))
+SWELL_API_DEFINE(HWND, SWELL_MakeEditField,(int getIndex, int x, int y, int w, int h, int flags))
+SWELL_API_DEFINE(HWND, SWELL_MakeLabel,(int align, const char *label, int getIndex, int x, int y, int w, int h, int flags))
+SWELL_API_DEFINE(HWND, SWELL_MakeControl,(const char *cname, int getIndex, const char *classname, int style, int x, int y, int w, int h, int exstyle))
+SWELL_API_DEFINE(HWND, SWELL_MakeCombo,(int getIndex, int x, int y, int w, int h, int flags))
+SWELL_API_DEFINE(HWND, SWELL_MakeGroupBox,(const char *name, int getIndex, int x, int y, int w, int h, int style))
+SWELL_API_DEFINE(HWND, SWELL_MakeCheckBox,(const char *name, int getIndex, int x, int y, int w, int h, int flags))
+SWELL_API_DEFINE(HWND, SWELL_MakeListBox,(int getIndex, int x, int y, int w, int h, int styles))
 
-SWELL_API_DEFINE(void, SWELL_Menu_AddMenuItem,(HMENU hMenu, const char *name, int idx, unsigned int flags))
+SWELL_API_DEFINE(void, SWELL_Menu_AddMenuItem,(HMENU hMenu, const char *name, int getIndex, unsigned int flags))
 SWELL_API_DEFINE(int, SWELL_GenerateMenuFromList,(HMENU hMenu, const void *list, int listsz)) // list is SWELL_MenuGen_Entry
 
 SWELL_API_DEFINE(void, SWELL_GenerateDialogFromList, (const void *list, int listsz))
@@ -1123,7 +1123,7 @@ SWELL_API_DEFINE(void,SWELL_DisableAppNap,(int disable))
 SWELL_API_DEFINE(int,SWELL_GetOSXVersion,())
 #endif
 
-SWELL_API_DEFINE(void,SWELL_Register_Cursor_Resource,(const char *idx, const char *name, int hotspot_x, int hotspot_y))
+SWELL_API_DEFINE(void,SWELL_Register_Cursor_Resource,(const char *getIndex, const char *name, int hotspot_x, int hotspot_y))
 
 
 #endif // _WDL_SWELL_H_API_DEFINED_

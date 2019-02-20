@@ -31,7 +31,7 @@ TAKE::TAKE(MediaItem_Take * take) : takePtr(take)
 
 // functions
 AudioFile & TAKE::audio() { return audioFile; }
-int TAKE::idx() const { return GetMediaItemTakeInfo_Value(takePtr, "IP_TAKENUMBER"); }
+int TAKE::getIndex() const { return GetMediaItemTakeInfo_Value(takePtr, "IP_TAKENUMBER"); }
 MediaItem * TAKE::item() const { return GetMediaItemTake_Item(takePtr); }
 MediaTrack * TAKE::track() const { return GetMediaItemTrack(item()); }
 int TAKE::chanmode() const { return GetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE"); }
@@ -74,7 +74,7 @@ PCM_source * TAKE::pcm_source() const { return m_source; }
 size_t TAKE::frames() const { return m_take_frames; }
 size_t TAKE::samples() const { return m_take_samples; }
 size_t TAKE::file_frames() const { return m_file_frames; }
-File TAKE::file() const { return m_file; }
+File TAKE::getFile() const { return m_file; }
 void TAKE::setFile(const String & file) { SetMediaItemTake_Source(takePtr, PCM_Source_CreateFromFile(file.toRawUTF8())); }
 void TAKE::setChannelMode(int v) { SetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE", v); }
 
@@ -168,13 +168,6 @@ TAKE TAKE::move(MediaItem * new_item)
 
 /* MIDI FUNCTIONS */
 
-MIDINOTELIST & TAKE::getMidiNoteList()
-{
-	note_list = MIDINOTELIST(this);
-	note_list.collectMidiNotes();
-	return note_list;
-}
-
 void TAKE::initAudio(double starttime, double endtime)
 {
 	audioIsInitialized = true;
@@ -237,7 +230,7 @@ double TAKE::getAudioSample(int channel, int sample)
 	return m_audiobuf[channel][sample];
 }
 
-void MIDINOTELIST::collectMidiNotes()
+void MIDINOTELIST::collect()
 {
 	LIST::clear();
 
@@ -260,9 +253,9 @@ void MIDINOTELIST::collectMidiNotes()
 	}
 }
 
-void MIDINOTELIST::add(MIDINOTE obj)
+void MIDINOTELIST::insert(MIDINOTE obj)
 {
-	obj.take = take;
+	//obj.take = take;
 	double position = obj.getStart() + take->getStart();
 
 	double ppq_start = MIDI_GetPPQPosFromProjTime(take->getPointer(), position);
@@ -270,6 +263,19 @@ void MIDINOTELIST::add(MIDINOTE obj)
 
 	bool noSort = false;
 	MIDI_InsertNote(take->getPointer(), obj.selected, obj.muted, ppq_start, ppq_end, obj.channel, obj.pitch, obj.velocity, &noSort);
+}
+
+inline void MIDINOTELIST::remove(int index)
+{
+	MIDI_DeleteNote(take->getPointer(), index);
+}
+
+inline void MIDINOTELIST::removeAll()
+{
+	int notecount;
+	MIDI_CountEvts(take->getPointer(), &notecount, nullptr, nullptr);
+	for (int i = 0; i < notecount; ++i)
+		MIDI_DeleteNote(take->getPointer(), i);
 }
 
 void MIDINOTE::setPitch(int v)

@@ -611,7 +611,7 @@ typedef struct tagGESTURECONFIG
 typedef BOOL (*PROPENUMPROCEX)(HWND hwnd, const char *lpszString, HANDLE hData, LPARAM lParam);
 
 // swell specific type
-typedef HWND (*SWELL_ControlCreatorProc)(HWND parent, const char *cname, int idx, const char *classname, int style, int x, int y, int w, int h);                                           
+typedef HWND (*SWELL_ControlCreatorProc)(HWND parent, const char *cname, int getIndex, const char *classname, int style, int x, int y, int w, int h);                                           
 
 #define DLL_PROCESS_DETACH   0    
 #define DLL_PROCESS_ATTACH   1    

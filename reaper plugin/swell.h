@@ -94,21 +94,21 @@ void SWELL_Internal_PMQ_ClearAllMessages(HWND hwnd);
 
 #ifndef SWELL_CB_InsertString
 
-#define SWELL_CB_InsertString(hwnd, idx, pos, str) ((int)SendDlgItemMessage(hwnd,idx,CB_INSERTSTRING,(pos),(LPARAM)(str)))
-#define SWELL_CB_AddString(hwnd, idx, str) ((int)SendDlgItemMessage(hwnd,idx,CB_ADDSTRING,0,(LPARAM)(str)))
-#define SWELL_CB_SetCurSel(hwnd,idx,val) ((int)SendDlgItemMessage(hwnd,idx,CB_SETCURSEL,(WPARAM)(val),0))
-#define SWELL_CB_GetNumItems(hwnd,idx) ((int)SendDlgItemMessage(hwnd,idx,CB_GETCOUNT,0,0))
-#define SWELL_CB_GetCurSel(hwnd,idx) ((int)SendDlgItemMessage(hwnd,idx,CB_GETCURSEL,0,0))
-#define SWELL_CB_SetItemData(hwnd,idx,item,val) SendDlgItemMessage(hwnd,idx,CB_SETITEMDATA,(item),(val))
-#define SWELL_CB_GetItemData(hwnd,idx,item) SendDlgItemMessage(hwnd,idx,CB_GETITEMDATA,(item),0)
-#define SWELL_CB_GetItemText(hwnd,idx,item,buf,bufsz) SendDlgItemMessage(hwnd,idx,CB_GETLBTEXT,(item),(LPARAM)(buf))
-#define SWELL_CB_Empty(hwnd,idx) SendDlgItemMessage(hwnd,idx,CB_RESETCONTENT,0,0)
-#define SWELL_CB_DeleteString(hwnd,idx,str) SendDlgItemMessage(hwnd,idx,CB_DELETESTRING,str,0)
+#define SWELL_CB_InsertString(hwnd, getIndex, pos, str) ((int)SendDlgItemMessage(hwnd,getIndex,CB_INSERTSTRING,(pos),(LPARAM)(str)))
+#define SWELL_CB_AddString(hwnd, getIndex, str) ((int)SendDlgItemMessage(hwnd,getIndex,CB_ADDSTRING,0,(LPARAM)(str)))
+#define SWELL_CB_SetCurSel(hwnd,getIndex,val) ((int)SendDlgItemMessage(hwnd,getIndex,CB_SETCURSEL,(WPARAM)(val),0))
+#define SWELL_CB_GetNumItems(hwnd,getIndex) ((int)SendDlgItemMessage(hwnd,getIndex,CB_GETCOUNT,0,0))
+#define SWELL_CB_GetCurSel(hwnd,getIndex) ((int)SendDlgItemMessage(hwnd,getIndex,CB_GETCURSEL,0,0))
+#define SWELL_CB_SetItemData(hwnd,getIndex,item,val) SendDlgItemMessage(hwnd,getIndex,CB_SETITEMDATA,(item),(val))
+#define SWELL_CB_GetItemData(hwnd,getIndex,item) SendDlgItemMessage(hwnd,getIndex,CB_GETITEMDATA,(item),0)
+#define SWELL_CB_GetItemText(hwnd,getIndex,item,buf,bufsz) SendDlgItemMessage(hwnd,getIndex,CB_GETLBTEXT,(item),(LPARAM)(buf))
+#define SWELL_CB_Empty(hwnd,getIndex) SendDlgItemMessage(hwnd,getIndex,CB_RESETCONTENT,0,0)
+#define SWELL_CB_DeleteString(hwnd,getIndex,str) SendDlgItemMessage(hwnd,getIndex,CB_DELETESTRING,str,0)
 
-#define SWELL_TB_SetPos(hwnd, idx, pos) SendDlgItemMessage(hwnd,idx, TBM_SETPOS,TRUE,(pos))
-#define SWELL_TB_SetRange(hwnd, idx, low, hi) SendDlgItemMessage(hwnd,idx,TBM_SETRANGE,TRUE,(LPARAM)MAKELONG((low),(hi)))
-#define SWELL_TB_GetPos(hwnd, idx) ((int)SendDlgItemMessage(hwnd,idx,TBM_GETPOS,0,0))
-#define SWELL_TB_SetTic(hwnd, idx, pos) SendDlgItemMessage(hwnd,idx,TBM_SETTIC,0,(pos))
+#define SWELL_TB_SetPos(hwnd, getIndex, pos) SendDlgItemMessage(hwnd,getIndex, TBM_SETPOS,TRUE,(pos))
+#define SWELL_TB_SetRange(hwnd, getIndex, low, hi) SendDlgItemMessage(hwnd,getIndex,TBM_SETRANGE,TRUE,(LPARAM)MAKELONG((low),(hi)))
+#define SWELL_TB_GetPos(hwnd, getIndex) ((int)SendDlgItemMessage(hwnd,getIndex,TBM_GETPOS,0,0))
+#define SWELL_TB_SetTic(hwnd, getIndex, pos) SendDlgItemMessage(hwnd,getIndex,TBM_SETTIC,0,(pos))
 
 #endif
 

@@ -65,7 +65,6 @@ bool ITEM::IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_trac
 ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
 ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
 
-
 ITEM ITEM::createMidi(MediaTrack * track, double position, double length)
 {
 	ITEM item = CreateNewMIDIItemInProj(track, position, position + length, 0);
@@ -158,7 +157,7 @@ int ITEM::getNumTakes() { return CountTakes(itemPtr); }
 
 double ITEM::getRate() const { return getActiveTake().getRate(); }
 
-ITEM ITEM::duplicate()
+ITEM ITEM::duplicate() const
 {
 	char* chunk = GetSetObjectState((MediaItem*)itemPtr, "");
 
@@ -257,8 +256,10 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 	case __name:
 		return getActiveTake().getNameNoTags();
 	case __track:
-		if (get_value) return (String)TRACK(getTrack()).idx();
-		else return TRACK(getTrack()).getName();
+		if (get_value)
+			return (String)TRACK(getTrack()).getIndex();
+		else
+			return TRACK(getTrack()).getName();
 	case __length:
 		return (String)getLength();
 	case __rate:
@@ -280,10 +281,10 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 	case __pitch:
 		return (String)getActiveTake().getPitch();
 	case __file_extension:
-		return getActiveTake().file().getFileExtension();
+		return getActiveTake().getFile().getFileExtension();
 	}
 
-	return String();
+	return {};
 }
 
 int ITEMLIST::CountSelected() { return CountSelectedMediaItems(0); }
@@ -469,12 +470,12 @@ void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_ov
 		}
 
 		// get either selected list or normal list
-		ITEMLIST * il = selected_only ? &t.ItemList_selected : &t.getItemList();
+		vector<ITEM> & il = selected_only ? t.ItemList_selected.list : t.list;
 		ITEM previous_item = selected_only ? t.getSelectedItemList().front() : t.front();
 
 		addNewList()->push_back(previous_item);
 
-		for (const ITEM & i : *il)
+		for (const ITEM & i : il)
 		{
 			if (previous_item == i)
 				continue;

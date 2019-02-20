@@ -45,7 +45,7 @@ public:
 	/* FUNCTIONS */
 
 	// copies the item exactly taking the same position and length, thereby overlapping 100%
-	ITEM duplicate();
+	ITEM duplicate() const;
 	void remove();
 	void move(double v);
 	bool crop(RANGE r, bool move_edge);
@@ -184,6 +184,11 @@ public:
 	ITEMLIST(ITEM i)
 	{
 		push_back(i);
+	}
+
+	ITEMLIST(vector<ITEM> v)
+	{
+		list = v;
 	}
 
 	operator MediaItem*() { return list[0]; }

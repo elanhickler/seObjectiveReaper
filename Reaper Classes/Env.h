@@ -31,18 +31,6 @@ public:
 
 class ENVELOPE : public LIST<ENVPT>
 {
-protected:
-	bool no_sort = true;
-	float tent(float x);
-	double getDistanceFromLine(double x1, double y1, double x2, double y2, double xp, double yp);
-	ENVELOPE simplify(ENVELOPE points, double maxError);
-	void LinearRegression(ENVELOPE p, double & a, double & b);
-
-	// members
-	String _name;
-	MediaItem_Take* _take;
-	TrackEnvelope* envelope;
-
 public:
 	ENVELOPE() {}
 	ENVELOPE(TrackEnvelope * envelope, String name = "") : envelope(envelope), _name(name) {}
@@ -70,6 +58,18 @@ public:
 
 	// boolean
 	bool isValid() const { return envelope != nullptr; }
+
+	protected:
+		bool no_sort = true;
+		float tent(float x);
+		double getDistanceFromLine(double x1, double y1, double x2, double y2, double xp, double yp);
+		ENVELOPE simplify(ENVELOPE points, double maxError);
+		void LinearRegression(ENVELOPE p, double & a, double & b);
+
+		// members
+		String _name;
+		MediaItem_Take* _take;
+		TrackEnvelope* envelope;
 };
 
 class AUTOITEM : public OBJECT_MOVABLE, public OBJECT_VALIDATES
@@ -84,7 +84,6 @@ public:
 	void simplifyByDifference(double diff) { _envelope.simplifyByDifference(diff); }
 	double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, getLength()); }
 	double create() { InsertAutomationItem(_envelope, _pool_id, _position, _length); }
-
 
 	double getStart() const override { return _position; }
 	void setStart(double v) override { _position = v; _set(); }
@@ -156,11 +155,11 @@ public:
 
 	void collectAutomationItems()
 	{
-		for (const auto& ai : list)
-		{
-			int num_items = CountAutomationItems(ai.envelope());
-			for (int i = 0; i < num_items; ++i)
-				list.push_back(AUTOITEM(i));
-		}
+		//for (const auto& ai : list)
+		//{
+		//	int num_items = CountAutomationItems(ai.envelope());
+		//	for (int i = 0; i < num_items; ++i)
+		//		list.push_back(AUTOITEM(i));
+		//}
 	}
 };

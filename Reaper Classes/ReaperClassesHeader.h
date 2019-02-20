@@ -61,6 +61,7 @@ public:
 
 	static String getFilePath();
 	static String getDirectory();
+	static String getName();
 
 	static int countMakersAndRegions();
 };
@@ -155,12 +156,20 @@ public:
 	// Get name of object without tags
 	String getNameNoTags() const { return TagManager.getNameNoTags(); }
 	// Set name of object without affecting tags
-	void setNameNoTags(const String & v) { TagManager.setStringNoTags(v); }
+	void setNameNoTags(const String & v)
+	{
+		TagManager.setStringNoTags(v);
+		setName(TagManager.getStringWithTags());
+	}
 
 	// Get name of object only affecting the tag string portion
 	String getTagString() const { return TagManager.getStringTagsOnly(); }
 	// Set name of object only affecting the tag string portion
-	void setTagString(const String & v) { TagManager.setStringWithTags(v); }
+	void setTagString(const String & v)
+	{
+		TagManager.setStringWithTags(v);
+		setName(TagManager.getStringWithTags());
+	}
 
 	// Remove a tag from the tag string
 	void removeTag(const String & key)
@@ -170,7 +179,11 @@ public:
 	}
 
 	// Remove the entire tag string
-	void removeAllTags() { TagManager.RemoveAllTags(); }
+	void removeAllTags()
+	{
+		TagManager.RemoveAllTags();
+		setName(TagManager.getNameNoTags());
+	}
 
 	// boolean
 	bool hasTag(const String & tag) const { return TagManager.tagExists(tag); }

@@ -7,21 +7,25 @@ class TRACK : public LIST<ITEM>, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 public:
 	// conversion
 	static int count();
-	static TRACK getByIndex(int idx);
+	static TRACK getByIndex(int getIndex);
 	static TRACK getByName(const String & name);
-	static TRACK getSelectedByIndex(int idx);
+	static TRACK getSelectedByIndex(int getIndex);
 	static TRACK getSelectedByName(const String & name);
 	static TRACK insertBeforeIndex(int i);
 	static TRACK insertAfterIndex(int i);
+	static TRACK insertFirst();
+	static TRACK insertLast();
 
 	// constructor
 	TRACK() { track = nullptr; }
 	TRACK(MediaTrack* track) : track(track) { TagManager.setStringWithTags(getName()); }
-	TRACK(int idx)
+	TRACK(int getIndex)
 	{
-		track = GetTrack(0, idx);
+		track = GetTrack(0, getIndex);
 		TagManager.setStringWithTags(getName());
 	}
+
+
 
 	// conversion
 	operator void*() const { return track; }
@@ -34,20 +38,22 @@ public:
 	bool operator!=(const TRACK & rhs) const { return track != rhs.track; }
 
 	// getters
-	int idx() const { return GetMediaTrackInfo_Value(track, "IP_TRACKNUMBER") - 1; }
-	TRACK parent() const;
+	MediaTrack * getPointer() { return track; }
+	int getIndex() const { return GetMediaTrackInfo_Value(track, "IP_TRACKNUMBER") - 1; }
+	TRACK getParent() const;
 	TRACK getLastChild() const;
 	TRACK getFirstChild() const;
 	int folder() const { return GetMediaTrackInfo_Value(track, "I_FOLDERDEPTH"); }
-	ITEM & getSelectedItem(int idx) { return ItemList_selected[idx]; }
 	int countItems() const { return list.size(); }
 	int countSelectedItems() const { return ItemList_selected.size(); }
+	ITEM & getItem(int index) { return list[index]; }
+	ITEM & getSelectedItem(int index) { return ItemList_selected[index]; }
 
 	// setters
 	void folder(int mode) { SetMediaTrackInfo_Value(track, "I_FOLDERDEPTH", mode); }
 	void setAsLastFolder();
 
-	// functions
+	 // functions
 	void collectItems();
 	void remove();
 	void RemoveAllItemsFromProject();
@@ -63,8 +69,7 @@ public:
 		GetSetMediaTrackInfo_String(track, "P_NAME", (char*)v.toRawUTF8(), true);
 	}
 
-	ITEMLIST getItemList() { return ItemList_all; }
-	ITEMLIST getSelectedItemList() { return ItemList_selected; }
+	ITEMLIST & getSelectedItemList() { return ItemList_selected; }
 
 	// getters
 	bool sel() const { return GetMediaTrackInfo_Value(track, "I_SELECTED") == 1; }
@@ -84,10 +89,10 @@ public:
 	}
 	bool has_items() const { return countItems() > 0; }
 	bool has_selected_items() const { return countSelectedItems() > 0; }
-	bool has_child() const { return TRACK(idx() + 1).parent() == track; }
+	bool has_child() const { return TRACK(getIndex() + 1).getParent() == track; }
 	bool is_parent() const { return folder() == 1; }
-	bool is_parent_of(const TRACK & t) { return track == t.parent(); }
-	bool is_child_of(const TRACK & t) { return parent() == t; }
+	bool is_parent_of(const TRACK & t) { return track == t.getParent(); }
+	bool is_child_of(const TRACK & t) { return getParent() == t; }
 
 	enum
 	{
@@ -107,7 +112,8 @@ protected:
 	ITEMLIST ItemList_all;
 	ITEMLIST ItemList_selected;
 };
-static TRACK TRACK_invalid;
+
+static TRACK INVALID_TRACK;
 
 class TRACKLIST : public LIST<TRACK>
 {
@@ -118,10 +124,9 @@ public:
 	static TRACKLIST Get();
 	static TRACKLIST GetChildren(TRACK parent);
 	static TRACKLIST GetParentsOfSelected();
-	static TRACK getSelectedChildByIdx(TRACK parent, int idx);
+	static TRACK getSelectedChildByIdx(TRACK parent, int getIndex);
 	static int CountChildren(TRACK parent);
 
-public:
 	TRACKLIST() {};
 	TRACKLIST(TRACK t) { push_back(t); };
 
@@ -132,6 +137,6 @@ public:
 	void CollectTracksWithSelectedItems();
 
 	// getters
-	TRACK & getSelectedByIdx(int idx);
+	TRACK & getSelectedByIdx(int getIndex);
 	TRACK & getByName(const String & name);
 };

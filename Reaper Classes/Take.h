@@ -14,7 +14,7 @@ public:
 	MIDINOTE(int pitch, double position, double length)
 		: pitch(pitch), startTime(position), endTime(position + length)
 	{ }
-	MIDINOTE(int pitch, double startTime, double endTime, int velocity, int channel, bool selected, bool muted)
+	MIDINOTE(int pitch, double startTime, double endTime, int velocity, int channel = 1, bool selected = false, bool muted = false)
 		: pitch(pitch), startTime(startTime), endTime(endTime), velocity(velocity), channel(channel), selected(selected), muted(muted)
 	{ }
 
@@ -58,12 +58,12 @@ class MIDINOTELIST : public LIST<MIDINOTE>
 
 public:
 	MIDINOTELIST() {};
-	MIDINOTELIST(TAKE * take) : take(take) {};
+	MIDINOTELIST(TAKE & take) : take(&take) {};
 
-	void collectMidiNotes();
-
-	//position in seconds relative to take
-	void add(MIDINOTE midinote);
+	void collect();
+	void insert(MIDINOTE midinote);
+	void remove(int index);
+	void removeAll();
 
 protected:
 	TAKE * take = nullptr;
@@ -118,7 +118,7 @@ public:
 	bool isPitchPreserved() const;
 	bool isPhaseInverted() const;
 
-	int idx() const;
+	int getIndex() const;
 	MediaItem * item() const;
 	MediaTrack * track() const;
 	int chanmode() const;
@@ -135,7 +135,7 @@ public:
 	size_t frames() const;
 	size_t samples() const;
 	size_t file_frames() const;
-	File file() const;
+	File getFile() const;
 
 	// setter
 	void setFile(const String & file);
@@ -164,7 +164,7 @@ public:
 	TAKE move(MediaTrack* track);
 	TAKE move(MediaItem* new_item);
 
-	int countStretchMarkers()
+	int countStretchMarkers() const
 	{
 		return GetTakeNumStretchMarkers(takePtr);
 	}
@@ -177,9 +177,6 @@ public:
 		int total = countStretchMarkers();
 		DeleteTakeStretchMarkers(takePtr, 0, &total);
 	}
-
-	/* MIDI FUNCTIONS */
-	MIDINOTELIST & getMidiNoteList();
 
 	/* AUDIO FUNCTIONS */
 	/*
@@ -234,9 +231,6 @@ protected:
 	MediaItem_Take* takePtr = nullptr;
 	ITEM * itemParent = nullptr;
 	AudioFile audioFile;
-
-	/* MIDI FUNCTIONS */
-	MIDINOTELIST note_list;
 
 	// audio property
 	PCM_source* m_source = nullptr;

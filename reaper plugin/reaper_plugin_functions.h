@@ -853,7 +853,7 @@ REAPERAPI_DEF //==============================================
 REAPERAPI_DEF //==============================================
 // CSurf_TrackFromID
 
-  MediaTrack* (*CSurf_TrackFromID)(int idx, bool mcpView);
+  MediaTrack* (*CSurf_TrackFromID)(int getIndex, bool mcpView);
 #endif
 
 #if defined(REAPERAPI_WANT_CSurf_TrackToID) || !defined(REAPERAPI_MINIMAL)
@@ -924,7 +924,7 @@ REAPERAPI_DEF //==============================================
 // DeleteTakeStretchMarkers
 // Deletes one or more stretch markers. Returns number of stretch markers deleted.
 
-  int (*DeleteTakeStretchMarkers)(MediaItem_Take* take, int idx, const int* countInOptional);
+  int (*DeleteTakeStretchMarkers)(MediaItem_Take* take, int getIndex, const int* countInOptional);
 #endif
 
 #if defined(REAPERAPI_WANT_DeleteTempoTimeSigMarker) || !defined(REAPERAPI_MINIMAL)
@@ -1093,21 +1093,21 @@ REAPERAPI_DEF //==============================================
 REAPERAPI_DEF //==============================================
 // EnumProjectMarkers
 
-  int (*EnumProjectMarkers)(int idx, bool* isrgnOut, double* posOut, double* rgnendOut, const char** nameOut, int* markrgnindexnumberOut);
+  int (*EnumProjectMarkers)(int getIndex, bool* isrgnOut, double* posOut, double* rgnendOut, const char** nameOut, int* markrgnindexnumberOut);
 #endif
 
 #if defined(REAPERAPI_WANT_EnumProjectMarkers2) || !defined(REAPERAPI_MINIMAL)
 REAPERAPI_DEF //==============================================
 // EnumProjectMarkers2
 
-  int (*EnumProjectMarkers2)(ReaProject* proj, int idx, bool* isrgnOut, double* posOut, double* rgnendOut, const char** nameOut, int* markrgnindexnumberOut);
+  int (*EnumProjectMarkers2)(ReaProject* proj, int getIndex, bool* isrgnOut, double* posOut, double* rgnendOut, const char** nameOut, int* markrgnindexnumberOut);
 #endif
 
 #if defined(REAPERAPI_WANT_EnumProjectMarkers3) || !defined(REAPERAPI_MINIMAL)
 REAPERAPI_DEF //==============================================
 // EnumProjectMarkers3
 
-  int (*EnumProjectMarkers3)(ReaProject* proj, int idx, bool* isrgnOut, double* posOut, double* rgnendOut, const char** nameOut, int* markrgnindexnumberOut, int* colorOut);
+  int (*EnumProjectMarkers3)(ReaProject* proj, int getIndex, bool* isrgnOut, double* posOut, double* rgnendOut, const char** nameOut, int* markrgnindexnumberOut, int* colorOut);
 #endif
 
 #if defined(REAPERAPI_WANT_EnumProjects) || !defined(REAPERAPI_MINIMAL)
@@ -1115,7 +1115,7 @@ REAPERAPI_DEF //==============================================
 // EnumProjects
 // idx=-1 for current project,projfn can be NULL if not interested in filename. use idx 0x40000000 for currently rendering project, if any.
 
-  ReaProject* (*EnumProjects)(int idx, char* projfn, int projfn_sz);
+  ReaProject* (*EnumProjects)(int getIndex, char* projfn, int projfn_sz);
 #endif
 
 #if defined(REAPERAPI_WANT_EnumProjExtState) || !defined(REAPERAPI_MINIMAL)
@@ -1123,7 +1123,7 @@ REAPERAPI_DEF //==============================================
 // EnumProjExtState
 // Enumerate the data stored with the project for a specific extname. Returns false when there is no more data. See SetProjExtState, GetProjExtState.
 
-  bool (*EnumProjExtState)(ReaProject* proj, const char* extname, int idx, char* keyOutOptional, int keyOutOptional_sz, char* valOutOptional, int valOutOptional_sz);
+  bool (*EnumProjExtState)(ReaProject* proj, const char* extname, int getIndex, char* keyOutOptional, int keyOutOptional_sz, char* valOutOptional, int valOutOptional_sz);
 #endif
 
 #if defined(REAPERAPI_WANT_EnumRegionRenderMatrix) || !defined(REAPERAPI_MINIMAL)
@@ -1377,7 +1377,7 @@ REAPERAPI_DEF //==============================================
 // GetColorTheme
 // Deprecated, see GetColorThemeStruct.
 
-  INT_PTR (*GetColorTheme)(int idx, int defval);
+  INT_PTR (*GetColorTheme)(int getIndex, int defval);
 #endif
 
 #if defined(REAPERAPI_WANT_GetColorThemeStruct) || !defined(REAPERAPI_MINIMAL)
@@ -1401,7 +1401,7 @@ REAPERAPI_DEF //==============================================
 // GetContextMenu
 // gets context menus. submenu 0:trackctl, 1:mediaitems, 2:ruler, 3:empty track area
 
-  HMENU (*GetContextMenu)(int idx);
+  HMENU (*GetContextMenu)(int getIndex);
 #endif
 
 #if defined(REAPERAPI_WANT_GetCurrentProjectInLoadSave) || !defined(REAPERAPI_MINIMAL)
@@ -2651,7 +2651,7 @@ REAPERAPI_DEF //==============================================
 // GetTakeStretchMarker
 // Gets information on a stretch marker, idx is 0..n. Returns false if stretch marker not valid. posOut will be set to position in item, srcposOutOptional will be set to source media position. Returns index. if input index is -1, next marker is found using position (or source position if position is -1). If position/source position are used to find marker position, their values are not updated.
 
-  int (*GetTakeStretchMarker)(MediaItem_Take* take, int idx, double* posOut, double* srcposOutOptional);
+  int (*GetTakeStretchMarker)(MediaItem_Take* take, int getIndex, double* posOut, double* srcposOutOptional);
 #endif
 
 #if defined(REAPERAPI_WANT_GetTakeStretchMarkerSlope) || !defined(REAPERAPI_MINIMAL)
@@ -2659,7 +2659,7 @@ REAPERAPI_DEF //==============================================
 // GetTakeStretchMarkerSlope
 // See SetTakeStretchMarkerSlope
 
-  double (*GetTakeStretchMarkerSlope)(MediaItem_Take* take, int idx);
+  double (*GetTakeStretchMarkerSlope)(MediaItem_Take* take, int getIndex);
 #endif
 
 #if defined(REAPERAPI_WANT_GetTCPFXParm) || !defined(REAPERAPI_MINIMAL)
@@ -3135,7 +3135,7 @@ REAPERAPI_DEF //==============================================
 // InsertTrackAtIndex
 // inserts a track at idx,of course this will be clamped to 0..GetNumTracks(). wantDefaults=TRUE for default envelopes/FX,otherwise no enabled fx/env
 
-  void (*InsertTrackAtIndex)(int idx, bool wantDefaults);
+  void (*InsertTrackAtIndex)(int getIndex, bool wantDefaults);
 #endif
 
 #if defined(REAPERAPI_WANT_IsInRealTimeAudio) || !defined(REAPERAPI_MINIMAL)
@@ -3269,7 +3269,7 @@ REAPERAPI_DEF //==============================================
 REAPERAPI_DEF //==============================================
 // kbd_enumerateActions
 
-  int (*kbd_enumerateActions)(KbdSectionInfo* section, int idx, const char** nameOut);
+  int (*kbd_enumerateActions)(KbdSectionInfo* section, int getIndex, const char** nameOut);
 #endif
 
 #if defined(REAPERAPI_WANT_kbd_formatKeyName) || !defined(REAPERAPI_MINIMAL)
@@ -4411,7 +4411,7 @@ REAPERAPI_DEF //==============================================
 REAPERAPI_DEF //==============================================
 // PCM_Sink_Enum
 
-  unsigned int (*PCM_Sink_Enum)(int idx, const char** descstrOut);
+  unsigned int (*PCM_Sink_Enum)(int getIndex, const char** descstrOut);
 #endif
 
 #if defined(REAPERAPI_WANT_PCM_Sink_GetExtension) || !defined(REAPERAPI_MINIMAL)
@@ -4638,7 +4638,7 @@ REAPERAPI_DEF //==============================================
 REAPERAPI_DEF //==============================================
 // projectconfig_var_addr
 
-  void* (*projectconfig_var_addr)(ReaProject* proj, int idx);
+  void* (*projectconfig_var_addr)(ReaProject* proj, int getIndex);
 #endif
 
 #if defined(REAPERAPI_WANT_projectconfig_var_getoffs) || !defined(REAPERAPI_MINIMAL)
@@ -5189,7 +5189,7 @@ REAPERAPI_DEF //==============================================
 // SetTakeStretchMarker
 // Adds or updates a stretch marker. If idx<0, stretch marker will be added. If idx>=0, stretch marker will be updated. When adding, if srcposInOptional is omitted, source position will be auto-calculated. When updating a stretch marker, if srcposInOptional is omitted, srcpos will not be modified. Position/srcposition values will be constrained to nearby stretch markers. Returns index of stretch marker, or -1 if did not insert (or marker already existed at time).
 
-  int (*SetTakeStretchMarker)(MediaItem_Take* take, int idx, double pos, const double* srcposInOptional);
+  int (*SetTakeStretchMarker)(MediaItem_Take* take, int getIndex, double pos, const double* srcposInOptional);
 #endif
 
 #if defined(REAPERAPI_WANT_SetTakeStretchMarkerSlope) || !defined(REAPERAPI_MINIMAL)
@@ -5197,7 +5197,7 @@ REAPERAPI_DEF //==============================================
 // SetTakeStretchMarkerSlope
 // See GetTakeStretchMarkerSlope
 
-  bool (*SetTakeStretchMarkerSlope)(MediaItem_Take* take, int idx, double slope);
+  bool (*SetTakeStretchMarkerSlope)(MediaItem_Take* take, int getIndex, double slope);
 #endif
 
 #if defined(REAPERAPI_WANT_SetTempoTimeSigMarker) || !defined(REAPERAPI_MINIMAL)
@@ -5663,7 +5663,7 @@ REAPERAPI_DEF //==============================================
 // TakeFX_SetPresetByIndex
 // Sets the preset idx, or the factory preset (idx==-2), or the default user preset (idx==-1). Returns true on success. See TakeFX_GetPresetIndex.
 
-  bool (*TakeFX_SetPresetByIndex)(MediaItem_Take* take, int fx, int idx);
+  bool (*TakeFX_SetPresetByIndex)(MediaItem_Take* take, int fx, int getIndex);
 #endif
 
 #if defined(REAPERAPI_WANT_TakeFX_Show) || !defined(REAPERAPI_MINIMAL)
@@ -6187,7 +6187,7 @@ REAPERAPI_DEF //==============================================
 // TrackFX_SetPresetByIndex
 // Sets the preset idx, or the factory preset (idx==-2), or the default user preset (idx==-1). Returns true on success. See TrackFX_GetPresetIndex.
 
-  bool (*TrackFX_SetPresetByIndex)(MediaTrack* track, int fx, int idx);
+  bool (*TrackFX_SetPresetByIndex)(MediaTrack* track, int fx, int getIndex);
 #endif
 
 #if defined(REAPERAPI_WANT_TrackFX_Show) || !defined(REAPERAPI_MINIMAL)

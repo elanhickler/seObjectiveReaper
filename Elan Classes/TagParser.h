@@ -15,26 +15,47 @@ class TagParser
 public:
     TagParser(const String & in_str);
 
-    template <class T> String buildString(T & object)
-    {
-        StringArray s;
-        for (auto& t : tags)
-        {
-            if (t.property_name.isEmpty())
-            {
-                s.add(t.prefix);
-                continue;
-            }
+		template <class T> String buildString(T & object)
+		{
+			StringArray s;
+			for (auto& t : tags)
+			{
+				if (t.property_name.isEmpty())
+				{
+					s.add(t.prefix);
+					continue;
+				}
 
-            String temp = object.GetPropertyStringFromKey(t.property_name, t.use_value);
+				String temp = object.GetPropertyStringFromKey(t.property_name, t.use_value);
 
-            if (temp.isEmpty() && t.is_optional)
-                continue;
-            s.add(t.prefix + temp + t.suffix);
-        }
+				if (temp.isEmpty() && t.is_optional)
+					continue;
+				s.add(t.prefix + temp + t.suffix);
+			}
 
-        return s.joinIntoString("");
-    }
+			return s.joinIntoString("");
+		}
+
+		String buildString(std::function<String(const String &, bool)> getPropertyFunction)
+		{
+			StringArray s;
+			for (auto& t : tags)
+			{
+				if (t.property_name.isEmpty())
+				{
+					s.add(t.prefix);
+					continue;
+				}
+
+				String temp = getPropertyFunction(t.property_name, t.use_value);
+
+				if (temp.isEmpty() && t.is_optional)
+					continue;
+				s.add(t.prefix + temp + t.suffix);
+			}
+
+			return s.joinIntoString("");
+		}
 
     size_t size() { return tags.size(); }  
 
