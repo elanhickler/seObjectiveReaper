@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "JuceHeader.h"
 
@@ -210,8 +210,7 @@ public:
 		std::function<void(String, var)> m_var_callback;
 		
 		std::function<juce::Rectangle<int>(Component*)> m_resize_callback;
-		template<typename T>
-		inline T* getAs()
+		template<typename T> inline T* getAs()
 		{
             static_assert(std::is_same<T,RSLCodeEditor>::value || std::is_same<T,PresetComponent>::value ||
                           std::is_same<T,Component>::value || std::is_same<T,Slider>::value ||
