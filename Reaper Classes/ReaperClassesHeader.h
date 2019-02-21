@@ -183,11 +183,7 @@ public:
 	void removeAllTags()
 	{
 		TagManager.RemoveAllTags();
-<<<<<<< HEAD
 		setName(TagManager.getNameNoTags());
-=======
-		setName(TagManager.getStringWithTags());
->>>>>>> aedb30e66caee8b30ba831a116cd602285ee7d78
 	}
 
 	// boolean

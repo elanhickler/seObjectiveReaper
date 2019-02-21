@@ -257,11 +257,7 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 		return getActiveTake().getNameNoTags();
 	case __track:
 		if (get_value)
-<<<<<<< HEAD
 			return (String)TRACK(getTrack()).getIndex();
-=======
-			return (String)TRACK(getTrack()).idx();
->>>>>>> aedb30e66caee8b30ba831a116cd602285ee7d78
 		else
 			return TRACK(getTrack()).getName();
 	case __length:
@@ -285,17 +281,13 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 	case __pitch:
 		return (String)getActiveTake().getPitch();
 	case __file_extension:
-<<<<<<< HEAD
 		return getActiveTake().getFile().getFileExtension();
-=======
-		return getActiveTake().file().getFileExtension();
 	case __noteclass:
 		MIDI midi(getTag("n"));
 		if (get_value)
 			return (String)midi.getClassValue();
 		else
 			return midi.getClass(); 
->>>>>>> aedb30e66caee8b30ba831a116cd602285ee7d78
 	}
 
 	return {};
