@@ -445,7 +445,8 @@ void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 	for (ITEM & i : il)
 	{
 		int grp = i.getGroupIndex();
-		if (grp == 0) grp = non_group_counter--;
+		if (grp == 0)
+			grp = non_group_counter--;
 		group_map[grp].push_back(i);
 		group_set.insert(grp);
 	}
