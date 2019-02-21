@@ -174,6 +174,7 @@ protected:
 
 class ITEMLIST : public LIST<ITEM>, public OBJECT_MOVABLE
 {
+	friend class ITEMGROUPLIST;
 public:
 	static int CountSelected();
 	static int Count();
@@ -238,6 +239,11 @@ public:
 	// project
 	void CollectItems(GROUPMODE group_mode);
 	void collectSelectedItems(GROUPMODE group_mode);
+	void setSelected(bool v)
+	{
+		for (auto & item : list)
+			item.setSelected(v);
+	}
 
 	// actions
 	ITEMLIST * addNewList()

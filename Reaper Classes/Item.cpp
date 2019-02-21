@@ -329,8 +329,27 @@ void ITEMLIST::collectSelectedItems()
 		sort();
 }
 
-double ITEMLIST::getStart() const { return front().getStart(); }
-double ITEMLIST::getEnd() const { return back().getEnd(); }
+double ITEMLIST::getStart() const
+{
+	if (do_sort)
+	{
+		return front().getStart();
+	}
+	else
+	{
+		double start = list[0].getStart();
+		for (const auto & item : list)
+			start = min(start, item.getStart());
+		return start;
+	}
+}
+double ITEMLIST::getEnd() const
+{
+	double end = list[0].getEnd();
+	for (const auto & item : list)
+		end = max(end, item.getEnd());
+	return end;
+}
 double ITEMLIST::getSnapOffset() const { return front().getSnapOffset(); }
 double ITEMLIST::getFadeInLen() const { return front().getFadeInLen(); }
 double ITEMLIST::getFadeOutLen() const { return back().getFadeOutLen(); }
@@ -432,6 +451,9 @@ void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 	reserve(items);
 
 	ITEMLIST il;
+	if (!do_sort)
+		il.disableSort();
+
 	if (selected_only)
 		il.collectSelectedItems();
 	else
@@ -452,7 +474,10 @@ void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 	}
 
 	for (auto it = group_set.begin(); it != group_set.end(); ++it)
+	{
 		push_back(group_map[*it]);
+		back().m_group = *it;
+	}
 }
 
 void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_overlapping)
