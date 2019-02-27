@@ -2,6 +2,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
+#include "../reaper plugin/reaper_plugin_functions.h"
+
 using namespace juce;
 
 using std::vector;
@@ -220,20 +222,29 @@ public:
   WavAudioFile * cues;
 
   AudioFile() {}
-  AudioFile(File file) : m_file(file) {}
 
-  File m_file;
-  int m_srate;
-  int m_bitdepth;
-  int m_frames;
-  int m_samples;
-  int m_channels;
-  double m_length;
+	AudioFile(PCM_source* source)
+	{
+		setSource(source);
+	}
+
+  File file;
+  int srate;
+  int bitdepth;
+  int frames;
+  int samples;
+  int channels;
+  double length;
   vector<vector<double>> multichannel;
 
-  void setFile(File file)
+  void setSource(PCM_source* source)
   {
-    m_file = file;
+    file = source->GetFileName();
+		srate = source->GetSampleRate();
+		channels = source->GetNumChannels();
+		samples = source->GetLength() * channels * srate;
+		bitdepth = source->GetBitsPerSample();
+		frames = source->GetLength() * srate;
   }
   void collectCues();
   Array<WavAudioFile::CuePoint> getCuePoints();
@@ -242,12 +253,12 @@ public:
   void writeCues();
 
   // getters
-  int samples() { return m_samples; }
-  int channels() { return m_channels; }
-  int frames() { return m_frames; }
-  int getSampleRate() { return m_srate; }
-  int bitdepth() { return m_bitdepth; }
-  double lenght() { return m_length; }
+  int getNumSamples() { return samples; }
+  int getNumChannels() { return channels; }
+  int getNumFrames() { return frames; }
+  int getSampleRate() { return srate; }
+  int getBitDepth() { return bitdepth; }
+  double getLenght() { return length; }
 };
 
 vector<vector<double>> InterleavedToMultichannel(double* input, int channels, int frames);

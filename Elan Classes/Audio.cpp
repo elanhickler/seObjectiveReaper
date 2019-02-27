@@ -385,7 +385,7 @@ WavAudioFile::Loop WavAudioFile::getSampleLoop(int index) const
 
 void AudioFile::collectCues()
 {
-    cues = WavAudioFile::create(m_file, 0.0, m_samples/(double)m_srate);
+    cues = WavAudioFile::create(file, 0.0, samples/(double)srate);
 }
 
 Array<WavAudioFile::CuePoint> AudioFile::getCuePoints()
@@ -405,5 +405,5 @@ Array<WavAudioFile::Loop> AudioFile::getLoops()
 
 void AudioFile::writeCues()
 {
-    cues->saveChanges(m_file);
+    cues->saveChanges(file);
 }

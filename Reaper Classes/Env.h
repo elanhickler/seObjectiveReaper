@@ -32,18 +32,27 @@ public:
 class ENVELOPE : public LIST<ENVPT>
 {
 public:
+	static TrackEnvelope* getSelected()
+	{
+		return GetSelectedEnvelope(nullptr);
+	}
+	static void toggleByName(MediaItem_Take* take, string env_name, bool off_on);
+	static TrackEnvelope* getByName(MediaItem_Take* take, String name);
+
 	ENVELOPE() {}
-	ENVELOPE(TrackEnvelope * envelope, String name = "") : envelope(envelope), _name(name) {}
+	ENVELOPE(TrackEnvelope * envelopePtr);
+	ENVELOPE(TrackEnvelope * envelopePtr, String name);
+	ENVELOPE(MediaItem_Take * take, String name);
 
 	// conversion
 	operator vector<ENVPT>() { return list; }
-	operator TrackEnvelope*() const { return envelope; }
+	operator TrackEnvelope*() const { return envelopePtr; }
 
 	// operators
-	bool operator==(TrackEnvelope * rhs) const { return envelope == rhs; }
-	bool operator!=(TrackEnvelope * rhs) const { return envelope != rhs; }
-	bool operator==(const ENVELOPE & rhs) const { return envelope == rhs.envelope; }
-	bool operator!=(const ENVELOPE & rhs) const { return envelope != rhs.envelope; }
+	bool operator==(TrackEnvelope * rhs) const { return envelopePtr == rhs; }
+	bool operator!=(TrackEnvelope * rhs) const { return envelopePtr != rhs; }
+	bool operator==(const ENVELOPE & rhs) const { return envelopePtr == rhs.envelopePtr; }
+	bool operator!=(const ENVELOPE & rhs) const { return envelopePtr != rhs.envelopePtr; }
 
 	// functions
 	void collectPoints();
@@ -53,37 +62,55 @@ public:
 	void simplifyByDifference(double diff);
 	double centerValueTowardAverage(double min_x, double max_x);
 
-	void setTrackEnvelope(MediaItem_Take* take, String name);
+	void setEnvelope(MediaItem_Take* take, String name);
+	void setEnvelope(TrackEnvelope* trackEnv);
 	void setPoints(const ENVELOPE & env);
 
+	void toggle(bool off_on);
+
 	// boolean
-	bool isValid() const { return envelope != nullptr; }
+	bool isValid() const { return envelopePtr != nullptr; }
 
-	protected:
-		bool no_sort = true;
-		float tent(float x);
-		double getDistanceFromLine(double x1, double y1, double x2, double y2, double xp, double yp);
-		ENVELOPE simplify(ENVELOPE points, double maxError);
-		void LinearRegression(ENVELOPE p, double & a, double & b);
+protected:
+	bool no_sort = true;
+	float tent(float x);
+	double getDistanceFromLine(double x1, double y1, double x2, double y2, double xp, double yp);
+	ENVELOPE simplify(ENVELOPE points, double maxError);
+	void LinearRegression(ENVELOPE p, double & a, double & b);
 
-		// members
-		String _name;
-		MediaItem_Take* _take;
-		TrackEnvelope* envelope;
+	// members
+	String _name;
+	MediaItem_Take* takePtr = nullptr;
+	TrackEnvelope* envelopePtr = nullptr;
+
+	// chunk stuff
+	struct TakeEnvMapStruct { regex r_search, r_replace; string defchunk; };
+	static map<String, TakeEnvMapStruct> TakeEnvMap;
+	static void splitTakeChunks(MediaItem * item, string chunk_c, string& header, string& footer, vector<string>& take_chunks, int& act_take_num);
+	static void toggleTakeEnvelope(MediaItem_Take * take, String env_name, bool off_on);
 };
 
 class AUTOITEM : public OBJECT_MOVABLE, public OBJECT_VALIDATES
 {
 public:
+	static AUTOITEM create(TrackEnvelope* envelopePtr, double position, double length)
+	{
+		return InsertAutomationItem(envelopePtr, -1, position, length);
+	}
+
 	AUTOITEM() {}
-	AUTOITEM(int idx) : _idx(idx) { _get(); }
+	AUTOITEM(int idx) : _idx(idx)
+	{
+		_get();
+		collectPoints();
+	}
 
 	void collectPoints() { _envelope.collectAutoItemPoints(_idx); }
 	ENVELOPE envelope() const { return _envelope; }
 	void simplifyByAverage(double width) { _envelope.simplifyByAverage(width); }
 	void simplifyByDifference(double diff) { _envelope.simplifyByDifference(diff); }
 	double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, getLength()); }
-	double create() { InsertAutomationItem(_envelope, _pool_id, _position, _length); }
+	AUTOITEM create() { return InsertAutomationItem(_envelope, _pool_id, _position, _length); }
 
 	double getStart() const override { return _position; }
 	void setStart(double v) override { _position = v; _set(); }

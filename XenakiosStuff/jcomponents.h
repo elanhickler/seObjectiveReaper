@@ -539,8 +539,6 @@ public:
 	}
 	
 	UserInputsComponent* m_comp = nullptr;
-private:
-
 };
 
 struct UIInputBox

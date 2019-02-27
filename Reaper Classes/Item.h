@@ -1,5 +1,11 @@
 #pragma once
 
+/*
+none: All items treated as single items and put into individual groups
+grouped: Items are grouped according to REAPER item group feature.
+overlapping: Items are grouped if they are overlapping. Items simply touching will not be grouped.
+touching: Items are grouped if they are right up against eachother or overlapping.
+*/
 enum GROUPMODE { none, grouped, overlapping, touching };
 
 class ITEM : public LIST<TAKE>, public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
@@ -175,9 +181,6 @@ protected:
 class ITEMLIST : public LIST<ITEM>, public OBJECT_MOVABLE
 {
 	friend class ITEMGROUPLIST;
-public:
-	static int CountSelected();
-	static int Count();
 protected:
 	int m_group;
 
@@ -189,7 +192,7 @@ public:
 		push_back(i);
 	}
 
-	ITEMLIST(vector<ITEM> v)
+	ITEMLIST(const vector<ITEM> & v)
 	{
 		list = v;
 	}
@@ -261,4 +264,16 @@ public:
 
 	// functions
 	int countItems();
+};
+
+class AUDIOPROCESS
+{
+public:
+	static void processItemList(ITEMLIST & list, std::function<void(TAKE&)> perTakeFunction);
+
+protected:
+	static void prepareToStart();
+	static void prepareToEnd();
+	static void loadTake(TAKE & take);
+	static void unloadTake(TAKE & take);
 };

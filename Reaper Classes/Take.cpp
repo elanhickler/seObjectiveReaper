@@ -1,6 +1,10 @@
 #include "ReaperClassesHeader.h"
 #include "Take.h"
 
+
+
+
+
 String TAKE::getName() const { return GetTakeName(takePtr); }
 void TAKE::setName(const String & v) { GetSetMediaItemTakeInfo_String(takePtr, "P_NAME", (char*)v.toRawUTF8(), 1); }
 double TAKE::getStart() const { return GetMediaItemInfo_Value(GetMediaItemTake_Item(takePtr), "D_POSITION"); }
@@ -23,20 +27,20 @@ TAKE::TAKE(MediaItem_Take * take) : takePtr(take)
 	jassert(take != nullptr);
 	TagManager.setStringWithTags(getName());
 
-	envelope.Volume.setTrackEnvelope(take, "Volume");
-	envelope.Pan.setTrackEnvelope(take, "Pan");
-	envelope.Mute.setTrackEnvelope(take, "Mute");
-	envelope.Pitch.setTrackEnvelope(take, "Pitch");
+	envelope.Volume = ENVELOPE(takePtr,"Volume");
+	envelope.Pan = ENVELOPE(take, "Pan");
+	envelope.Mute = ENVELOPE(take, "Mute");
+	envelope.Pitch = ENVELOPE(take, "Pitch");
 }
 
 // functions
 AudioFile & TAKE::audio() { return audioFile; }
 int TAKE::getIndex() const { return GetMediaItemTakeInfo_Value(takePtr, "IP_TAKENUMBER"); }
-MediaItem * TAKE::item() const { return GetMediaItemTake_Item(takePtr); }
-MediaTrack * TAKE::track() const { return GetMediaItemTrack(item()); }
+MediaItem * TAKE::getMediaItemPtr() const { return GetMediaItemTake_Item(takePtr); }
+MediaTrack * TAKE::track() const { return GetMediaItemTrack(getMediaItemPtr()); }
 int TAKE::chanmode() const { return GetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE"); }
 struct chantype { enum { normal, mono, stereo }; };
-int TAKE::firstCh() const
+int TAKE::getFirstChannel() const
 {
 	int ch = chanmode();
 
@@ -46,10 +50,10 @@ int TAKE::firstCh() const
 		return ch - 3;
 	return 0;
 }
-int TAKE::lastCh() const
+int TAKE::getLastChannel() const
 {
 	int ch = chanmode();
-	int first = firstCh();
+	int first = getFirstChannel();
 
 	if (ch == 0)
 		return GetMediaItemTake_Source(takePtr)->GetNumChannels() - 1;
@@ -67,13 +71,12 @@ double TAKE::getRate() const { return GetMediaItemTakeInfo_Value(takePtr, "D_PLA
 // Returns volume as a factor of amplitude.
 double TAKE::getVolume() const { return abs(GetMediaItemTakeInfo_Value(takePtr, "D_VOL")); }
 double TAKE::getStartOffset() const { return GetMediaItemTakeInfo_Value(takePtr, "D_STARTOFFS"); }
-int TAKE::getSampleRate() { return audioFile.m_srate; }
-int TAKE::getBitDepth() { return m_bitdepth; }
-int TAKE::getNumChannels() { return m_nch; }
+int TAKE::getSampleRate() { return audioFile.getSampleRate(); }
+int TAKE::getBitDepth() { return audioFile.getBitDepth(); }
+int TAKE::getNumChannels() { return audioFile.getNumChannels(); }
 PCM_source * TAKE::pcm_source() const { return m_source; }
-size_t TAKE::frames() const { return m_take_frames; }
-size_t TAKE::samples() const { return m_take_samples; }
-size_t TAKE::file_frames() const { return m_file_frames; }
+size_t TAKE::getNumFrames() const { return m_take_frames; }
+size_t TAKE::getNumSamples() const { return m_take_samples; }
 File TAKE::getFile() const { return m_file; }
 void TAKE::setFile(const String & file) { SetMediaItemTake_Source(takePtr, PCM_Source_CreateFromFile(file.toRawUTF8())); }
 void TAKE::setChannelMode(int v) { SetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE", v); }
@@ -171,30 +174,24 @@ TAKE TAKE::move(MediaItem * new_item)
 void TAKE::initAudio(double starttime, double endtime)
 {
 	audioIsInitialized = true;
-	m_source = GetMediaItemTake_Source(takePtr);
 
-	audioFile = AudioFile((File)m_source->GetFileName());
+	audioFile = AudioFile(m_source);
 
-	// raw audio file properties
-	audioFile.m_srate = m_source->GetSampleRate();
-	audioFile.m_channels = m_source->GetNumChannels();
-	audioFile.m_samples = m_source->GetLength() * audioFile.m_channels * audioFile.m_srate;
-	audioFile.m_bitdepth = m_source->GetBitsPerSample();
-	audioFile.m_frames = m_source->GetLength() * audioFile.m_srate;
-
-	jassert(audioFile.m_channels > 0); // bad audio file
+	jassert(audioFile.channels > 0); // bad audio file
 
 	// take audio properties
-	audioFile.m_file = m_source->GetFileName();
-	m_file_frames = getLength() * audioFile.m_srate;
+	audioFile.file = m_source->GetFileName();
+	m_file_frames = getLength() * audioFile.srate;
 	m_file_length = m_source->GetLength();
 	m_bitdepth = m_source->GetBitsPerSample();
 	m_nch = m_source->GetNumChannels();
 
-	if (starttime == -1) starttime = m_audiobuf_starttime = 0;
-	if (endtime == -1) { endtime = m_audiobuf_endtime = getLength(); }
+	if (starttime == -1)
+		starttime = m_audiobuf_starttime = 0;
+	if (endtime == -1)
+		endtime = m_audiobuf_endtime = getLength();
 
-	m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)audioFile.m_srate;
+	m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)audioFile.srate;
 	m_take_samples = m_take_frames * m_nch;
 }
 
@@ -205,7 +202,7 @@ void TAKE::loadAudio()
 
 	vector<double> buffer(m_take_samples, 0);
 	AudioAccessor* accessor = CreateTakeAudioAccessor(takePtr);
-	GetAudioAccessorSamples(accessor, audioFile.m_srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
+	GetAudioAccessorSamples(accessor, audioFile.srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
 	DestroyAudioAccessor(accessor);
 
 	setChannelMode(initial_chanmode);

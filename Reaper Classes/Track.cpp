@@ -1,8 +1,6 @@
 #include "ReaperClassesHeader.h"
 #include "Track.h"
 
-int TRACK::count() { return CountTracks(0); }
-
 TRACK TRACK::getByIndex(int idx) { return TRACK(idx); }
 
 TRACK TRACK::getByName(const String & name)

@@ -43,7 +43,6 @@ public:
 	T* getDataAs() { return static_cast<T*>(m_data); }
 };
 
-
 class MyWindow;
 
 template<class T, class U> void setOpt(T* parameter, U&& input)
@@ -51,8 +50,70 @@ template<class T, class U> void setOpt(T* parameter, U&& input)
 	if (parameter != nullptr)  *parameter = std::move(input);
 }
 
+class CONSOLE
+{
+public:
+	CONSOLE(String text)
+	{
+		ShowConsoleMsg(text.toRawUTF8());
+	}
+	static void clear()
+	{
+		ShowConsoleMsg("");
+	}
+};
+
+class COMMAND
+{
+public:
+	static void pasteItems() { COMMAND(40058); }
+	static void removeItems() { COMMAND(40006); }
+	static void glueItems() { COMMAND(40362); }
+	void unselectAllItemsAndSelectItemUnderMouse() { COMMAND(40528); }
+
+	COMMAND(int action, int flag = 0) { Main_OnCommand(action, flag); }
+	COMMAND(const char* action, int flag = 0) { Main_OnCommand(NamedCommandLookup(action), flag); }
+};
+
+class NUDGE
+{
+public:
+	enum what {
+		position,
+		start, //leftTrim,
+		positionKeepingEnd, //leftEdge,
+		end, //rightTrim or rightEdge,
+		contents,
+		duplicate,
+		editCursor,
+		invalid
+	};
+
+	enum units
+	{
+		ms,
+		seconds,
+		grid,
+		samples = 17,
+		frames,
+		pixels,
+	};
+
+	static void apply(what w, double amount, units u = units::seconds)
+	{
+		ApplyNudge(0, 0, w, u, amount, false, 0);
+	}
+};
+
 class PROJECT
 {
+protected:
+	static vector<MediaItem*> savedItems;
+	static double saved_cursor_position;
+	static bool view_is_being_saved;
+	static double global_save_view_start;
+	static double global_save_view_end;
+
 public:
 	static double getEndTime();
 	static double getGridDivision();
@@ -64,43 +125,41 @@ public:
 	static String getName();
 
 	static int countMakersAndRegions();
+	static int countSelectedItems() { return CountSelectedMediaItems(0); }
+	static int countItems();
+	static int countTracks();
+	static int countSelectedTracks();
 
-	static File PROJECT::getUserFile(const String & title = "Choose a file", const String & fileFilter = "*.txt");
+	static void selectItem(MediaItem* itemPtr) { SetMediaItemInfo_Value(itemPtr, "B_UISEL", true); }
+	static void unselectItem(MediaItem* itemPtr);
+	static void unselectAllItems() { COMMAND(40289); }
+
+	static void setSelectedItemsOffline() { COMMAND(40440); }
+	static void setSelectedItemsOnline() { COMMAND(40439); }
+	static void setAllItemsOffline() { COMMAND(40100); }
+	static void setAllItemsOnline() { COMMAND(40101); }
+
+	static void saveItemSelection();
+	static void loadItemSelection();
+
+	static void saveCursor();
+	static void loadCursor();
+
+	static void saveView();
+	static void loadView();
+
+	static double setCursor(double time, bool moveview = false, bool seekplay = false);
+	static double getCursor();
 };
-
-
-void msg(String s);
-void COMMAND(int action, int flag = 0);
-void COMMAND(const char* action, int flag = 0);
-
-// project cursor functions
-double SETCURSOR(double time, bool moveview = false, bool seekplay = false);
-double GETCURSOR();
 
 void UI();
 void UNDO(String undostr = "ACTION ENDED EARLY", ReaProject* project = 0);
-void VIEW();
 void UPDATE();
-void SET_ALL_ITEMS_OFFLINE();
-void SET_ALL_ITEMS_ONLINE();
-void SET_SELECTED_ITEMS_OFFLINE();
-void SET_SELECTED_ITEMS_ONLINE();
-void PASTE_ITEMS();
-void REMOVE_ITEMS();
-void GLUE_ITEMS();
-
-namespace NUDGE {
-	void START(double v, bool move_source = false);
-}
-
-// item functions
-void UNSELECT_ITEMS(); // Unselect all items
-MediaItem* SELECT_ITEM_UNDER_MOUSE();
 
 int juceToReaperColor(const Colour & v);
 Colour reaperToJuceColor(int v);
 
-// [\\s\\S] replaces . for c++ regex since . does not match any character, only non-newline character
+// [\\s\\S] replaces . for c++ regex since . does not match newline characters
 
 // chunk functions
 static regex chunk_to_sections("(<[\\s\\S]*IID\\s\\d*\\n)(NAME[\\s\\S]*)(>\\n)");
@@ -109,19 +168,6 @@ static regex split_take_from_sm_chunk("^(.*>\n)(SM.*)");
 static regex get_rate_properties(".*?\\n(PLAYRATE .*?)\\n");
 static regex split_rate_properties("PLAYRATE (.*?) (.*?) (.*?) (.*?) (.*?) (.*?)\\n");
 static regex modify_rate_properties("^(.*?\\n)PLAYRATE (.*?) (.*?) (.*?) (.*?) (.*?) (.*?)(\\n.*)$");
-void SplitTakeChunks(MediaItem* item, string chunk_c, string& header, string& footer, vector<string>& take_chunks, int& act_take_num);
-struct TakeEnvMapStruct { regex r_search, r_replace; string defchunk; };
-static map<string, TakeEnvMapStruct> TakeEnvMap =
-{
-	{ "Mute",{ (regex)"<MUTEENV\n", (regex)"<MUTEENV\n[\\s\\S]*?>\\s*", "<MUTEENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 1 -1 -1\nPT 0 1 1\n>\n" } },
-	{ "Pitch",{ (regex)"<PITCHENV\n", (regex)"<PITCHENV\n[\\s\\S]*?>\\s*", "<PITCHENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 1 1\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
-	{ "Pan",{ (regex)"><PANENV\n", (regex)"<PANENV\n[\\s\\S]*?>\\s*", "<PANENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
-	{ "Volume",{ (regex)"<VOLENV\n", (regex)"<VOLENV\n[\\s\\S]*?>\\s*", "<VOLENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 1 0\n>\n" } }
-};
-static regex get_start_of_env_chunk("(>\\s*)");
-
-// envelope functions
-TrackEnvelope* ToggleTakeEnvelopeByName(MediaItem_Take* take, string env_name, bool off_on);
 
 class OBJECT_VALIDATES
 {

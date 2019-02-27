@@ -19,20 +19,51 @@ action_entry::action_entry(std::string description, std::string idstring, toggle
 	}
 }
 
-void msg(String s) { ShowConsoleMsg(s.toRawUTF8()); }
+vector<MediaItem*> PROJECT::savedItems;
+double PROJECT::saved_cursor_position;
+bool PROJECT::view_is_being_saved = true;
+double PROJECT::global_save_view_start = 0;
+double PROJECT::global_save_view_end = 0;
 
-void COMMAND(int action, int flag) { Main_OnCommand(action, flag); }
-void COMMAND(const char* action, int flag) { Main_OnCommand(NamedCommandLookup(action), flag); }
+void PROJECT::saveItemSelection()
+{
+	int items = CountMediaItems(0);
 
-double SETCURSOR(double time, bool moveview, bool seekplay) { SetEditCurPos(time, moveview, seekplay); return time; }
-double GETCURSOR() { return GetCursorPosition(); }
+	savedItems.clear();
+	savedItems.reserve(items);
 
-double saved_cursor_position;
-void SAVE_CURSOR() { saved_cursor_position = GETCURSOR(); }
-void RESTORE_CURSOR() { SETCURSOR(saved_cursor_position); }
+	for (int i = 0; i < items; ++i)
+		savedItems.push_back(GetMediaItem(0, i));
+}
 
-void UNSELECT_ITEMS() { COMMAND(40289); }
-MediaItem* SELECT_ITEM_UNDER_MOUSE() { Main_OnCommand(40528, 0); return GetSelectedMediaItem(0, 0); }
+void PROJECT::loadItemSelection()
+{
+	unselectAllItems();
+	for (const auto & item : savedItems)
+		selectItem(item);
+}
+
+double PROJECT::setCursor(double time, bool moveview, bool seekplay)
+{
+	SetEditCurPos(time, moveview, seekplay);
+	return time;
+}
+double PROJECT::getCursor() { return GetCursorPosition(); }
+
+void PROJECT::saveCursor() { saved_cursor_position = PROJECT::getCursor(); }
+void PROJECT::loadCursor() { PROJECT::setCursor(saved_cursor_position); }
+
+void PROJECT::saveView()
+{
+	GetSet_ArrangeView2(0, 0, 0, 0, &global_save_view_start, &global_save_view_end);
+	view_is_being_saved = false;
+}
+
+void PROJECT::loadView()
+{
+	GetSet_ArrangeView2(0, 1, 0, 0, &global_save_view_start, &global_save_view_end);
+	view_is_being_saved = true;
+}
 
 int juceToReaperColor(const Colour & v)
 {
@@ -46,84 +77,16 @@ Colour reaperToJuceColor(int v)
 	return Colour(r, g, b);
 }
 
-void SplitTakeChunks(MediaItem * item, string chunk_c, string & header, string & footer, vector<string>& take_chunks, int & act_take_num)
-{
-	string chunk = chunk_c;
-
-	// Split item chunk
-	match_results<string::const_iterator> m;
-	regex_search(chunk, m, chunk_to_sections);
-	header = m[1];
-	string data = m[2];
-	footer = m[3];
-
-	// Split data into take chunks
-	sregex_token_iterator i(data.begin(), data.end(), separate_take_chunks, { -1, 0 });
-	sregex_token_iterator j;
-	act_take_num = 0;
-	++i;
-	while (i != j)
-	{
-		take_chunks.push_back(*i++);
-		if (i != j) take_chunks.back() += *i++;
-		if (!act_take_num) act_take_num = take_chunks.back().substr(0, 8) == "TAKE SEL" ? take_chunks.size() - 1 : 0;
-	}
-}
-
-// envelope functions
-TrackEnvelope * ToggleTakeEnvelopeByName(MediaItem_Take * take, string env_name, bool off_on)
-{
-	bool update_chunk = false;
-	bool env_is_enabled = false;
-	string header, footer, chunk;
-	vector<string> take_chunks;
-	int act_take_num;
-	int take_num = GetMediaItemTakeInfo_Value(take, "IP_TAKENUMBER");
-	auto item = (MediaItem*)GetSetMediaItemTakeInfo(take, "P_ITEM", 0);
-
-	char* chunk_c = GetSetObjectState(item, "");
-	SplitTakeChunks(item, chunk_c, header, footer, take_chunks, act_take_num);
-
-	auto idx = TakeEnvMap[env_name];
-
-	if (regex_search(take_chunks[take_num], idx.r_search)) env_is_enabled = true;
-
-	if (off_on && !env_is_enabled)
-	{
-		take_chunks[take_num] += idx.defchunk;
-		update_chunk = true;
-	}
-	else if (!off_on && env_is_enabled)
-	{
-		take_chunks[take_num] = regex_replace(take_chunks[take_num], idx.r_replace, "$1");
-		update_chunk = true;
-	}
-
-	// Rebuild item chunk
-	if (update_chunk)
-	{
-		chunk = header;
-		for (const auto& c : take_chunks) chunk += c;
-		chunk += footer;
-
-		GetSetObjectState(item, chunk.c_str());
-
-		FreeHeapPtr(chunk_c);
-	}
-
-	return off_on ? GetTakeEnvelopeByName(take, env_name.c_str()) : nullptr;
-}
-
 double PROJECT::getEndTime()
 {
-	SAVE_CURSOR();
-	VIEW();
+	saveCursor();
+	saveView();
 
 	COMMAND(40043); // Transport: Go to end of project
-	double time = GETCURSOR();
+	double time = getCursor();
 
-	RESTORE_CURSOR();
-	VIEW();
+	loadCursor();
+	loadView();
 
 	return time;
 }
@@ -169,46 +132,42 @@ int PROJECT::countMakersAndRegions()
 	return m + r;
 }
 
-File PROJECT::getUserFile(const String & title, const String & fileFilter)
+int PROJECT::countItems() { return CountMediaItems(0); }
+
+int PROJECT::countTracks() { return CountTracks(0); }
+
+int PROJECT::countSelectedTracks() { return CountSelectedTracks(0); }
+
+void PROJECT::unselectItem(MediaItem * itemPtr)
 {
-	char charbuffer[4096];
-	if (GetUserFileNameForRead(charbuffer, title.toStdString().c_str(), fileFilter.toStdString().c_str()))
-		return charbuffer;
-	else
-		return {};
+	SetMediaItemInfo_Value(itemPtr, "B_UISEL", false);
 }
 
 bool ui_is_updating = true;
 void UI()
 {
-	if (ui_is_updating) { PreventUIRefresh(1); ui_is_updating = false; }
-	else { PreventUIRefresh(-1); ui_is_updating = true; UPDATE(); }
+	if (ui_is_updating)
+	{
+		PreventUIRefresh(1);
+		ui_is_updating = false;
+	}
+	else
+	{
+		PreventUIRefresh(-1);
+		ui_is_updating = true;
+		UPDATE();
+	}
 }
 
 bool undo_is_active = false;
 void UNDO(String undostr, ReaProject* project)
 {
-	if (!undo_is_active) Undo_BeginBlock2(0);
-	else Undo_EndBlock2(project, undostr.toRawUTF8(), -1);
+	if (!undo_is_active)
+		Undo_BeginBlock2(0);
+	else
+		Undo_EndBlock2(project, undostr.toRawUTF8(), -1);
 
 	flip(undo_is_active);
-}
-
-bool view_is_being_saved = true;
-double global_save_view_start = 0;
-double global_save_view_end = 0;
-void VIEW()
-{
-	if (view_is_being_saved)
-	{
-		GetSet_ArrangeView2(0, 0, 0, 0, &global_save_view_start, &global_save_view_end);
-		view_is_being_saved = false;
-	}
-	else
-	{
-		GetSet_ArrangeView2(0, 1, 0, 0, &global_save_view_start, &global_save_view_end);
-		view_is_being_saved = true;
-	}
 }
 
 void UPDATE()
@@ -216,22 +175,6 @@ void UPDATE()
 	UpdateArrange();
 	TrackList_AdjustWindows(false);
 }
-
-void SET_ALL_ITEMS_OFFLINE() { COMMAND(40100); }
-void SET_ALL_ITEMS_ONLINE() { COMMAND(40101); }
-void SET_SELECTED_ITEMS_OFFLINE() { COMMAND(40440); }
-void SET_SELECTED_ITEMS_ONLINE() { COMMAND(40439); }
-void PASTE_ITEMS() { COMMAND(40058); }
-void REMOVE_ITEMS() { COMMAND(40006); }
-void GLUE_ITEMS() { COMMAND(40362); }
-
-void NUDGE::START(double v, bool move_source)
-{
-	int nudgewhat = 1;
-	if (move_source) nudgewhat = 2;
-	ApplyNudge(0, 0, nudgewhat, 1, v, 0, 0);
-}
-
 //double GetNextItemStartTime(double time, TRACKLIST & TrackListIn)
 //{
 //    return 0.0;
@@ -432,3 +375,4 @@ void NUDGE::START(double v, bool move_source)
 //}
 
 //String GetPropertyStringFromKey(const String & key, bool use_value) const { return String(); }
+

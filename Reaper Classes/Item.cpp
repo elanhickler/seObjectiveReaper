@@ -13,7 +13,6 @@ void ITEM::collectTakes()
 	{
 		push_back(GetTake(itemPtr, i));
 		back().itemParent = this;
-		back().initAudio();
 	}
 }
 
@@ -80,9 +79,9 @@ double ITEM::getStart() const { return GetMediaItemInfo_Value(itemPtr, "D_POSITI
 
 void ITEM::setStart(double v)
 {
-	UNSELECT_ITEMS();
+	PROJECT::unselectAllItems();
 	SetMediaItemInfo_Value(itemPtr, "B_UISEL", true);
-	NUDGE::START(v, false);
+	//NUDGE::apply(v, false);
 }
 
 double ITEM::getEnd() const
@@ -292,10 +291,6 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 
 	return {};
 }
-
-int ITEMLIST::CountSelected() { return CountSelectedMediaItems(0); }
-
-int ITEMLIST::Count() { return CountMediaItems(0); }
 
 void ITEMLIST::CollectItems()
 {
@@ -512,7 +507,7 @@ void ITEMGROUPLIST::collect_groupoverlapping(bool selected_only, bool must_be_ov
 			if (previous_item == i)
 				continue;
 
-			bool do_new_list = must_be_overlapping ? !RANGE::is_overlapping(previous_item, i) : !RANGE::is_touching(previous_item, i);
+			bool do_new_list = !(must_be_overlapping ? RANGE::is_overlapping(previous_item, i) : RANGE::is_touching(previous_item, i));
 
 			if (do_new_list)
 				addNewList()->push_back(i);
@@ -570,7 +565,8 @@ void ITEMGROUPLIST::CollectItems(GROUPMODE group_mode)
 		break;
 	}
 
-	if (do_sort) sort();
+	if (do_sort)
+		sort();
 }
 
 int ITEMGROUPLIST::countItems()
@@ -579,4 +575,50 @@ int ITEMGROUPLIST::countItems()
 	for (const auto& itemgroup : list)
 		c += itemgroup.size();
 	return c;
+}
+
+void AUDIOPROCESS::processItemList(ITEMLIST & list, std::function<void(TAKE&)> perTakeFunction)
+{
+	prepareToStart();
+
+	for (auto & item : list)
+	{
+		auto take = item.getActiveTake();
+
+		loadTake(take);
+
+		perTakeFunction(take);
+
+		unloadTake(take);
+	}
+
+	prepareToEnd();
+}
+
+void AUDIOPROCESS::prepareToStart()
+{
+	PROJECT::setAllItemsOffline();
+	PROJECT::saveItemSelection();
+	PROJECT::unselectAllItems();
+}
+
+void AUDIOPROCESS::prepareToEnd()
+{
+	PROJECT::loadItemSelection();
+	PROJECT::setAllItemsOnline();
+}
+
+void AUDIOPROCESS::loadTake(TAKE & take)
+{
+	PROJECT::selectItem(take.getMediaItemPtr());
+	PROJECT::setSelectedItemsOnline();
+	take.initAudio();
+	take.loadAudio();
+}
+
+void AUDIOPROCESS::unloadTake(TAKE & take)
+{
+	take.unloadAudio();
+	PROJECT::setSelectedItemsOffline();
+	PROJECT::unselectItem(take.getMediaItemPtr());
 }

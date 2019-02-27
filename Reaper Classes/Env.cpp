@@ -2,6 +2,14 @@
 
 #include "Env.h"
 
+map<String, ENVELOPE::TakeEnvMapStruct> ENVELOPE::TakeEnvMap =
+{
+	{ "Mute",{ (regex)"<MUTEENV\n", (regex)"<MUTEENV\n[\\s\\S]*?>\\s*", "<MUTEENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 1 -1 -1\nPT 0 1 1\n>\n" } },
+	{ "Pitch",{ (regex)"<PITCHENV\n", (regex)"<PITCHENV\n[\\s\\S]*?>\\s*", "<PITCHENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 1 1\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
+	{ "Pan",{ (regex)"><PANENV\n", (regex)"<PANENV\n[\\s\\S]*?>\\s*", "<PANENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 0 0\n>\n" } },
+	{ "Volume",{ (regex)"<VOLENV\n", (regex)"<VOLENV\n[\\s\\S]*?>\\s*", "<VOLENV\nACT 1\nVIS 1 1 1\nLANEHEIGHT 0 0\nARM 1\nDEFSHAPE 0 -1 -1\nPT 0 1 0\n>\n" } }
+};
+
 float ENVELOPE::tent(float x)
 {
 	x = fabs(x);
@@ -98,26 +106,92 @@ void ENVELOPE::LinearRegression(ENVELOPE env, double & a, double & b)
 	b = ym - a * xm;
 }
 
+void ENVELOPE::splitTakeChunks(MediaItem* item, string chunk_c, string & header, string & footer, vector<string>& take_chunks, int & act_take_num)
+{
+	string chunk = chunk_c;
+
+	// Split item chunk
+	match_results<string::const_iterator> m;
+	regex_search(chunk, m, chunk_to_sections);
+	header = m[1];
+	string data = m[2];
+	footer = m[3];
+
+	// Split data into take chunks
+	sregex_token_iterator i(data.begin(), data.end(), separate_take_chunks, { -1, 0 });
+	sregex_token_iterator j;
+	act_take_num = 0;
+	++i;
+	while (i != j)
+	{
+		take_chunks.push_back(*i++);
+		if (i != j) take_chunks.back() += *i++;
+		if (!act_take_num) act_take_num = take_chunks.back().substr(0, 8) == "TAKE SEL" ? take_chunks.size() - 1 : 0;
+	}
+}
+
+void ENVELOPE::toggleTakeEnvelope(MediaItem_Take * take, String env_name, bool off_on)
+{
+	bool update_chunk = false;
+	bool env_is_enabled = false;
+	string header, footer, chunk;
+	vector<string> take_chunks;
+	int act_take_num;
+	int take_num = GetMediaItemTakeInfo_Value(take, "IP_TAKENUMBER");
+	auto item = (MediaItem*)GetSetMediaItemTakeInfo(take, "P_ITEM", 0);
+
+	char* chunk_c = GetSetObjectState(item, "");
+	splitTakeChunks(item, chunk_c, header, footer, take_chunks, act_take_num);
+
+	auto idx = TakeEnvMap[env_name];
+
+	if (regex_search(take_chunks[take_num], idx.r_search))
+		env_is_enabled = true;
+
+	if (off_on && !env_is_enabled)
+	{
+		take_chunks[take_num] += idx.defchunk;
+		update_chunk = true;
+	}
+	else if (!off_on && env_is_enabled)
+	{
+		take_chunks[take_num] = regex_replace(take_chunks[take_num], idx.r_replace, "$1");
+		update_chunk = true;
+	}
+
+	// Rebuild item chunk
+	if (update_chunk)
+	{
+		chunk = header;
+		for (const auto& c : take_chunks) chunk += c;
+		chunk += footer;
+
+		GetSetObjectState(item, chunk.c_str());
+
+		FreeHeapPtr(chunk_c);
+	}
+}
+
 void ENVELOPE::collectPoints()
 {
 	ENVPT p;
 	p.id = 0;
-	while (GetEnvelopePoint(envelope, p.id++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
+	while (GetEnvelopePoint(envelopePtr, p.id++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
 		list.push_back(p);
 }
 
 void ENVELOPE::removeAllPoints()
 {
 	double start = 0;
-	GetEnvelopePoint(envelope, 0, &start, nullptr, nullptr, nullptr, nullptr);
-	DeleteEnvelopePointRange(envelope, start, DBL_MAX);
+	GetEnvelopePoint(envelopePtr, 0, &start, nullptr, nullptr, nullptr, nullptr);
+	DeleteEnvelopePointRange(envelopePtr, start, DBL_MAX);
 }
 
 void ENVELOPE::collectAutoItemPoints(int autoitemidx)
 {
 	ENVPT p;
 	p.id = 0;
-	while (GetEnvelopePointEx(envelope, autoitemidx, p.id++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
+	while (GetEnvelopePointEx(envelopePtr, autoitemidx, p.id++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
 		list.push_back(p);
 }
 
@@ -171,20 +245,104 @@ double ENVELOPE::centerValueTowardAverage(double min_x, double max_x)
 	return a * xc + b;
 }
 
-void ENVELOPE::setTrackEnvelope(MediaItem_Take * take, String name)
+void ENVELOPE::setEnvelope(MediaItem_Take * take, String name)
 {
-	_take = take;
+	takePtr = take;
+	envelopePtr = GetTakeEnvelopeByName(takePtr, _name.toRawUTF8());
 	_name = name;
-	envelope = GetTakeEnvelopeByName(_take, _name.toRawUTF8());
+}
+
+void ENVELOPE::setEnvelope(TrackEnvelope* trackEnv)
+{
+	takePtr = nullptr;
+	envelopePtr = trackEnv;
+	char buf[1024];
+	GetEnvelopeName(envelopePtr, buf, 1024);
+	_name = String(buf);
 }
 
 void ENVELOPE::setPoints(const ENVELOPE & env)
 {
 	if (!isValid())
-		envelope = ToggleTakeEnvelopeByName(_take, _name.toStdString(), true);
+	{
+		toggleByName(takePtr, _name.toStdString(), true);
+		envelopePtr = ENVELOPE::getByName(takePtr, _name);
+	}
+
 	removeAllPoints();
+
 	list = env.list;
+
 	for (const auto& pt : list)
-		InsertEnvelopePoint(envelope, pt.position, pt.value, pt.shape, pt.tension, pt.selected, &no_sort);
-	Envelope_SortPoints(envelope);
+		InsertEnvelopePoint(envelopePtr, pt.position, pt.value, pt.shape, pt.tension, pt.selected, &no_sort);
+
+	Envelope_SortPoints(envelopePtr);
+}
+
+void ENVELOPE::toggle(bool off_on)
+{
+	if (takePtr != nullptr)
+		toggleTakeEnvelope(takePtr, _name, off_on);
+}
+
+void ENVELOPE::toggleByName(MediaItem_Take * take, string env_name, bool off_on)
+{
+	bool update_chunk = false;
+	bool env_is_enabled = false;
+	string header, footer, chunk;
+	vector<string> take_chunks;
+	int act_take_num;
+	int take_num = GetMediaItemTakeInfo_Value(take, "IP_TAKENUMBER");
+	auto item = (MediaItem*)GetSetMediaItemTakeInfo(take, "P_ITEM", 0);
+
+	char* chunk_c = GetSetObjectState(item, "");
+	splitTakeChunks(item, chunk_c, header, footer, take_chunks, act_take_num);
+
+	auto idx = TakeEnvMap[env_name];
+
+	if (regex_search(take_chunks[take_num], idx.r_search)) env_is_enabled = true;
+
+	if (off_on && !env_is_enabled)
+	{
+		take_chunks[take_num] += idx.defchunk;
+		update_chunk = true;
+	}
+	else if (!off_on && env_is_enabled)
+	{
+		take_chunks[take_num] = regex_replace(take_chunks[take_num], idx.r_replace, "$1");
+		update_chunk = true;
+	}
+
+	// Rebuild item chunk
+	if (update_chunk)
+	{
+		chunk = header;
+		for (const auto& c : take_chunks) chunk += c;
+		chunk += footer;
+
+		GetSetObjectState(item, chunk.c_str());
+
+		FreeHeapPtr(chunk_c);
+	}
+}
+
+TrackEnvelope * ENVELOPE::getByName(MediaItem_Take * take, String name)
+{
+	return GetTakeEnvelopeByName(take, name.toUTF8());
+}
+
+ENVELOPE::ENVELOPE(TrackEnvelope * envelopePtr) : envelopePtr(envelopePtr)
+{
+	char buf[1024];
+	GetEnvelopeName(envelopePtr, buf, 1024);
+	_name = String(buf);
+}
+
+ENVELOPE::ENVELOPE(TrackEnvelope * envelopePtr, String name) : envelopePtr(envelopePtr), _name(name) {}
+
+ENVELOPE::ENVELOPE(MediaItem_Take * take, String name)
+{
+	takePtr = take;
+	_name = name;
+	envelopePtr = GetTakeEnvelopeByName(takePtr, _name.toRawUTF8());
 }

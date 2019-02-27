@@ -6,7 +6,6 @@ class TRACK : public LIST<ITEM>, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 
 public:
 	// conversion
-	static int count();
 	static TRACK getByIndex(int getIndex);
 	static TRACK getByName(const String & name);
 	static TRACK getSelectedByIndex(int getIndex);
@@ -24,8 +23,6 @@ public:
 		track = GetTrack(0, getIndex);
 		TagManager.setStringWithTags(getName());
 	}
-
-
 
 	// conversion
 	operator void*() const { return track; }
@@ -88,7 +85,7 @@ public:
 		return false;
 	}
 	bool has_items() const { return countItems() > 0; }
-	bool has_selected_items() const { return countSelectedItems() > 0; }
+	bool has_selected_items() const { return PROJECT::countSelectedItems() > 0; }
 	bool has_child() const { return TRACK(getIndex() + 1).getParent() == track; }
 	bool is_parent() const { return folder() == 1; }
 	bool is_parent_of(const TRACK & t) { return track == t.getParent(); }

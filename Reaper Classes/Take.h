@@ -71,6 +71,7 @@ protected:
 
 class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
+	friend class AUDIOPROCESS;
 	friend class ITEM;
 	friend class MIDINOTE;
 	friend class MIDINOTELIST;
@@ -99,14 +100,8 @@ public:
 	} envelope;
 
 	AudioFile & audio();
-	MediaItem_Take * getPointer() const
-	{
-		return takePtr;
-	}
-	MediaItem_Take * getPointer()
-	{
-		return takePtr;
-	}
+	MediaItem_Take * getPointer() const { return takePtr; }
+	MediaItem_Take * getPointer() { return takePtr; }
 	PCM_source * pcm_source() const;
 
 	String getName() const override;
@@ -119,11 +114,11 @@ public:
 	bool isPhaseInverted() const;
 
 	int getIndex() const;
-	MediaItem * item() const;
+	MediaItem * getMediaItemPtr() const;
 	MediaTrack * track() const;
 	int chanmode() const;
-	int firstCh() const;
-	int lastCh() const;
+	int getFirstChannel() const;
+	int getLastChannel() const;
 	double getPitch() const;
 	double getRate() const;
 	double getStartOffset() const;
@@ -132,9 +127,8 @@ public:
 	int getBitDepth();
 	int getNumChannels();
 
-	size_t frames() const;
-	size_t samples() const;
-	size_t file_frames() const;
+	size_t getNumFrames() const;
+	size_t getNumSamples() const;
 	File getFile() const;
 
 	// setter
@@ -178,46 +172,19 @@ public:
 		DeleteTakeStretchMarkers(takePtr, 0, &total);
 	}
 
-	/* AUDIO FUNCTIONS */
-	/*
-	Example usage code:
-
-	// set items offline/online to prevent RAM overusag,
-	// this is optional, but recommended
-	SET_ALL_ITEMS_OFFLINE();
-	UNSELECT_ITEMS();
-
-	for (auto item : ItemList)
-	{
-	item.selected(true);
-	SET_SELECTED_ITEMS_ONLINE();
-	auto take = item.getActiveTake();
-	take.loadAudio();
-
-	int channel = 0;
-	int sample = 0;
-	double value = take.getAudioSample(channel, sample);
-
-	take.unloadAudio();
-	SET_SELECTED_ITEMS_OFFLINE();
-	item.selected(false);
-	}
-
-	SET_ALL_ITEMS_ONLINE();
-	*/
-
 	bool audioIsInitialized = false;
+	void initAudio(double starttime = -1, double endtime = -1);
 	void loadAudio();
 	void unloadAudio();
 
-	double getAudioSampleRate() { return audioFile.m_srate; }
+	double getAudioSampleRate() { return audioFile.srate; }
 	int getAudioNumChannels() { return m_audiobuf.size(); }
 	int getAudioNumFrames() { return m_take_frames; }
 
 	vector<vector<double>> & getAudioMultichannel();
 	vector<double> & getAudioChannel(int channel);
 	double getAudioSample(int channel, int sample);
-	double getProjectPositionForAudioSample(int sample)
+	double getProjectPositionForFrameIndex(int sample)
 	{
 		double sr = getSampleRate();
 		double startTime = getStart();
@@ -248,6 +215,4 @@ protected:
 	double m_audio_endttime = -1;
 	double m_audiobuf_starttime = -1;
 	double m_audiobuf_endtime = -1;
-
-	void initAudio(double starttime = -1, double endtime = -1);
 };
