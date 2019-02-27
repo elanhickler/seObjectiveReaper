@@ -242,7 +242,8 @@ public:
     file = source->GetFileName();
 		srate = source->GetSampleRate();
 		channels = source->GetNumChannels();
-		samples = source->GetLength() * channels * srate;
+		length = source->GetLength();
+		samples = int(source->GetLength() * channels * srate);
 		bitdepth = source->GetBitsPerSample();
 		frames = source->GetLength() * srate;
   }
