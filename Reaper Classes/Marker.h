@@ -109,10 +109,10 @@ public:
 	// setter
 	void remove() { DeleteProjectMarkerByIndex(0, index); index = -1; }
 
-	String getName() const override { return _name; }
-	void setName(const String & v) override { _name = v; _set(); }
-
 protected:
+	String getObjectName() const override { return _name; }
+	void setObjectName(const String & v) override { _name = v; _set(); }
+
 	enum
 	{
 		__name,

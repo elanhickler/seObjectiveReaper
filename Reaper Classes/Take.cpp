@@ -5,8 +5,8 @@
 
 
 
-String TAKE::getName() const { return GetTakeName(takePtr); }
-void TAKE::setName(const String & v) { GetSetMediaItemTakeInfo_String(takePtr, "P_NAME", (char*)v.toRawUTF8(), 1); }
+String TAKE::getObjectName() const { return GetTakeName(takePtr); }
+void TAKE::setObjectName(const String & v) { GetSetMediaItemTakeInfo_String(takePtr, "P_NAME", (char*)v.toRawUTF8(), 1); }
 double TAKE::getStart() const { return GetMediaItemInfo_Value(GetMediaItemTake_Item(takePtr), "D_POSITION"); }
 double TAKE::getEnd() const { return getStart() + getLength(); }
 void TAKE::setStart(double v) { itemParent->setStart(v); }
@@ -25,24 +25,30 @@ bool TAKE::isValid() const { return takePtr != nullptr; }
 TAKE::TAKE(MediaItem_Take * take) : takePtr(take)
 {
 	jassert(take != nullptr);
-	TagManager.setStringWithTags(getName());
 
-	envelope.Volume = ENVELOPE(takePtr,"Volume");
+	OBJECT_NAMABLE::initialize();
+
+	envelope.Volume = ENVELOPE(take, "Volume");
 	envelope.Pan = ENVELOPE(take, "Pan");
 	envelope.Mute = ENVELOPE(take, "Mute");
 	envelope.Pitch = ENVELOPE(take, "Pitch");
 }
 
+TAKE::TAKE(MediaItem * item) : takePtr(GetActiveTake(item))
+{
+	OBJECT_NAMABLE::initialize();
+}
+
 // functions
-AudioFile & TAKE::audio() { return audioFile; }
+AudioFile & TAKE::getAudioFile() { return audioFile; }
 int TAKE::getIndex() const { return GetMediaItemTakeInfo_Value(takePtr, "IP_TAKENUMBER"); }
 MediaItem * TAKE::getMediaItemPtr() const { return GetMediaItemTake_Item(takePtr); }
 MediaTrack * TAKE::track() const { return GetMediaItemTrack(getMediaItemPtr()); }
-int TAKE::chanmode() const { return GetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE"); }
+int TAKE::getChannelMode() const { return GetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE"); }
 struct chantype { enum { normal, mono, stereo }; };
 int TAKE::getFirstChannel() const
 {
-	int ch = chanmode();
+	int ch = getChannelMode();
 
 	if (ch >= 67)
 		return ch - 67;
@@ -52,7 +58,7 @@ int TAKE::getFirstChannel() const
 }
 int TAKE::getLastChannel() const
 {
-	int ch = chanmode();
+	int ch = getChannelMode();
 	int first = getFirstChannel();
 
 	if (ch == 0)
@@ -71,14 +77,21 @@ double TAKE::getRate() const { return GetMediaItemTakeInfo_Value(takePtr, "D_PLA
 // Returns volume as a factor of amplitude.
 double TAKE::getVolume() const { return abs(GetMediaItemTakeInfo_Value(takePtr, "D_VOL")); }
 double TAKE::getStartOffset() const { return GetMediaItemTakeInfo_Value(takePtr, "D_STARTOFFS"); }
-int TAKE::getSampleRate() { return audioFile.getSampleRate(); }
-int TAKE::getBitDepth() { return audioFile.getBitDepth(); }
-int TAKE::getNumChannels() { return audioFile.getNumChannels(); }
-PCM_source * TAKE::pcm_source() const { return m_source; }
-size_t TAKE::getNumFrames() const { return m_take_frames; }
-size_t TAKE::getNumSamples() const { return m_take_samples; }
-File TAKE::getFile() const { return m_file; }
-void TAKE::setFile(const String & file) { SetMediaItemTake_Source(takePtr, PCM_Source_CreateFromFile(file.toRawUTF8())); }
+PCM_source * TAKE::pcm_source() const { return pcmSource; }
+File TAKE::getFile() const { return audioFile.getFile(); }
+void TAKE::setFile(const String & file)
+{
+	pcmSource = PCM_Source_CreateFromFile(file.toRawUTF8());
+	SetMediaItemTake_Source(takePtr, pcmSource);
+
+	audioFile.clear();
+	audioIsInitialized = false;
+	takeAudioBuffer.clear();
+	takeFrames = 0;
+	takeSamples = 0;
+	audiobuf_starttime = -1;
+	audiobuf_endtime = -1;
+}
 void TAKE::setChannelMode(int v) { SetMediaItemTakeInfo_Value(takePtr, "I_CHANMODE", v); }
 
 void TAKE::setVolume(double v)
@@ -110,14 +123,21 @@ void TAKE::setStartOffset(double v) { SetMediaItemTakeInfo_Value(takePtr, "D_STA
 void TAKE::activate() { itemParent->setActiveTake(*this); }
 void TAKE::remove()
 {
+	PROJECT::saveItemSelection();
+	PROJECT::unselectAllItems();
+
+	PROJECT::selectItem(itemParent->getPointer());
+
 	auto actTake = GetActiveTake(itemParent->getPointer());
 	SetActiveTake(takePtr);
-	COMMAND(40129); //Delete active take from items
-	COMMAND(41348); //Item: Remove all empty take lanes
+	COMMAND(40129); // Delete active take from selected items
+	COMMAND(41348); // Remove all empty take lanes from selected items
 	if (actTake != takePtr)
 		SetActiveTake(actTake);
 
 	takePtr = nullptr;
+
+	PROJECT::loadItemSelection();
 }
 
 TAKE TAKE::move(MediaTrack * track)
@@ -175,56 +195,56 @@ void TAKE::initAudio(double starttime, double endtime)
 {
 	audioIsInitialized = true;
 
-	audioFile = AudioFile(m_source);
+	audioFile.setSource(pcmSource);
 
-	jassert(audioFile.channels > 0); // bad audio file
-
-	// take audio properties
-	audioFile.file = m_source->GetFileName();
-	m_file_frames = getLength() * audioFile.srate;
-	m_file_length = m_source->GetLength();
-	m_bitdepth = m_source->GetBitsPerSample();
-	m_nch = m_source->GetNumChannels();
+	jassert(audioFile.getNumChannels() > 0); // bad audio file
 
 	if (starttime == -1)
-		starttime = m_audiobuf_starttime = 0;
+		starttime = audiobuf_starttime = 0;
 	if (endtime == -1)
-		endtime = m_audiobuf_endtime = getLength();
+		endtime = audiobuf_endtime = getLength();
 
-	m_take_frames = (m_audiobuf_endtime - m_audiobuf_starttime) * (double)audioFile.srate;
-	m_take_samples = m_take_frames * m_nch;
+	takeFrames = (audiobuf_endtime - audiobuf_starttime) * (double)audioFile.getSampleRate();
+	takeSamples = takeFrames * audioFile.getNumChannels();
 }
 
 void TAKE::loadAudio()
 {
-	int initial_chanmode = chanmode();
+	int initial_chanmode = getChannelMode();
 	setChannelMode(0);
 
-	vector<double> buffer(m_take_samples, 0);
+	vector<double> buffer(takeSamples, 0);
 	AudioAccessor* accessor = CreateTakeAudioAccessor(takePtr);
-	GetAudioAccessorSamples(accessor, audioFile.srate, m_nch, m_audiobuf_starttime, m_take_frames, buffer.data());
+	GetAudioAccessorSamples(accessor, audioFile.getSampleRate(), audioFile.getNumChannels(), audiobuf_starttime, takeFrames, buffer.data());
 	DestroyAudioAccessor(accessor);
 
 	setChannelMode(initial_chanmode);
 
-	m_audiobuf = InterleavedToMultichannel(buffer.data(), m_nch, m_take_frames);
+	takeAudioBuffer = InterleavedToMultichannel(buffer.data(), audioFile.getNumChannels(), takeFrames);
 }
 
-void TAKE::unloadAudio() { m_audiobuf.clear(); }
+void TAKE::unloadAudio() { takeAudioBuffer.clear(); }
 
-vector<vector<double>> & TAKE::getAudioMultichannel() { return m_audiobuf; }
+int TAKE::getSampleRate() { return audioFile.getSampleRate(); }
+
+int TAKE::getBitDepth() { return audioFile.getBitDepth(); }
+
+int TAKE::getNumChannels() { return audioFile.getNumChannels(); }
+
+size_t TAKE::getNumFrames() const { return takeFrames; }
+
+size_t TAKE::getNumSamples() const { return takeSamples; }
+
+vector<vector<double>> & TAKE::getAudioMultichannel() { return takeAudioBuffer; }
 
 vector<double>& TAKE::getAudioChannel(int channel)
 {
-	jassert(channel < m_audiobuf.size());
-	return m_audiobuf[channel];
+	return takeAudioBuffer[channel];
 }
 
-double TAKE::getAudioSample(int channel, int sample)
+double TAKE::getAudioSample(int channel, int frame)
 {
-	jassert(channel < m_audiobuf.size());
-	jassert(sample < m_audiobuf[channel].size());
-	return m_audiobuf[channel][sample];
+	return takeAudioBuffer[channel][frame];
 }
 
 void MIDINOTELIST::collect()

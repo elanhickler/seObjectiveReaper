@@ -17,12 +17,8 @@ public:
 
 	// constructor
 	TRACK() { track = nullptr; }
-	TRACK(MediaTrack* track) : track(track) { TagManager.setStringWithTags(getName()); }
-	TRACK(int getIndex)
-	{
-		track = GetTrack(0, getIndex);
-		TagManager.setStringWithTags(getName());
-	}
+	TRACK(MediaTrack* track) : track(track) { OBJECT_NAMABLE::initialize(); }
+	TRACK(int getIndex) : track(GetTrack(0, getIndex)) { OBJECT_NAMABLE::initialize(); }
 
 	// conversion
 	operator void*() const { return track; }
@@ -55,17 +51,6 @@ public:
 	void remove();
 	void RemoveAllItemsFromProject();
 
-	String getName() const override
-	{
-		char c[4096];
-		GetSetMediaTrackInfo_String(track, "P_NAME", c, false);
-		return c;
-	}
-	void setName(const String & v) override
-	{
-		GetSetMediaTrackInfo_String(track, "P_NAME", (char*)v.toRawUTF8(), true);
-	}
-
 	ITEMLIST & getSelectedItemList() { return ItemList_selected; }
 
 	// getters
@@ -75,7 +60,7 @@ public:
 	void sel(bool state) { SetMediaTrackInfo_Value(track, "I_SELECTED", state); }
 
 	// logic
-	bool isValid() const { return track != nullptr; }
+	bool isValid() const { return track != nullptr && getIndex() != 0; }
 	bool is_selected() const { return sel(); }
 	bool hasMidiItems() const
 	{
@@ -108,6 +93,17 @@ protected:
 	MediaTrack* track;
 	ITEMLIST ItemList_all;
 	ITEMLIST ItemList_selected;
+
+	String getObjectName() const override
+	{
+		char c[4096];
+		GetSetMediaTrackInfo_String(track, "P_NAME", c, false);
+		return c;
+	}
+	void setObjectName(const String & v) override
+	{
+		GetSetMediaTrackInfo_String(track, "P_NAME", (char*)v.toRawUTF8(), true);
+	}
 };
 
 static TRACK INVALID_TRACK;

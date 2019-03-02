@@ -8,7 +8,9 @@ touching: Items are grouped if they are right up against eachother or overlappin
 */
 enum GROUPMODE { none, grouped, overlapping, touching };
 
-class ITEM : public LIST<TAKE>, public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
+class TRACK;
+
+class ITEM : public TAKELIST, public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
 	friend class ITEMLIST;
 	friend class TagParser;
@@ -17,7 +19,9 @@ public:
 	static bool IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
 	static ITEM get(int idx);
 	static ITEM getSelected(int idx);
+	static ITEM createBlank(MediaTrack * track, double position, double length);
 	static ITEM createMidi(MediaTrack * track, double position, double length);
+	static ITEM createFromAudio(const AudioFile & audioFile, const String & fileToWriteTo, const TRACK & existingTrack, double startTime);
 
 	enum FADESHAPE
 	{
@@ -32,8 +36,8 @@ public:
 
 public:
 	// constructor
-	ITEM();
-	ITEM(int i) { itemPtr = GetMediaItem(0, i); }
+	ITEM() {}
+	ITEM(int i);
 	ITEM(MediaItem * item);
 	ITEM(MediaItem_Take * take);
 
@@ -65,8 +69,6 @@ public:
 	MediaItem* getPointer() { return itemPtr; }
 
 	/* GETTER */
-	String getName() const override;
-	void setName(const String & v) override;
 
 	bool isValid() const override;
 
@@ -76,6 +78,7 @@ public:
 	const TAKE & getTake(int i) const;
 	TAKE & getTake(int i);
 	int getNumTakes();
+	TAKELIST & getTakeList() { return *this; }
 
 	MediaTrack* getTrack() const;
 	int getTrackIndex() const;
@@ -137,7 +140,10 @@ public:
 	void setColor(Colour v) override;
 
 protected:
-	MediaItem* itemPtr;
+	String getObjectName() const override;
+	void setObjectName(const String & v) override;
+
+	MediaItem* itemPtr = nullptr;
 
 	void collectTakes();
 
@@ -181,8 +187,6 @@ protected:
 class ITEMLIST : public LIST<ITEM>, public OBJECT_MOVABLE
 {
 	friend class ITEMGROUPLIST;
-protected:
-	int m_group;
 
 public:
 	// constructor
@@ -217,6 +221,17 @@ public:
 	double getFadeOutLen() const;
 	String GetPropertyStringFromKey(const String & key, bool use_value) const;
 	bool isSelected() const;
+	TAKELIST & getActiveTakeList()
+	{
+		if (TakeList.size() != list.size())
+		{
+			TakeList.clear();
+			for (const auto & item : list)
+				TakeList.push_back(item.getActiveTake());
+		}
+
+		return TakeList;
+	}
 
 	// setters
 	int setTrack(MediaTrack* track);
@@ -224,6 +239,10 @@ public:
 	void setEnd(double v) override;
 	void setSnapOffset(double v);
 	void setSelected(bool select);
+
+protected:
+	int m_group;
+	TAKELIST TakeList;
 };
 
 class ITEMGROUPLIST : public LIST<ITEMLIST>
@@ -266,14 +285,31 @@ public:
 	int countItems();
 };
 
+/*
+convenient audio functions to be used inside an audioprocess function
+*/
+class AUDIOFUNCTION
+{
+public:
+	static double getPeak(TAKE& take, double * frameIndexOut = nullptr, double * channelIndexOut = nullptr);
+
+	static vector<double> sumChannelModeChannels(TAKE & take);
+
+	static vector<double> sumAllChannels(TAKE & take);
+
+	static double getPeakRMS(TAKE & take, double timeWindowForPeakRMS);
+
+	static bool isAudioSilent(TAKE & take, double minimumAmplitude);
+};
+
 class AUDIOPROCESS
 {
 public:
-	static void processItemList(ITEMLIST & list, std::function<void(TAKE&)> perTakeFunction);
+	static void processTakeList(TAKELIST& list, std::function<void(TAKE&)> perTakeFunction);
 
 protected:
 	static void prepareToStart();
 	static void prepareToEnd();
-	static void loadTake(TAKE & take);
-	static void unloadTake(TAKE & take);
+	static void loadTake(TAKE& take);
+	static void unloadTake(TAKE& take);
 };

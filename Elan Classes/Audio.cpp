@@ -6,20 +6,20 @@ vector<vector<double>> InterleavedToMultichannel(double* input, int channels, in
 {
     vector<vector<double>> data(channels, vector<double>(channels));
 
-    for (auto& c : data) c.reserve(frames);
+    for (auto& c : data)
+			c.reserve(frames);
 
     for (int ch = 0; ch < channels; ++ch)
         for (int x = 0, y = ch; x < frames; ++x, y+=channels)
             data[ch].push_back(input[y]);
 
-    return data;
+    return std::move(data);
 }
 
 static const String idCueLabel{ "CueLabel" };
 static const String idCueRegion{ "CueRegion" };
 static const String idCue{ "Cue" };
 static const String idLoop{ "Loop" };
-
 
 WavAudioFile::WavAudioFile(const File& sourceFile, double startOffset, double length)
   :

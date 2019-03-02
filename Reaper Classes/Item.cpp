@@ -1,11 +1,6 @@
 #include "ReaperClassesHeader.h"
 #include "Item.h"
 
-ITEM::ITEM()
-{
-	itemPtr = nullptr;
-}
-
 void ITEM::collectTakes()
 {
 	int num_takes = CountTakes(itemPtr);
@@ -14,20 +9,30 @@ void ITEM::collectTakes()
 		push_back(GetTake(itemPtr, i));
 		back().itemParent = this;
 	}
+	OBJECT_NAMABLE::initialize();
+}
+
+
+// constructor
+
+ITEM::ITEM(int i)
+{
+	itemPtr = GetMediaItem(0, i);
+	OBJECT_NAMABLE::initialize();
 }
 
 ITEM::ITEM(MediaItem * item) : itemPtr(item)
 {
 	jassert(item != nullptr);
 	collectTakes();
-	TagManager.setStringWithTags(getName());
+	OBJECT_NAMABLE::initialize();
 }
 ITEM::ITEM(MediaItem_Take * take)
 {
 	jassert(take != nullptr);
 	itemPtr = GetMediaItemTake_Item(take);
 	collectTakes();
-	TagManager.setStringWithTags(getName());
+	OBJECT_NAMABLE::initialize();
 }
 
 const TAKE & ITEM::getActiveTake() const
@@ -64,14 +69,22 @@ bool ITEM::IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_trac
 ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
 ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
 
+ITEM ITEM::createBlank(MediaTrack * track, double position, double length)
+{
+	ITEM newItem(AddMediaItemToTrack(track));
+	newItem.setPosition(position);
+	newItem.setLength(length);
+	return std::move(newItem);
+}
+
 ITEM ITEM::createMidi(MediaTrack * track, double position, double length)
 {
 	ITEM item = CreateNewMIDIItemInProj(track, position, position + length, 0);
 	return item;
 }
 
-String ITEM::getName() const { return getActiveTake().getName(); }
-void ITEM::setName(const String & v)
+String ITEM::getObjectName() const { return getActiveTake().getName(); }
+void ITEM::setObjectName(const String & v)
 {
 	getActiveTake().setName(v);
 }
@@ -276,7 +289,7 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 	case __startoffset:
 		return (String)getActiveTake().getStartOffset();
 	case __tags:
-		return getActiveTake().getTagString();
+		return getActiveTake().getNameTagsOnly();
 	case __pitch:
 		return (String)getActiveTake().getPitch();
 	case __file_extension:
@@ -577,14 +590,102 @@ int ITEMGROUPLIST::countItems()
 	return c;
 }
 
-void AUDIOPROCESS::processItemList(ITEMLIST & list, std::function<void(TAKE&)> perTakeFunction)
+double AUDIOFUNCTION::getPeak(TAKE & take, double * frameIndexOut, double * channelIndexOut)
+{
+	double peakValue = 0;
+	bool endEarly = false;
+	int frameIndexForPeak = 0;
+	int channelIndexForPeak = take.getFirstChannel();
+
+	int fr, ch;
+
+	std::function<void()> updateFrameAndChannelIndex = [&]()
+	{
+		frameIndexForPeak = fr;
+		channelIndexForPeak = ch;
+	};
+
+	for (fr = 0; fr < take.getNumFrames(); ++fr)
+	{
+		if (endEarly)
+			break;
+
+		for (ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
+		{
+			double previousPeakValue = peakValue;
+			peakValue = max<double>(peakValue, abs(take.getAudioSample(ch, fr)));
+
+			if (previousPeakValue != peakValue)
+				updateFrameAndChannelIndex();
+
+			if (peakValue == 1)
+			{
+				endEarly = true;
+				updateFrameAndChannelIndex();
+			}
+		}
+	}
+
+	if (frameIndexOut)
+		*frameIndexOut = frameIndexForPeak;
+	if (channelIndexOut)
+		*channelIndexOut = channelIndexForPeak;
+	return peakValue;
+}
+
+vector<double> AUDIOFUNCTION::sumChannelModeChannels(TAKE & take)
+{
+	vector<double> summed(take.getNumFrames(), 0);
+
+	if (take.getFirstChannel() == take.getLastChannel())
+		return take.getAudioChannel(take.getFirstChannel());
+
+	for (int fr = 0; fr < take.getNumFrames(); ++fr)
+		for (int ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
+			summed[fr] += take[ch][fr];
+
+	return std::move(summed);
+}
+
+vector<double> AUDIOFUNCTION::sumAllChannels(TAKE & take)
+{
+	vector<double> summed(take.getNumFrames(), 0);
+
+	if (take.getNumChannels() == 1)
+		return take.getAudioChannel(0);
+
+	for (int fr = 0; fr < take.getNumFrames(); ++fr)
+		for (int ch = 0; ch < take.getNumChannels(); ++ch)
+			summed[fr] += take[ch][fr];
+
+	return std::move(summed);
+}
+
+double AUDIOFUNCTION::getPeakRMS(TAKE & take, double timeWindowForPeakRMS)
+{
+	auto summedAudio = sumChannelModeChannels(take);
+
+	for (auto & sample : summedAudio)
+		sample /= take.getNumChannels();
+
+	return RAPT::getMaxShortTimeRMS<double>(summedAudio.data(), summedAudio.size(), take.getSampleRate()*timeWindowForPeakRMS);
+}
+
+bool AUDIOFUNCTION::isAudioSilent(TAKE & take, double minimumAmplitude)
+{
+	for (int ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
+		for (int fr = 0; fr < take.getNumFrames(); ++fr)
+			if (take.getAudioSample(ch, fr) >= minimumAmplitude)
+				return false;
+	return true;
+}
+
+void AUDIOPROCESS::processTakeList(TAKELIST & list, std::function<void(TAKE&)> perTakeFunction)
 {
 	prepareToStart();
 
-	for (auto & item : list)
+	for (auto & take : list)
 	{
-		auto take = item.getActiveTake();
-
 		loadTake(take);
 
 		perTakeFunction(take);
@@ -621,4 +722,9 @@ void AUDIOPROCESS::unloadTake(TAKE & take)
 	take.unloadAudio();
 	PROJECT::setSelectedItemsOffline();
 	PROJECT::unselectItem(take.getMediaItemPtr());
+}
+
+TAKE::TAKE(const vector<vector<double>> & multichannelAudio, FILE fileToWriteTo)
+{
+
 }

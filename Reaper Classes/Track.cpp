@@ -288,8 +288,29 @@ String TRACK::GetPropertyStringFromKey(const String & key, bool get_value) const
 			return String(getIndex());
 		return getNameNoTags();
 	case __tags:
-		return getTagString();
+		return getNameTagsOnly();
 	}
 
 	return {};
+}
+
+ITEM ITEM::createFromAudio(const AudioFile & audioFile, const String & fileToWriteTo, const TRACK & existingTrack, double startTime)
+{
+	jassert(existingTrack.isValid()); // track must exist in the REAPER project
+
+	double sampleRate = 44100;
+	int bitDepth = 16;
+
+	try
+	{
+		FileHelper::createFile(fileToWriteTo, true);
+	}
+	catch (std::exception&) {}
+
+	audioFile.writeToFile(fileToWriteTo);
+
+	auto newItem = ITEM::createBlank(existingTrack, startTime, audioFile.getLength());
+	newItem.setName(File(fileToWriteTo).getFileNameWithoutExtension());
+	newItem.getActiveTake().setFile(fileToWriteTo);
+	return newItem;
 }

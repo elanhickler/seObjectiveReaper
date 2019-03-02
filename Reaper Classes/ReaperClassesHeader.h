@@ -184,12 +184,29 @@ protected:
 
 class OBJECT_NAMABLE
 {
-public:
-	virtual String getName() const = 0;
-	// Set full name string of object also affecting the tag string portion
-	virtual void setName(const String & v) = 0;
+protected:
+	// Call this function in the derived class's constructor like this: OBJECT_NAMABLE::initialize()
+	// Make sure you call this AFTER the object actually has a name.
+	void initialize() { TagManager.setStringWithTags(getObjectName()); }
+	// Override this to provide a way for retreiving name string from the object, protect this function
+	virtual String getObjectName() const = 0;
+	// Override this to provide a way for applying the name string to the object, protect this function
+	virtual void setObjectName(const String & v) = 0;
 
-	virtual String GetPropertyStringFromKey(const String & key, bool use_value) const { return String(); }
+public:
+	// Get the object's name including tags
+	String getName() const
+	{
+		return TagManager.getStringWithTags();
+	}
+	// Set the object's full name string which will also overwrite tags
+	void setName(const String & v)
+	{
+		TagManager.setStringWithTags(v);
+		setObjectName(v);
+	}
+
+	virtual String GetPropertyStringFromKey(const String & key, bool use_value) const { return {}; }
 
 	// Set a tag within the tag string
 	String getTag(const String & key) const { return TagManager.getTag(key); }
@@ -197,7 +214,7 @@ public:
 	void setTag(const String & key, const String & value)
 	{
 		TagManager.SetTag(key, value);
-		setName(TagManager.getStringWithTags());
+		setObjectName(TagManager.getStringWithTags());
 	}
 
 	// Get name of object without tags
@@ -206,30 +223,30 @@ public:
 	void setNameNoTags(const String & v)
 	{
 		TagManager.setStringNoTags(v);
-		setName(TagManager.getStringWithTags());
+		setObjectName(TagManager.getStringWithTags());
 	}
 
 	// Get name of object only affecting the tag string portion
-	String getTagString() const { return TagManager.getStringTagsOnly(); }
+	String getNameTagsOnly() const { return TagManager.getStringTagsOnly(); }
 	// Set name of object only affecting the tag string portion
-	void setTagString(const String & v)
+	void setNameTagsOnly(const String & v)
 	{
 		TagManager.setStringWithTags(v);
-		setName(TagManager.getStringWithTags());
+		setObjectName(TagManager.getStringWithTags());
 	}
 
 	// Remove a tag from the tag string
 	void removeTag(const String & key)
 	{
 		TagManager.removeTag(key);
-		setName(TagManager.getStringWithTags());
+		setObjectName(TagManager.getStringWithTags());
 	}
 
 	// Remove the entire tag string
 	void removeAllTags()
 	{
 		TagManager.RemoveAllTags();
-		setName(TagManager.getNameNoTags());
+		setObjectName(TagManager.getNameNoTags());
 	}
 
 	// boolean

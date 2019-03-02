@@ -84,7 +84,7 @@ MARKER::MARKER(int index) : index(index)
 {
 	_get();
 	cache_end();
-	TagManager.setStringWithTags(getName());
+	OBJECT_NAMABLE::initialize();
 }
 
 MARKER::MARKER(RANGE range, const String & name)
@@ -94,7 +94,7 @@ MARKER::MARKER(RANGE range, const String & name)
 	isRegion = _start < _end;
 	is_ghost = true;
 	_name = name;
-	TagManager.setStringWithTags(name);
+	OBJECT_NAMABLE::initialize();
 }
 
 MARKER::MARKER(double position, const String & name)
@@ -104,7 +104,7 @@ MARKER::MARKER(double position, const String & name)
 	isRegion = false;
 	is_ghost = true;
 	_name = name;
-	TagManager.setStringWithTags(name);
+	OBJECT_NAMABLE::initialize();
 }
 
 MARKER::MARKER(double start, double end, const String & name)
@@ -114,7 +114,7 @@ MARKER::MARKER(double start, double end, const String & name)
 	isRegion = _start < _end;
 	is_ghost = true;
 	_name = name;
-	TagManager.setStringWithTags(name);
+	OBJECT_NAMABLE::initialize();
 }
 
 String MARKER::GetPropertyStringFromKey(const String & key, bool get_value) const
@@ -131,7 +131,7 @@ String MARKER::GetPropertyStringFromKey(const String & key, bool get_value) cons
 			return String(getIndex());
 		return getNameNoTags();
 	case __tags:
-		return getTagString();
+		return getNameTagsOnly();
 	}
 
 	return String();
