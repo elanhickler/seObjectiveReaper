@@ -60,7 +60,7 @@ TAKE & ITEM::getTake(int i)
 	return list[i];
 }
 
-bool ITEM::IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
+bool ITEM::isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
 {
 	if (must_be_on_same_track && i1.getTrack() != i2.getTrack()) return false;
 	return i1.getGroupIndex() && i1.getGroupIndex() == i2.getGroupIndex();
@@ -305,7 +305,7 @@ String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
 	return {};
 }
 
-void ITEMLIST::CollectItems()
+void ITEMLIST::collectItems()
 {
 	int items = CountMediaItems(0);
 
@@ -446,7 +446,7 @@ void ITEMGROUPLIST::collect_donotgroup(bool selected_only)
 	if (selected_only)
 		il.collectSelectedItems();
 	else
-		il.CollectItems();
+		il.collectItems();
 
 	push_back(il);
 
@@ -465,7 +465,7 @@ void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 	if (selected_only)
 		il.collectSelectedItems();
 	else
-		il.CollectItems();
+		il.collectItems();
 
 	map<int, ITEMLIST> group_map;
 	set<int> group_set;

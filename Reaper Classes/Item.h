@@ -16,12 +16,12 @@ class ITEM : public TAKELIST, public OBJECT_MOVABLE, public OBJECT_NAMABLE, publ
 	friend class TagParser;
 
 public:
-	static bool IsGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
+	static bool isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track = true);
 	static ITEM get(int idx);
 	static ITEM getSelected(int idx);
 	static ITEM createBlank(MediaTrack * track, double position, double length);
 	static ITEM createMidi(MediaTrack * track, double position, double length);
-	static ITEM createFromAudio(const AudioFile & audioFile, const String & fileToWriteTo, const TRACK & existingTrack, double startTime);
+	static ITEM createFromAudioData(const AUDIODATA & audioFile, const File & fileToWriteTo, const TRACK & existingTrack, double startTime);
 
 	enum FADESHAPE
 	{
@@ -205,7 +205,7 @@ public:
 	operator ITEM() { return list[0]; }
 	ITEMLIST operator=(vector<ITEM> rhs) { list = rhs; return *this; }
 
-	void CollectItems();
+	void collectItems();
 	void collectSelectedItems();
 
 	// functions

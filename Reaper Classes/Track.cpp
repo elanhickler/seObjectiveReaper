@@ -294,23 +294,20 @@ String TRACK::GetPropertyStringFromKey(const String & key, bool get_value) const
 	return {};
 }
 
-ITEM ITEM::createFromAudio(const AudioFile & audioFile, const String & fileToWriteTo, const TRACK & existingTrack, double startTime)
+ITEM ITEM::createFromAudioData(const AUDIODATA & audioData, const File & fileToWriteTo, const TRACK & existingTrack, double startTime)
 {
 	jassert(existingTrack.isValid()); // track must exist in the REAPER project
 
-	double sampleRate = 44100;
-	int bitDepth = 16;
-
 	try
 	{
-		FileHelper::createFile(fileToWriteTo, true);
+		FileHelper::createFile(fileToWriteTo.getFullPathName(), true);
 	}
 	catch (std::exception&) {}
 
-	audioFile.writeToFile(fileToWriteTo);
+	audioData.writeToFile(fileToWriteTo);
 
-	auto newItem = ITEM::createBlank(existingTrack, startTime, audioFile.getLength());
-	newItem.setName(File(fileToWriteTo).getFileNameWithoutExtension());
+	auto newItem = ITEM::createBlank(existingTrack, startTime, audioData.getLength());
+	newItem.setName(fileToWriteTo.getFileNameWithoutExtension());
 	newItem.getActiveTake().setFile(fileToWriteTo);
 	return newItem;
 }

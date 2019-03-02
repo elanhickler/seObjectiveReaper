@@ -383,27 +383,27 @@ WavAudioFile::Loop WavAudioFile::getSampleLoop(int index) const
   return r;
 }
 
-void AudioFile::collectCues()
+void AUDIODATA::collectCues()
 {
     cues = WavAudioFile::create(file, 0.0, samples/(double)srate);
 }
 
-Array<WavAudioFile::CuePoint> AudioFile::getCuePoints()
+Array<WavAudioFile::CuePoint> AUDIODATA::getCuePoints()
 {
     return cues->cuePoints;
 }
 
-Array<WavAudioFile::Region> AudioFile::getCueRegions()
+Array<WavAudioFile::Region> AUDIODATA::getCueRegions()
 {
     return cues->regions;
 }
 
-Array<WavAudioFile::Loop> AudioFile::getLoops()
+Array<WavAudioFile::Loop> AUDIODATA::getLoops()
 {
   return cues->loops;
 }
 
-void AudioFile::writeCues()
+void AUDIODATA::writeCues()
 {
     cues->saveChanges(file);
 }

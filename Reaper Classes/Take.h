@@ -124,7 +124,7 @@ public:
 	File getFile() const;
 
 	// setter
-	void setFile(const String & file);
+	void setFile(const File & file);
 	void setChannelMode(int v);
 	void setVolume(double v);
 	void setPitch(double v);
@@ -168,7 +168,7 @@ public:
 	void loadAudio();
 	void unloadAudio();
 
-	AudioFile & getAudioFile();
+	AUDIODATA & getAudioFile();
 	int getSampleRate();
 	int getBitDepth();
 	int getNumChannels();
@@ -191,7 +191,7 @@ protected:
 	// member
 	MediaItem_Take* takePtr = nullptr;
 	ITEM * itemParent = nullptr;
-	AudioFile audioFile;
+	AUDIODATA audioFile;
 	bool audioIsInitialized = false;
 
 	// audio property

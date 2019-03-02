@@ -40,7 +40,7 @@ TAKE::TAKE(MediaItem * item) : takePtr(GetActiveTake(item))
 }
 
 // functions
-AudioFile & TAKE::getAudioFile() { return audioFile; }
+AUDIODATA & TAKE::getAudioFile() { return audioFile; }
 int TAKE::getIndex() const { return GetMediaItemTakeInfo_Value(takePtr, "IP_TAKENUMBER"); }
 MediaItem * TAKE::getMediaItemPtr() const { return GetMediaItemTake_Item(takePtr); }
 MediaTrack * TAKE::track() const { return GetMediaItemTrack(getMediaItemPtr()); }
@@ -79,9 +79,9 @@ double TAKE::getVolume() const { return abs(GetMediaItemTakeInfo_Value(takePtr, 
 double TAKE::getStartOffset() const { return GetMediaItemTakeInfo_Value(takePtr, "D_STARTOFFS"); }
 PCM_source * TAKE::pcm_source() const { return pcmSource; }
 File TAKE::getFile() const { return audioFile.getFile(); }
-void TAKE::setFile(const String & file)
+void TAKE::setFile(const File & file)
 {
-	pcmSource = PCM_Source_CreateFromFile(file.toRawUTF8());
+	pcmSource = PCM_Source_CreateFromFile(file.getFullPathName().toRawUTF8());
 	SetMediaItemTake_Source(takePtr, pcmSource);
 
 	audioFile.clear();
