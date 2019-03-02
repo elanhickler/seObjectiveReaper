@@ -63,7 +63,7 @@ TAKE & ITEM::getTake(int i)
 bool ITEM::isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_track)
 {
 	if (must_be_on_same_track && i1.getTrack() != i2.getTrack()) return false;
-	return i1.getGroupIndex() && i1.getGroupIndex() == i2.getGroupIndex();
+	return i1.getGroupId() && i1.getGroupId() == i2.getGroupId();
 }
 
 ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
@@ -148,7 +148,7 @@ MediaTrack * ITEM::getTrack() const { return GetMediaItem_Track(itemPtr); }
 int ITEM::getTrackIndex() const { return GetMediaTrackInfo_Value(GetMediaItem_Track(itemPtr), "IP_TRACKNUMBER"); }
 double ITEM::getSnapOffset() const { return GetMediaItemInfo_Value(itemPtr, "D_SNAPOFFSET"); }
 bool ITEM::isMuted() const { return 0.0 != GetMediaItemInfo_Value(itemPtr, "B_MUTE"); }
-int ITEM::getGroupIndex() const { return GetMediaItemInfo_Value(itemPtr, "I_GROUPID"); }
+int ITEM::getGroupId() const { return GetMediaItemInfo_Value(itemPtr, "I_GROUPID"); }
 double ITEM::getVolume() const { return GetMediaItemInfo_Value(itemPtr, "D_VOL"); }
 double ITEM::getFadeInLen() const { return GetMediaItemInfo_Value(itemPtr, "D_FADEINLEN"); }
 double ITEM::getFadeOutLen() const { return GetMediaItemInfo_Value(itemPtr, "D_FADEOUTLEN"); }
@@ -458,33 +458,40 @@ void ITEMGROUPLIST::collect_groupgrouped(bool selected_only)
 	int items = selected_only ? CountSelectedMediaItems(0) : CountMediaItems(0);
 	reserve(items);
 
-	ITEMLIST il;
+	ITEMLIST itemList;
 	if (!do_sort)
-		il.disableSort();
+		itemList.disableSort();
 
 	if (selected_only)
-		il.collectSelectedItems();
+		itemList.collectSelectedItems();
 	else
-		il.collectItems();
+		itemList.collectItems();
 
 	map<int, ITEMLIST> group_map;
-	set<int> group_set;
+	Array<int> group_order_appearance;
 
 	int non_group_counter = 0;
-
-	for (ITEM & i : il)
+	for (ITEM& item : itemList)
 	{
-		int grp = i.getGroupIndex();
-		if (grp == 0)
+		int grp;
+		if (item.getGroupId() == 0)
+		{
 			grp = non_group_counter--;
-		group_map[grp].push_back(i);
-		group_set.insert(grp);
+			group_order_appearance.add(grp);
+		}
+		else
+		{
+			grp = item.getGroupId();
+			group_order_appearance.addIfNotAlreadyThere(grp);
+		}
+
+		group_map[grp].push_back(item);
 	}
 
-	for (auto it = group_set.begin(); it != group_set.end(); ++it)
+	for (int id : group_order_appearance)
 	{
-		push_back(group_map[*it]);
-		back().m_group = *it;
+		push_back(group_map[id]);
+		back().groupId = id;
 	}
 }
 
@@ -593,38 +600,30 @@ int ITEMGROUPLIST::countItems()
 double AUDIOFUNCTION::getPeak(TAKE & take, double * frameIndexOut, double * channelIndexOut)
 {
 	double peakValue = 0;
-	bool endEarly = false;
+	double absPeakValue = 0;
 	int frameIndexForPeak = 0;
 	int channelIndexForPeak = take.getFirstChannel();
 
-	int fr, ch;
-
-	std::function<void()> updateFrameAndChannelIndex = [&]()
+	auto func = [&](int ch, int fr)
 	{
-		frameIndexForPeak = fr;
-		channelIndexForPeak = ch;
+		double value = take[ch][fr];
+		double absValue = abs(value);
+
+		if (absValue > absPeakValue)
+		{
+			peakValue = value;
+			absPeakValue = absValue;
+			frameIndexForPeak = fr;
+			channelIndexForPeak = ch;
+
+			if (absPeakValue == 1)
+				return;
+		}
 	};
 
-	for (fr = 0; fr < take.getNumFrames(); ++fr)
-	{
-		if (endEarly)
-			break;
-
-		for (ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
-		{
-			double previousPeakValue = peakValue;
-			peakValue = max<double>(peakValue, abs(take.getAudioSample(ch, fr)));
-
-			if (previousPeakValue != peakValue)
-				updateFrameAndChannelIndex();
-
-			if (peakValue == 1)
-			{
-				endEarly = true;
-				updateFrameAndChannelIndex();
-			}
-		}
-	}
+	for (int fr = 0; fr < take.getNumFrames(); ++fr)
+		for (int ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
+			func(ch, fr);				
 
 	if (frameIndexOut)
 		*frameIndexOut = frameIndexForPeak;
@@ -637,7 +636,7 @@ vector<double> AUDIOFUNCTION::sumChannelModeChannels(TAKE & take)
 {
 	vector<double> summed(take.getNumFrames(), 0);
 
-	if (take.getFirstChannel() == take.getLastChannel())
+	if (take.getNumChannelModeChannels() == 1)
 		return take.getAudioChannel(take.getFirstChannel());
 
 	for (int fr = 0; fr < take.getNumFrames(); ++fr)
@@ -664,9 +663,11 @@ vector<double> AUDIOFUNCTION::sumAllChannels(TAKE & take)
 double AUDIOFUNCTION::getPeakRMS(TAKE & take, double timeWindowForPeakRMS)
 {
 	auto summedAudio = sumChannelModeChannels(take);
+	int numChannels = take.getNumChannelModeChannels();
 
-	for (auto & sample : summedAudio)
-		sample /= take.getNumChannels();
+	if (numChannels > 1)
+		for (auto & value : summedAudio)
+			value /= double(numChannels);
 
 	return RAPT::getMaxShortTimeRMS<double>(summedAudio.data(), summedAudio.size(), take.getSampleRate()*timeWindowForPeakRMS);
 }
@@ -675,7 +676,7 @@ bool AUDIOFUNCTION::isAudioSilent(TAKE & take, double minimumAmplitude)
 {
 	for (int ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
 		for (int fr = 0; fr < take.getNumFrames(); ++fr)
-			if (take.getAudioSample(ch, fr) >= minimumAmplitude)
+			if (take.getSample(ch, fr) >= minimumAmplitude)
 				return false;
 	return true;
 }

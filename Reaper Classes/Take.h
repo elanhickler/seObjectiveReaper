@@ -103,7 +103,7 @@ public:
 
 	MediaItem_Take * getPointer() const { return takePtr; }
 	MediaItem_Take * getPointer() { return takePtr; }
-	PCM_source * pcm_source() const;
+	PCM_source * getPCMSource() const;
 
 	// getter
 	bool isMidi() const { return TakeIsMIDI(takePtr); }
@@ -172,12 +172,13 @@ public:
 	int getSampleRate();
 	int getBitDepth();
 	int getNumChannels();
+	int getNumChannelModeChannels();
 	size_t getNumFrames() const;
 	size_t getNumSamples() const;
 
 	vector<vector<double>> & getAudioMultichannel();
 	vector<double> & getAudioChannel(int channel);
-	double getAudioSample(int channel, int frame);
+	double getSample(int channel, int frame);
 	double getProjectPositionForFrameIndex(int sample)
 	{
 		double sr = getSampleRate();
@@ -193,9 +194,6 @@ protected:
 	ITEM * itemParent = nullptr;
 	AUDIODATA audioFile;
 	bool audioIsInitialized = false;
-
-	// audio property
-	PCM_source* pcmSource = nullptr;
 
 	vector<vector<double>> takeAudioBuffer;
 	size_t takeFrames = 0;

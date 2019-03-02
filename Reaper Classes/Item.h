@@ -87,7 +87,7 @@ public:
 	bool isSelected() const;
 
 	int getIndex() const;
-	int getGroupIndex() const;
+	int getGroupId() const;
 	double getVolume() const;
 	double getRate() const;
 	double getSnapOffset() const;
@@ -241,7 +241,7 @@ public:
 	void setSelected(bool select);
 
 protected:
-	int m_group;
+	int groupId;
 	TAKELIST TakeList;
 };
 
@@ -305,7 +305,14 @@ public:
 class AUDIOPROCESS
 {
 public:
-	static void processTakeList(TAKELIST& list, std::function<void(TAKE&)> perTakeFunction);
+	static void processTakeList(TAKELIST& list, function<void(TAKE&)> perTakeFunction);
+
+	static void shorthand(TAKE& take, function<void(int,int)> func)
+	{
+		for (int fr = 0; fr < take.getNumFrames(); ++fr)
+			for (int ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
+				func(ch, fr);
+	}
 
 protected:
 	static void prepareToStart();

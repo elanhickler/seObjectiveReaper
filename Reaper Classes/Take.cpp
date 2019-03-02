@@ -77,12 +77,19 @@ double TAKE::getRate() const { return GetMediaItemTakeInfo_Value(takePtr, "D_PLA
 // Returns volume as a factor of amplitude.
 double TAKE::getVolume() const { return abs(GetMediaItemTakeInfo_Value(takePtr, "D_VOL")); }
 double TAKE::getStartOffset() const { return GetMediaItemTakeInfo_Value(takePtr, "D_STARTOFFS"); }
-PCM_source * TAKE::pcm_source() const { return pcmSource; }
-File TAKE::getFile() const { return audioFile.getFile(); }
+PCM_source * TAKE::getPCMSource() const
+{
+	return GetMediaItemTake_Source(takePtr);
+}
+File TAKE::getFile() const
+{
+	char buf[1024];
+	GetMediaSourceFileName(getPCMSource(), buf, 1024);
+	return File(buf);
+}
 void TAKE::setFile(const File & file)
 {
-	pcmSource = PCM_Source_CreateFromFile(file.getFullPathName().toRawUTF8());
-	SetMediaItemTake_Source(takePtr, pcmSource);
+	SetMediaItemTake_Source(takePtr, PCM_Source_CreateFromFile(file.getFullPathName().toRawUTF8()));
 
 	audioFile.clear();
 	audioIsInitialized = false;
@@ -195,7 +202,7 @@ void TAKE::initAudio(double starttime, double endtime)
 {
 	audioIsInitialized = true;
 
-	audioFile.setSource(pcmSource);
+	audioFile.setSource(getPCMSource());
 
 	jassert(audioFile.getNumChannels() > 0); // bad audio file
 
@@ -231,6 +238,11 @@ int TAKE::getBitDepth() { return audioFile.getBitDepth(); }
 
 int TAKE::getNumChannels() { return audioFile.getNumChannels(); }
 
+int TAKE::getNumChannelModeChannels()
+{
+	return getLastChannel() - getFirstChannel();
+}
+
 size_t TAKE::getNumFrames() const { return takeFrames; }
 
 size_t TAKE::getNumSamples() const { return takeSamples; }
@@ -242,7 +254,7 @@ vector<double>& TAKE::getAudioChannel(int channel)
 	return takeAudioBuffer[channel];
 }
 
-double TAKE::getAudioSample(int channel, int frame)
+double TAKE::getSample(int channel, int frame)
 {
 	return takeAudioBuffer[channel][frame];
 }
