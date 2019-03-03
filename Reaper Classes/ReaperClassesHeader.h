@@ -176,8 +176,8 @@ public:
 
 	AUDIODATA() {}
 
-	vector<double>& operator[](int i) { return multichannel[i]; }
-	vector<double> operator[](int i) const { return multichannel[i]; }
+	vector<double>& operator[](int i) { return data[i]; }
+	vector<double> operator[](int i) const { return data[i]; }
 
 	AUDIODATA(const vector<vector<double>> & multichannelAudio, int sampleRate, int bitDepth)
 	{
@@ -187,6 +187,16 @@ public:
 	AUDIODATA(const vector<vector<float>> & multichannelAudio, int sampleRate, int bitDepth)
 	{
 		setSource(convertAudioType<double>(multichannelAudio), sampleRate, bitDepth);
+	}
+
+	AUDIODATA(const vector<double> & singleChannelAudio, int sampleRate, int bitDepth)
+	{
+		setSource(convertAudioType<double>(singleChannelAudio), sampleRate, bitDepth);
+	}
+
+	AUDIODATA(const vector<float> & singleChannelAudio, int sampleRate, int bitDepth)
+	{
+		setSource(convertAudioType<double>(singleChannelAudio), sampleRate, bitDepth);
 	}
 
 	AUDIODATA(PCM_source* source)
@@ -217,12 +227,12 @@ public:
 
 	void setSource(const vector<vector<double>> multichannelAudio, int sampleRate, int bitDepth)
 	{
-		multichannel = multichannelAudio;
+		data = multichannelAudio;
 		srate = sampleRate;
 		bitdepth = bitDepth;
-		channels = multichannel.size();
-		length = multichannel[0].size() / sampleRate;
-		frames = multichannel[0].size();
+		channels = data.size();
+		length = data[0].size() / sampleRate;
+		frames = data[0].size();
 		samples = int(frames * channels * srate);
 	}
 
@@ -245,8 +255,8 @@ public:
 
 	// getters
 	File getFile() const { return file; }
-	double getSample(int channel, int sample) { return multichannel[channel][sample]; }
-	vector<double> & getChannel(int channel) { return multichannel[channel]; }
+	double getSample(int channel, int sample) { return data[channel][sample]; }
+	vector<double> & getChannel(int channel) { return data[channel]; }
 	int getNumSamples() const { return samples; }
 	int getNumChannels() const { return channels; }
 	int getNumFrames() const { return frames; }
@@ -254,9 +264,16 @@ public:
 	int getBitDepth() const { return bitdepth; }
 	double getLength() const { return length; }
 
+	// setters
+	void setSampleRate(int v);
+	void setBitDepth(int v);
+	void setNumFrames(int v);
+	void setNumChannels(int v);
+	void setSample(int channel, int frame, double value);
+
 	void clear()
 	{
-		multichannel.clear();
+		data.clear();
 		file = File();
 		int srate = 0;
 		int bitdepth = 0;
@@ -274,18 +291,9 @@ protected:
 	int samples;
 	int channels;
 	double length;
-	vector<vector<double>> multichannel;
+	vector<vector<double>> data;
 
-	AudioSampleBuffer convertToAudioSampleBuffer() const
-	{
-		vector<vector<float>> audio = convertAudioType<float>(multichannel);
-
-		AudioSampleBuffer buffer(getNumChannels(), getNumFrames());
-		for (int ch = 0; ch < getNumChannels(); ++ch)
-			buffer.addFrom(ch, 0, audio[ch].data(), audio[ch].size());
-
-		return std::move(buffer);
-	}
+	AudioSampleBuffer convertToAudioSampleBuffer() const;
 
 	template <typename t1, typename t2> vector<vector<t1>> convertAudioType(const vector<vector<t2>> & type2Audio) const
 	{
@@ -294,6 +302,15 @@ protected:
 		type1Audio.reserve(type2Audio.size());
 		for (int ch = 0; ch < type2Audio.size(); ++ch)
 			type1Audio.push_back({ type2Audio[ch].begin(), type2Audio[ch].end() });
+
+		return std::move(type1Audio);
+	}
+
+	template <typename t1, typename t2> vector<vector<t1>> convertAudioType(const vector<t2> & type2Audio) const
+	{
+		vector<vector<t1>> type1Audio;
+
+		type1Audio.push_back({ type2Audio.begin(), type2Audio.end() });
 
 		return std::move(type1Audio);
 	}

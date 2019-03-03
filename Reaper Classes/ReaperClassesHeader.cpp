@@ -175,6 +175,65 @@ void UPDATE()
 	UpdateArrange();
 	TrackList_AdjustWindows(false);
 }
+
+
+
+void AUDIODATA::collectCues()
+{
+	cues = WavAudioFile::create(file, 0.0, samples / (double)srate);
+}
+
+Array<WavAudioFile::CuePoint> AUDIODATA::getCuePoints()
+{
+	return cues->cuePoints;
+}
+
+Array<WavAudioFile::Region> AUDIODATA::getCueRegions()
+{
+	return cues->regions;
+}
+
+Array<WavAudioFile::Loop> AUDIODATA::getLoops()
+{
+	return cues->loops;
+}
+
+void AUDIODATA::writeCues()
+{
+	cues->saveChanges(file);
+}
+
+void AUDIODATA::setSampleRate(int v) { srate = v; }
+
+void AUDIODATA::setBitDepth(int v) { bitdepth = v; }
+
+void AUDIODATA::setNumFrames(int v)
+{
+	for (auto & channel : data)
+		channel.resize(v, 0);
+}
+
+void AUDIODATA::setNumChannels(int v)
+{
+	data.resize(v, vector<double>(data.size(), 0.0));
+}
+
+void AUDIODATA::setSample(int channel, int frame, double value)
+{
+	data[channel][frame] = value;
+}
+
+AudioSampleBuffer AUDIODATA::convertToAudioSampleBuffer() const
+{
+	vector<vector<float>> audio = convertAudioType<float>(data);
+
+	AudioSampleBuffer buffer(getNumChannels(), getNumFrames());
+	for (int ch = 0; ch < getNumChannels(); ++ch)
+		buffer.addFrom(ch, 0, audio[ch].data(), audio[ch].size());
+
+	return std::move(buffer);
+}
+
 //double GetNextItemStartTime(double time, TRACKLIST & TrackListIn)
 //{
 //    return 0.0;

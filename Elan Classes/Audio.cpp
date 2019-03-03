@@ -1,6 +1,7 @@
 #include <vector>
 using std::vector;
 #include "Audio.h"
+#include "..\Reaper Classes\ReaperClassesHeader.h"
 
 vector<vector<double>> InterleavedToMultichannel(double* input, int channels, int frames)
 {
@@ -381,29 +382,4 @@ WavAudioFile::Loop WavAudioFile::getSampleLoop(int index) const
   r.playcount = getIntValue(idLoop, index, "PlayCount");
   r.cueIdentifier = getIntValue(idLoop, index, "Identifier");
   return r;
-}
-
-void AUDIODATA::collectCues()
-{
-    cues = WavAudioFile::create(file, 0.0, samples/(double)srate);
-}
-
-Array<WavAudioFile::CuePoint> AUDIODATA::getCuePoints()
-{
-    return cues->cuePoints;
-}
-
-Array<WavAudioFile::Region> AUDIODATA::getCueRegions()
-{
-    return cues->regions;
-}
-
-Array<WavAudioFile::Loop> AUDIODATA::getLoops()
-{
-  return cues->loops;
-}
-
-void AUDIODATA::writeCues()
-{
-    cues->saveChanges(file);
 }
