@@ -227,7 +227,7 @@ void TAKE::loadAudio()
 
 	setChannelMode(initial_chanmode);
 
-	takeAudioBuffer = InterleavedToMultichannel(buffer.data(), audioFile.getNumChannels(), takeFrames);
+	takeAudioBuffer.setSource(InterleavedToMultichannel(buffer.data(), audioFile.getNumChannels(), takeFrames), audioFile.getSampleRate(), audioFile.getBitDepth());
 }
 
 void TAKE::unloadAudio() { takeAudioBuffer.clear(); }
@@ -247,7 +247,7 @@ size_t TAKE::getNumFrames() const { return takeFrames; }
 
 size_t TAKE::getNumSamples() const { return takeSamples; }
 
-vector<vector<double>> & TAKE::getAudioMultichannel() { return takeAudioBuffer; }
+vector<vector<double>> & TAKE::getAudioMultichannel() { return takeAudioBuffer.getData(); }
 
 vector<double>& TAKE::getAudioChannel(int channel)
 {
@@ -257,6 +257,11 @@ vector<double>& TAKE::getAudioChannel(int channel)
 double TAKE::getSample(int channel, int frame)
 {
 	return takeAudioBuffer[channel][frame];
+}
+
+double TAKE::getProjectPositionForFrameIndex(int index)
+{
+	return getStart() + index / getSampleRate();
 }
 
 void MIDINOTELIST::collect()

@@ -179,12 +179,7 @@ public:
 	vector<vector<double>> & getAudioMultichannel();
 	vector<double> & getAudioChannel(int channel);
 	double getSample(int channel, int frame);
-	double getProjectPositionForFrameIndex(int sample)
-	{
-		double sr = getSampleRate();
-		double startTime = getStart();
-		return startTime + sample / sr;
-	}
+	double getProjectPositionForFrameIndex(int index);
 
 	bool isValid() const override;
 
@@ -195,7 +190,7 @@ protected:
 	AUDIODATA audioFile;
 	bool audioIsInitialized = false;
 
-	vector<vector<double>> takeAudioBuffer;
+	AUDIODATA takeAudioBuffer;
 	size_t takeFrames = 0;
 	size_t takeSamples = 0;
 	double audiobuf_starttime = -1;

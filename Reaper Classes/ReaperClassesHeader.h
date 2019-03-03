@@ -257,6 +257,7 @@ public:
 	File getFile() const { return file; }
 	double getSample(int channel, int sample) { return data[channel][sample]; }
 	vector<double> & getChannel(int channel) { return data[channel]; }
+	vector<vector<double>> & getData() { return data; }
 	int getNumSamples() const { return samples; }
 	int getNumChannels() const { return channels; }
 	int getNumFrames() const { return frames; }
