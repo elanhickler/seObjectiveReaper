@@ -217,6 +217,7 @@ void TAKE::initAudio(double starttime, double endtime)
 
 void TAKE::loadAudio()
 {
+	// audio accessor is unusuable/bugged unless channel mode is 0
 	int initial_chanmode = getChannelMode();
 	setChannelMode(0);
 

@@ -178,6 +178,74 @@ void UPDATE()
 
 
 
+AUDIODATA::AUDIODATA(const vector<vector<double>>& multichannelAudio, int sampleRate, int bitDepth)
+{
+	setSource(multichannelAudio, sampleRate, bitDepth);
+}
+
+AUDIODATA::AUDIODATA(const vector<vector<float>>& multichannelAudio, int sampleRate, int bitDepth)
+{
+	setSource(convertAudioType<double>(multichannelAudio), sampleRate, bitDepth);
+}
+
+AUDIODATA::AUDIODATA(const vector<double>& singleChannelAudio, int sampleRate, int bitDepth)
+{
+	setSource(convertAudioType<double>(singleChannelAudio), sampleRate, bitDepth);
+}
+
+AUDIODATA::AUDIODATA(const vector<float>& singleChannelAudio, int sampleRate, int bitDepth)
+{
+	setSource(convertAudioType<double>(singleChannelAudio), sampleRate, bitDepth);
+}
+
+AUDIODATA::AUDIODATA(PCM_source * source)
+{
+	setSource(source);
+}
+
+AUDIODATA::AUDIODATA(const File & file)
+{
+	setSource(file);
+}
+
+void AUDIODATA::setSource(PCM_source * source)
+{
+	file = source->GetFileName();
+	srate = source->GetSampleRate();
+	channels = source->GetNumChannels();
+	length = source->GetLength();
+	samples = int(source->GetLength() * channels * srate);
+	bitdepth = source->GetBitsPerSample();
+	frames = source->GetLength() * srate;
+}
+
+void AUDIODATA::setSource(const File & file)
+{
+	setSource(PCM_Source_CreateFromFile(file.getFullPathName().toRawUTF8()));
+}
+
+void AUDIODATA::setSource(const vector<vector<double>> multichannelAudio, int sampleRate, int bitDepth)
+{
+	data = multichannelAudio;
+	srate = sampleRate;
+	bitdepth = bitDepth;
+	channels = data.size();
+	length = data[0].size() / sampleRate;
+	frames = data[0].size();
+	samples = int(frames * channels * srate);
+}
+
+void AUDIODATA::writeToFile(const File & file) const
+{
+	AudioSampleBuffer buffer = convertToAudioSampleBuffer();
+
+	WavAudioFormat format;
+	std::unique_ptr<AudioFormatWriter> writer;
+	writer.reset(format.createWriterFor(new FileOutputStream(file), srate, buffer.getNumChannels(), bitdepth, {}, 0));
+	if (writer != nullptr)
+		writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+}
+
 void AUDIODATA::collectCues()
 {
 	cues = WavAudioFile::create(file, 0.0, samples / (double)srate);
