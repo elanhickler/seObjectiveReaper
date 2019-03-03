@@ -116,6 +116,9 @@ public:
 	void setRate(double new_rate, bool warp = true);
 	void setSnapOffset(double v);
 
+	void setGroupId(int v);
+	void removeGroup();
+
 	void setFadeInLen(double v);
 	void setFadeOutLen(double v);
 	void setFadeInLenAuto(double v);

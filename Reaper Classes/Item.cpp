@@ -200,6 +200,14 @@ bool ITEM::setTrackByName(String name) { return MoveMediaItemToTrack(itemPtr, TR
 void ITEM::setActiveTake(int idx) { SetActiveTake(GetTake(itemPtr, idx)); }
 void ITEM::setActiveTake(const TAKE & take) { SetActiveTake(take.getPointer()); }
 void ITEM::setSnapOffset(double v) { SetMediaItemInfo_Value(itemPtr, "D_SNAPOFFSET", v); }
+void ITEM::setGroupId(int v)
+{
+	SetMediaItemInfo_Value(itemPtr, "I_GROUPID", double(v));
+}
+void ITEM::removeGroup()
+{
+	setGroupId(0);
+}
 void ITEM::setMuted(bool v) { SetMediaItemInfo_Value(itemPtr, "B_MUTE", v); }
 void ITEM::setVolume(double v) { SetMediaItemInfo_Value(itemPtr, "D_VOL", v); }
 void ITEM::move(double v) { SetMediaItemInfo_Value(itemPtr, "D_POSITION", GetMediaItemInfo_Value(itemPtr, "D_POSITION") + v); }
