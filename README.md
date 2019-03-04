@@ -7,7 +7,7 @@ C++ library for using REAPER API through an object oriented interface. Warning: 
 Functions to manipulate the REAPER project.
 
 ### AUDIODATA
-Stores audio for manipulation.
+Functions to read/write/manipulate audio eiter from TAKE or arbitrary data.
 
 ### MIDINOTE
 Functions to manipulate a midi note or to create new midi notes in TAKE.
@@ -16,7 +16,7 @@ Functions to manipulate a midi note or to create new midi notes in TAKE.
 Holds a list of MIDINOTE to manipulate TAKE midi.
 
 ### TAKE
-Functions to manipulate a `MediaItem_Take*`.
+Functions to manipulate a `MediaItem_Take*` and access take audio. Owns an AUDIODATA object.
 
 ### TAKELIST
 Functions to gather takes. Holds a list of TAKE.
