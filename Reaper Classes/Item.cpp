@@ -676,7 +676,7 @@ double AUDIOFUNCTION::getPeakRMS(TAKE & take, double timeWindowForPeakRMS)
 	if (numChannels > 1)
 		for (auto & value : summedAudio)
 			value /= double(numChannels);
-
+	
 	return RAPT::getMaxShortTimeRMS<double>(summedAudio.data(), summedAudio.size(), take.getSampleRate()*timeWindowForPeakRMS);
 }
 

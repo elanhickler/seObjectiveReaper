@@ -146,15 +146,14 @@ protected:
 
 class MARKERLIST : public LIST<MARKER>
 {
-protected:
-	int num_markers = 0;
-	int num_regions = 0;
-	int num_markersregions = 0;
-
-	bool has_markers = false;
-	bool has_regions = false;
-
 public:
+	static int CountMarkersInProject();
+	static int CountRegionsInProject();
+	static int CountMarkersAndRegionsInProject();
+
+	// constructor
+	MARKERLIST() {}
+
 	// operators
 	const MARKER& operator[](size_t i) const { return list[i]; }
 	MARKER& operator[](size_t i) { return list[i]; }
@@ -162,49 +161,51 @@ public:
 	// conversion
 	operator vector<MARKER>() { return list; }
 
-	// constructor
-	MARKERLIST() {}
-
 	// collect
-	int CountMarkersInProject();
-	int CountRegionsInProject();
-	int CountMarkersAndRegionsInProject();
 	void CollectMarkersAndRegions();
 	void CollectMarkers();
 	void CollectRegions();
 	void RemoveAllFromProject();
 	void AddAllToProject();
 	void RemoveDuplicates();
+
+protected:
+	int num_markers = 0;
+	int num_regions = 0;
+	int num_markersregions = 0;
+
+	bool has_markers = false;
+	bool has_regions = false;
 };
 
 class TIMESELECTION
 {
 public:
-	static RANGE range()
+	static RANGE getRange()
 	{
 		double timesel_start, timesel_end;
 		GetSet_LoopTimeRange(false, false, &timesel_start, &timesel_end, false);
 		return { timesel_start, timesel_end };
 	}
 
-	static double start()
+	static double getStart()
 	{
 		double timesel_start, timesel_end;
 		GetSet_LoopTimeRange(false, false, &timesel_start, &timesel_end, false);
 		return timesel_start;
 	}
-	static double end()
+	static double getEnd()
 	{
 		double timesel_start, timesel_end;
 		GetSet_LoopTimeRange(false, false, &timesel_start, &timesel_end, false);
 		return timesel_end;
 	}
-	static void range(const RANGE & v)
+	static void setRange(const RANGE & v)
 	{
 		double timesel_start = v.start(), timesel_end = v.end();
 		GetSet_LoopTimeRange(true, false, &timesel_start, &timesel_end, false);
 	}
-	static void start(double v)
+	static void setStart(double v)
 	{
 		double timesel_start, timesel_end;
 		GetSet_LoopTimeRange(false, false, &timesel_start, &timesel_end, false);
@@ -212,7 +213,7 @@ public:
 		GetSet_LoopTimeRange(true, false, &timesel_start, &timesel_end, false);
 	}
 
-	static void end(double v)
+	static void setEnd(double v)
 	{
 		double timesel_start, timesel_end;
 		GetSet_LoopTimeRange(false, false, &timesel_start, &timesel_end, false);

@@ -63,8 +63,11 @@ void MARKERLIST::AddAllToProject()
 
 void MARKERLIST::RemoveDuplicates()
 {
-	if (size() < 2) return;
+	if (size() < 2)
+		return;
+
 	sort();
+
 	MARKER * m;
 	for (int i = 0; i < size();)
 	{
@@ -72,11 +75,13 @@ void MARKERLIST::RemoveDuplicates()
 		while (++i < size() && m->range() == list[i].range())
 			list[i].makeInvalid();
 	}
+
 	MARKERLIST NewMarkerList;
 	for (const auto& mr : list)
 		if (mr.isValid())
 			NewMarkerList.push_back(mr);
-	*this = std::move(NewMarkerList);
+
+	list = std::move(NewMarkerList);
 }
 
 MARKER::MARKER() {}
