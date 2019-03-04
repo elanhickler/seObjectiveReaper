@@ -1,5 +1,5 @@
 # seObjectiveReaper
-C++ library for using REAPER API through an object oriented interface. Warning: Large changes will be made to continue to make this library easy to use and understand.
+C++ library for using REAPER API through an object oriented interface. Warning: Large changes will be made to continue to make this library easy to use.
 
 # Main Classes
 
@@ -41,6 +41,12 @@ Functions to manipulate project markers and regions.
 
 ### MARKERLIST
 Functions to gather project markers and regions. Holds a list of MARKER.
+
+### STRETCHMAKER
+Functions to manipulate stretch markers inside a `MediaTake*`.
+
+### STRETCHMAKERLIST
+Functions to gather stretch markers. Holds a list of STRETCHMARKER.
 
 ### ENVPT
 Functions to manipulate a point in ENVELOPE.
