@@ -27,13 +27,13 @@ double PROJECT::global_save_view_end = 0;
 
 void PROJECT::saveItemSelection()
 {
-	int items = CountMediaItems(0);
+	int items = PROJECT::countSelectedItems();
 
 	savedItems.clear();
 	savedItems.reserve(items);
 
 	for (int i = 0; i < items; ++i)
-		savedItems.push_back(GetMediaItem(0, i));
+		savedItems.push_back(GetSelectedMediaItem(0, i));
 }
 
 void PROJECT::loadItemSelection()

@@ -241,7 +241,7 @@ int TAKE::getNumChannels() { return audioFile.getNumChannels(); }
 
 int TAKE::getNumChannelModeChannels()
 {
-	return getLastChannel() - getFirstChannel();
+	return getLastChannel() - getFirstChannel() + 1;
 }
 
 size_t TAKE::getNumFrames() const { return takeFrames; }

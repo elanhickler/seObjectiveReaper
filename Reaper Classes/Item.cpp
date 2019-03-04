@@ -605,7 +605,12 @@ int ITEMGROUPLIST::countItems()
 	return c;
 }
 
-double AUDIOFUNCTION::getPeak(TAKE & take, double * frameIndexOut, double * channelIndexOut)
+double AUDIOFUNCTION::getPeakValueAbsolute(TAKE & take, double * frameIndexOut, double * channelIndexOut)
+{
+	return abs(getPeakValue(take, frameIndexOut, channelIndexOut));
+}
+
+double AUDIOFUNCTION::getPeakValue(TAKE & take, double * frameIndexOut, double * channelIndexOut)
 {
 	double peakValue = 0;
 	double absPeakValue = 0;
@@ -630,7 +635,7 @@ double AUDIOFUNCTION::getPeak(TAKE & take, double * frameIndexOut, double * chan
 	};
 
 	for (int fr = 0; fr < take.getNumFrames(); ++fr)
-		for (int ch = take.getFirstChannel(); ch < take.getLastChannel(); ++ch)
+		for (int ch = take.getFirstChannel(); ch < take.getNumChannelModeChannels(); ++ch)
 			func(ch, fr);				
 
 	if (frameIndexOut)

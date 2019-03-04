@@ -294,7 +294,8 @@ convenient audio functions to be used inside an audioprocess function
 class AUDIOFUNCTION
 {
 public:
-	static double getPeak(TAKE& take, double * frameIndexOut = nullptr, double * channelIndexOut = nullptr);
+	static double getPeakValue(TAKE& take, double * frameIndexOut = nullptr, double * channelIndexOut = nullptr);
+	static double getPeakValueAbsolute(TAKE & take, double * frameIndexOut = nullptr, double * channelIndexOut = nullptr);
 
 	static vector<double> sumChannelModeChannels(TAKE & take);
 
