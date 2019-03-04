@@ -16,7 +16,7 @@
   license:          WTFPL www.wtfpl.net
 
   dependencies:     juce_core, juce_audio_basics, juce_graphics, juce_gui_basics,
-                    juce_audio_formats, juce_audio_processors, rapt, romos, rosic
+                    juce_audio_formats, juce_audio_processors, rapt, rosic
   OSXFrameworks:
   iOSFrameworks:
 
