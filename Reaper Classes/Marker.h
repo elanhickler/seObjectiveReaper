@@ -124,7 +124,7 @@ protected:
 			{ "t", __tags },
 	};
 
-	String GetPropertyStringFromKey(const String & key, bool get_value) const;
+	String GetPropertyStringFromKey(const String & key, bool get_value) const override;
 
 	static int idToIndex(int lookForId, bool lookForRegion)
 	{

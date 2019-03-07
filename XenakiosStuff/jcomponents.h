@@ -564,6 +564,6 @@ inline UserInputsWindow* ShowGenericUserInputs(String windowtitle, String but1tx
 
 	dlg->m_comp->loadSettings();
 	dlg->m_comp->setButtonText(1, but1txt);
-	dlg->setSize(500, NameDefVal.size() * 25 + 32);
+	dlg->setSize(500, int(NameDefVal.size()) * 25 + 32);
 	return dlg;
 }

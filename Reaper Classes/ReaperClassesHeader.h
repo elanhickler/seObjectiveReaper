@@ -286,6 +286,8 @@ protected:
 class OBJECT_NAMABLE
 {
 protected:
+  // members
+  Tagger TagManager;
 	// Call this function in the derived class's constructor like this: OBJECT_NAMABLE::initialize()
 	// Make sure you call this AFTER the object actually has a name.
 	void initialize() { TagManager.setStringWithTags(getObjectName()); }
@@ -295,6 +297,8 @@ protected:
 	virtual void setObjectName(const String & v) = 0;
 
 public:
+ 	virtual ~OBJECT_NAMABLE(){}
+  
 	// Get the object's name including tags
 	String getName() const
 	{
@@ -352,15 +356,13 @@ public:
 
 	// boolean
 	bool hasTag(const String & tag) const { return TagManager.tagExists(tag); }
-
-protected:
-	// members
-	Tagger TagManager;
 };
 
 class OBJECT_MOVABLE
 {
 public:
+  virtual ~OBJECT_MOVABLE(){}
+  
 	operator RANGE() { return range(); }
 
 	// getters
@@ -524,7 +526,6 @@ template<typename t>
 void LIST<t>::FilterByPattern(char do_not_filter, const String & pattern, bool full_pattern_must_complete)
 {
 	LIST l;
-	int mod = 0;
 	int counter = 0;
 	const int len = pattern.length();
 	const int do_full_pattern = full_pattern_must_complete ? len : 0;

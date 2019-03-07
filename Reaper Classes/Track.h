@@ -37,8 +37,8 @@ public:
 	TRACK getLastChild() const;
 	TRACK getFirstChild() const;
 	int folder() const { return GetMediaTrackInfo_Value(track, "I_FOLDERDEPTH"); }
-	int countItems() const { return list.size(); }
-	int countSelectedItems() const { return ItemList_selected.size(); }
+	int countItems() const { return (int)list.size(); }
+	int countSelectedItems() const { return (int)ItemList_selected.size(); }
 	ITEM & getItem(int index) { return list[index]; }
 	ITEM & getSelectedItem(int index) { return ItemList_selected[index]; }
 
@@ -60,7 +60,7 @@ public:
 	void sel(bool state) { SetMediaTrackInfo_Value(track, "I_SELECTED", state); }
 
 	// logic
-	bool isValid() const { return track != nullptr && getIndex() != 0; }
+	bool isValid() const override { return track != nullptr && getIndex() != 0; }
 	bool is_selected() const { return sel(); }
 	bool hasMidiItems() const
 	{

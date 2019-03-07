@@ -1,7 +1,7 @@
 #include <vector>
 using std::vector;
 #include "Audio.h"
-#include "..\Reaper Classes\ReaperClassesHeader.h"
+#include "../Reaper Classes/ReaperClassesHeader.h"
 
 vector<vector<double>> InterleavedToMultichannel(double* input, int channels, int frames)
 {

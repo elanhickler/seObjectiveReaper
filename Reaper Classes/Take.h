@@ -18,6 +18,8 @@ public:
 	MIDINOTE(int pitch, double startTime, double endTime, int velocity, int channel = 1, bool selected = false, bool muted = false)
 		: pitch(pitch), startTime(startTime), endTime(endTime), velocity(velocity), channel(channel), selected(selected), muted(muted)
 	{ }
+  
+  virtual ~MIDINOTE(){}
 
 	int getPitch() { return pitch; };
 	String getPitchString() { return MIDI(pitch).getName(); }

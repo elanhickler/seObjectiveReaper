@@ -109,13 +109,13 @@ public:
 	ENVELOPE envelope() const { return _envelope; }
 	void simplifyByAverage(double width) { _envelope.simplifyByAverage(width); }
 	void simplifyByDifference(double diff) { _envelope.simplifyByDifference(diff); }
-	double centerValueTowardAverage() { _envelope.centerValueTowardAverage(0, getLength()); }
+	double centerValueTowardAverage() { return _envelope.centerValueTowardAverage(0, getLength()); }
 	AUTOITEM create() { return InsertAutomationItem(_envelope, _pool_id, _position, _length); }
 
 	double getStart() const override { return _position; }
 	void setStart(double v) override { _position = v; _set(); }
 
-	double getLength() const { return _length; }
+	double getLength() const override { return _length; }
 	void setLength(double v) override { _length = v; _set(); }
 
 	double getEnd() const override { return getStart() + getLength(); }

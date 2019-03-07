@@ -204,6 +204,8 @@ public:
 	{
 		list = v;
 	}
+  
+  virtual ~ITEMLIST(){}
 
 	operator MediaItem*() { return list[0]; }
 	operator ITEM() { return list[0]; }
