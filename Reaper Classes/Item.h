@@ -9,6 +9,7 @@ touching: Items are grouped if they are right up against eachother or overlappin
 enum GROUPMODE { none, grouped, overlapping, touching };
 
 class TRACK;
+class ITEMLIST;
 
 class ITEM : public TAKELIST, public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {

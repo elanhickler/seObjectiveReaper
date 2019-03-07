@@ -228,12 +228,12 @@ public:
 	{
 		data.clear();
 		file = File();
-		int srate = 0;
-		int bitdepth = 0;
-		int frames = 0;
-		int samples = 0;
-		int channels = 0;
-		double length = 0;
+		srate = 0;
+		bitdepth = 0;
+		frames = 0;
+		samples = 0;
+		channels = 0;
+		length = 0;
 	}
 
 protected:
@@ -466,7 +466,7 @@ template<typename t> t LIST<t>::SearchRange(RANGE r, bool find_near_start)
 	if (r.is_touching(list[i].start()))
 		return list[i];
 
-	return InvalidTake;
+  return {};
 }
 
 template<typename t>
@@ -480,17 +480,20 @@ t LIST<t>::SearchAtOrBeforeTime(double time)
 	if (list[i].start() <= time)
 		return list[i];
 	else
-		return InvalidTake;
+    return {};
 }
 
 template<typename t>
 t LIST<t>::SearchNearestToTime(double time)
 {
-	if (!list.size()) return MARKER();
-	if (list.size() == 1) return list[0];
+	if (!list.size())
+    return MARKER();
+	if (list.size() == 1)
+    return list[0];
 
 	int m = 0;
-	while (m < list.size() && list[m].start() < time) ++m;
+	while (m < list.size() && list[m].start() < time)
+    ++m;
 
 	if (abs(list[m].start() - time) < abs(list[max(0, m - 1)].start() - time))
 		return list[m];

@@ -5,6 +5,7 @@
 using juce::File;
 
 class TAKE;
+class ITEM;
 
 class MIDINOTE : public OBJECT_MOVABLE
 {
