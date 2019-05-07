@@ -4,6 +4,7 @@ C++ library for using REAPER API through an object oriented interface. Warning: 
 Dependencies:
 
 https://github.com/RobinSchmidt/RS-MET (contains JUCE)
+https://gitlab.com/Hickler/elanjucehelpers
 
 # Main Classes
 
