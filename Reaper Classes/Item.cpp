@@ -95,6 +95,7 @@ void ITEM::setStart(double v)
 	PROJECT::unselectAllItems();
 	SetMediaItemInfo_Value(itemPtr, "B_UISEL", true);
 	//NUDGE::apply(v, false);
+	jassertfalse; // not yet implemented, unable to implement due to requiring item selection change, looking for solution
 }
 
 double ITEM::getEnd() const

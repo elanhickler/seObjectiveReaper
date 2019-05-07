@@ -16,7 +16,10 @@ TagParser::TagParser(const String & in_str)
 			prefix = iter.consumeToChar_IgnoreEscapes("<[", '\\');
 			switch ((char)iter)
 			{
-			case '<': iter.move(); mode = InsideExpression; continue;
+			case '<':
+				iter.move();
+				mode = InsideExpression; continue;
+
 			case '[':
 				if (prefix.isNotEmpty())
 				{
@@ -32,7 +35,8 @@ TagParser::TagParser(const String & in_str)
 		case InsideExpression:
 			property_name = iter.consumeToChar_IgnoreEscapes("#>", '\\');
 
-			if (iter == '#') use_value = true;
+			if (iter == '#')
+				use_value = true;
 
 			iter.skipPastChar('>');
 
@@ -53,6 +57,14 @@ TagParser::TagParser(const String & in_str)
 			iter.skip();
 			mode = InsideExpression;
 			continue;
+
+
+		//case InsideBracket:
+		//	inside_bracket = is_optional = true;
+		//	prefix = iter.consumeToChar_IgnoreEscapes("<]", '\\');
+		//	iter.skip();
+		//	mode = prefix.getLastCharacter() == '<' ? InsideExpression : SaveResult;
+		//	continue;
 
 		case SaveResult:
 			tags.push_back({ property_name, prefix, suffix, use_value, is_optional });
