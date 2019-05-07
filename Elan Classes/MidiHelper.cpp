@@ -1,6 +1,5 @@
 #include "MidiHelper.h"
 #include <map>
-#include "StringHelper.h"
 
 #undef ERROR
 

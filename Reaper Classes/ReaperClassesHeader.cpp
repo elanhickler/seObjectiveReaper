@@ -235,7 +235,7 @@ void AUDIODATA::setSource(const vector<vector<double>> multichannelAudio, int sa
 	samples = int(frames * channels * srate);
 }
 
-void AUDIODATA::writeToFile(const File & file) const
+void AUDIODATA::writeToFile(const File& file) const
 {
 	AudioSampleBuffer buffer = convertToAudioSampleBuffer();
 

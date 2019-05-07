@@ -19,14 +19,6 @@ static vector<String> define_uniques({ "ls", "le", "f", "r", "clip", "so", "sn",
 
 class Tagger
 {
-private:
-    String name;
-    map<String, String> tagmap;
-    MediaItem_Take* take;
-    vector<String> order = define_order;
-    vector<String> uniques = define_uniques;
-    String KeySort(map<String, String> m) const;    
-    void setup(String input);
 public:
     Tagger() {}
     Tagger(String input);    
@@ -74,4 +66,13 @@ public:
     //void GetLegatoTags(int* start_out = nullptr, int* end_out = nullptr, int* interval_out = nullptr, int* dir_out = nullptr, bool shorthand = true);
     //int TransposeLegatoTags(int i);
     //void SetLegatoTags(int ns, int dir, int ne, bool shorthand = true);
+
+private:
+	String name;
+	map<String, String> tagmap;
+	MediaItem_Take* take = nullptr;
+	vector<String> order = define_order;
+	vector<String> uniques = define_uniques;
+	String KeySort(map<String, String> m) const;
+	void setup(String input);
 };

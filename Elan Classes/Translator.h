@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StringHelper.h"
 #include <map>
 
 using std::map;

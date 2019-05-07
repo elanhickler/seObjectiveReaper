@@ -5,10 +5,7 @@
 
 using std::vector;
 using std::map;
-
-#include "StringHelper.h"
-
-using STR::split;
+using STR::splitToVector;
 
 #include "Tagger.h"
 
@@ -21,7 +18,7 @@ void Tagger::setup(String input)
 
     for (int i = 1; i < tempvect.size(); ++i)
     {
-        vector<String> temp = split(tempvect[i], '=');
+        vector<String> temp = splitToVector(tempvect[i], '=');
         if (temp.size() < 2) continue;
         tagmap[temp[0]] = temp[1];
     }
@@ -102,7 +99,8 @@ void Tagger::RemoveAllTags()
 }
 void Tagger::removeTags(const vector<String>& TagList)
 {
-    for (const auto& tag : TagList) removeTag(tag);
+    for (const auto& tag : TagList)
+			removeTag(tag);
 }
 
 //String GetNoteTag(bool search_tags, bool use_regex, int search_count) { //todo: support legato note tag style

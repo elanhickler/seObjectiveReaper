@@ -2,11 +2,9 @@
 
 #include "Elan Classes/maths.cpp"
 #include "Elan Classes/Audio.cpp"
-#include "Elan Classes/StringHelper.cpp"
 #include "Elan Classes/TagParser.cpp"
 #include "Elan Classes/Translator.cpp"
 #include "Elan Classes/MidiHelper.cpp"
-#include "Elan Classes/FileHelper.cpp"
 #include "Elan Classes/Tagger.cpp"
 #include "Elan Classes/SignalFunctions.cpp"
 

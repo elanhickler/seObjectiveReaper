@@ -41,7 +41,7 @@ public:
 	bool getIsMuted() { return muted; }
 
 protected:
-	TAKE * take;
+	TAKE * take = nullptr;
 	int index = -1;
 
 	int pitch = 36;
