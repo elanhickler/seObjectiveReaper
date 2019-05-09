@@ -33,14 +33,14 @@ ENVELOPE ENVELOPE::simplify(ENVELOPE points, double maxError)
 
 	if (points.size() > 1)
 	{
-		auto x1 = points[0].position;
-		auto y1 = points[0].value;
-		auto x2 = points[points.size() - 1].position;
-		auto y2 = points[points.size() - 1].value;
+		auto x1 = points[0].getPosition();
+		auto y1 = points[0].getValue();
+		auto x2 = points[points.size() - 1].getPosition();
+		auto y2 = points[points.size() - 1].getValue();
 
 		for (auto i = 1; i < points.size() - 1; ++i)
 		{
-			auto distance = getDistanceFromLine(x1, y1, x2, y2, points[i].position, points[i].value);
+			auto distance = getDistanceFromLine(x1, y1, x2, y2, points[i].getPosition(), points[i].getValue());
 
 			if (distance > maxPointDistance)
 			{
@@ -175,8 +175,8 @@ void ENVELOPE::toggleTakeEnvelope(MediaItem_Take * take, String env_name, bool o
 void ENVELOPE::collectPoints()
 {
 	ENVPT p;
-	p.id = 0;
-	while (GetEnvelopePoint(envelopePtr, p.id++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
+	p.index = 0;
+	while (GetEnvelopePoint(envelopePtr, p.index++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
 		list.push_back(p);
 }
 
@@ -190,8 +190,8 @@ void ENVELOPE::removeAllPoints()
 void ENVELOPE::collectAutoItemPoints(int autoitemidx)
 {
 	ENVPT p;
-	p.id = 0;
-	while (GetEnvelopePointEx(envelopePtr, autoitemidx, p.id++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
+	p.index = 0;
+	while (GetEnvelopePointEx(envelopePtr, autoitemidx, p.index++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
 		list.push_back(p);
 }
 

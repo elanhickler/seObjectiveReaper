@@ -1,42 +1,153 @@
 #pragma once
 
-class ENVPT
+class ENVPT : public OBJECT_MOVABLE, public OBJECT_VALIDATES
 {
+	friend class ENVELOPE;
 public:
 	enum shape { linear, square, s_curve, log, exp, bezier };
-	static ENVPT getByTime(TrackEnvelope * envelope, double time)
+
+	static ENVPT getNearestToTime(TrackEnvelope* envelope, double time)
 	{
-		int pt_idx = GetEnvelopePointByTime(envelope, time);
-		double position, value, tension;
-		bool selected;
-		int shape;
-		GetEnvelopePoint(envelope, pt_idx, &position, &value, &shape, &tension, &selected);
-		return ENVPT(pt_idx, position, value, shape, tension, selected);
+		int index1 = GetEnvelopePointByTime(envelope, time);
+		int index2 = index1 + 1;
+
+		ENVPT p1 = getByIndex(envelope, p1.index);		
+		ENVPT p2 = getByIndex(envelope, index2);
+
+		double p1_delta = abs(p1.getPosition() - time);
+		double p2_delta = abs(p2.getPosition() - time);
+
+		return p1_delta < p2_delta ? p1 : p2;
 	}
-public:
-	// members
-	int id = -1;
+
+	static ENVPT getNearestBeforeTime(TrackEnvelope* envelope, double time)
+	{
+		int index = GetEnvelopePointByTime(envelope, time);
+
+		ENVPT p1 = getByIndex(envelope, index);
+		ENVPT p2 = getByIndex(envelope, index + 1);
+
+		if (!p2.isValid())
+			return p1;
+
+		double p1_delta = abs(p1.getPosition() - time);
+		double p2_delta = abs(p2.getPosition() - time);
+
+		if (p1_delta < p2_delta)
+				return p1;
+
+		return p2;
+	}
+
+	template<typename Q, typename I, typename Distance>
+	void find_n_nearest(const Q& q, I first, I nth, I last, Distance dist)
+	{
+		using T = decltype(*first);
+		auto compare = [&q, &dist](T i, T j) { return dist(i, q) < dist(j, q); };
+		std::nth_element(first, nth, last, compare);
+		std::sort(first, last, compare);
+	}
+
+	static ENVPT getNearestAfterTime(TrackEnvelope* envelope, double time)
+	{
+		int startIndex = GetEnvelopePointByTime(envelope, time);
+
+		vector<ENVPT> points;
+		for (int i = startIndex; i < startIndex + 2; ++i)
+		{
+			auto p = getByIndex(envelope, i);
+			if (p.isValid() && isMoreThanOrEqual(p.getPosition(), time))
+				points.push_back(p);
+		}
+
+		if (points.size() == 0)
+			return {};
+
+		if (points.size() == 1)
+			return points[0];
+
+		double lastDelta = abs(points[0].getPosition() - time);
+		int lastIndex = 0;
+		for (int i = 1; i < points.size(); ++i)
+		{
+			ENVPT pt = points[i];
+			double delta = abs(points[i].getPosition() - time);
+			if (delta < lastDelta)
+			{
+				lastDelta = delta;
+				lastIndex = i;
+			}
+		}
+
+		return points[lastIndex];
+	}
+
+	static ENVPT getByIndex(TrackEnvelope* envelope, int idx)
+	{
+		ENVPT p;
+		p.index = idx;
+		GetEnvelopePoint(envelope, idx, &p.position, &p.value, &p.shape, &p.tension, &p.selected);
+		return p;
+	}
+
+	ENVPT() {}
+	ENVPT(int index, double position, double value, int shape = 0, double tension = 0.0, bool sel = false)
+		: index(index)
+		, position(position)
+		, value(value)
+		, shape(shape)
+		, tension(tension),
+		selected(sel)
+	{}
+
+	ENVPT(double position, double value, int shape = 0, double tension = 0.0, bool selected = false)
+		: position(position)
+		, value(value)
+		, shape(shape)
+		, tension(tension)
+		, selected(selected)
+	{}
+
+	double getPosition() const { return position; }
+	double getStart() const override { return position; }
+	double getEnd() const override { return position; }
+
+	int getIndex() const { return index; }
+
+	double getValue() const { return value; }
+	void setValue(double v) { value = v; }
+
+	bool isValid() const override
+	{
+		return position != -1.0;
+	}
+
+protected:
+	int index = -1;
 	double value = -1.0;
 	double position = -1.0;
 	int shape = ENVPT::shape::linear;
 	double tension = 0.0;
 	bool selected = false;
-
-	double getStart() { return position; }
-
-	ENVPT() {}
-	ENVPT(int idx, double p, double v, int s = 0, double t = 0.0, bool sel = false) : id(idx), position(p), value(v), shape(s), tension(t), selected(sel) {}
-	ENVPT(double p, double v, int s = 0, double t = 0.0, bool sel = false) : position(p), value(v), shape(s), tension(t), selected(sel) {}
 };
 
-class ENVELOPE : public LIST<ENVPT>
+class ENVELOPE : public LIST<ENVPT>, public OBJECT_VALIDATES
 {
 public:
+	static ENVELOPE getMasterPlayRateEnvelope()
+	{
+		ENVELOPE e;
+		e.envelopePtr = GetTrackEnvelopeByName(GetMasterTrack(0), "Playrate");
+		return std::move(e);
+	}
+
 	static TrackEnvelope* getSelected()
 	{
 		return GetSelectedEnvelope(nullptr);
 	}
+
 	static void toggleByName(MediaItem_Take* take, string env_name, bool off_on);
+
 	static TrackEnvelope* getByName(MediaItem_Take* take, String name);
 
 	ENVELOPE() {}
@@ -65,6 +176,40 @@ public:
 	void setEnvelope(MediaItem_Take* take, String name);
 	void setEnvelope(TrackEnvelope* trackEnv);
 	void setPoints(const ENVELOPE & env);
+
+	ENVELOPE getPointsInRange(double start, double end)
+	{
+		ENVELOPE envOut;
+		envOut.envelopePtr = this->envelopePtr;
+
+		auto firstPoint = ENVPT::getNearestAfterTime(envelopePtr, start);
+		auto lastPoint = ENVPT::getNearestBeforeTime(envelopePtr, end);
+
+		if (!firstPoint.isValid())
+		{
+			if (lastPoint.isValid())
+				envOut.push_back(lastPoint);
+
+			return envOut;
+		}		
+
+		bool firstPointBeyondEnd = isMoreThanOrEqual(firstPoint.getPosition(), end);
+		bool lastPointBeforeStart = isLessThanOrEqual(lastPoint.getPosition(), start);
+
+		if (firstPointBeyondEnd || lastPointBeforeStart)
+			return envOut;
+
+		if (firstPoint.getIndex() == lastPoint.getIndex())
+		{
+			envOut.push_back(firstPoint);
+			return envOut;
+		}
+
+		for (int i = firstPoint.getIndex(); i <= lastPoint.getIndex(); ++i)
+			envOut.push_back(this->list[i]);
+
+		return envOut;
+	}
 
 	void toggle(bool off_on);
 
@@ -188,5 +333,6 @@ public:
 		//	for (int i = 0; i < num_items; ++i)
 		//		list.push_back(AUTOITEM(i));
 		//}
+		jassertfalse;
 	}
 };

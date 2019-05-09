@@ -9,6 +9,8 @@ bool isLessThan(double a, double b, double accuracy = 1.e-7);
 bool isMoreThan(double a, double b, double accuracy = 1.e-7);
 bool isLessThanOrEqual(double a, double b, double accuracy = 1.e-7);
 bool isMoreThanOrEqual(double a, double b, double accuracy = 1.e-7);
+bool isTouchingRange(double time, double start, double end, double accuracy = 1.e-7);
+bool isInsideRange(double time, double start, double end, double accuracy = 1.e-7);
 
 class RANGE
 {
