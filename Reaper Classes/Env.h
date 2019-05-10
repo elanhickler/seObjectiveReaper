@@ -191,7 +191,7 @@ public:
 				envOut.push_back(lastPoint);
 
 			return envOut;
-		}		
+		}
 
 		bool firstPointBeyondEnd = isMoreThanOrEqual(firstPoint.getPosition(), end);
 		bool lastPointBeforeStart = isLessThanOrEqual(lastPoint.getPosition(), start);

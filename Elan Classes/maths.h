@@ -3,14 +3,14 @@
 using std::min;
 using std::max;
 
-bool isEqual(double a, double b, double accuracy = 1.e-7);
-bool isNotEqual(double a, double b, double accuracy = 1.e-7);
-bool isLessThan(double a, double b, double accuracy = 1.e-7);
-bool isMoreThan(double a, double b, double accuracy = 1.e-7);
-bool isLessThanOrEqual(double a, double b, double accuracy = 1.e-7);
-bool isMoreThanOrEqual(double a, double b, double accuracy = 1.e-7);
-bool isTouchingRange(double time, double start, double end, double accuracy = 1.e-7);
-bool isInsideRange(double time, double start, double end, double accuracy = 1.e-7);
+bool isEqual(double a, double b, double accuracy = 1.e-6);
+bool isNotEqual(double a, double b, double accuracy = 1.e-6);
+bool isLessThan(double a, double b, double accuracy = 1.e-6);
+bool isMoreThan(double a, double b, double accuracy = 1.e-6);
+bool isLessThanOrEqual(double a, double b, double accuracy = 1.e-6);
+bool isMoreThanOrEqual(double a, double b, double accuracy = 1.e-6);
+bool isTouchingRange(double time, double start, double end, double accuracy = 1.e-6);
+bool isInsideRange(double time, double start, double end, double accuracy = 1.e-6);
 
 class RANGE
 {
