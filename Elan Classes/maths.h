@@ -1,5 +1,7 @@
 #pragma once
 
+#include "elan_juce_helpers/source/DecimalCompare.h"
+
 using std::min;
 using std::max;
 
