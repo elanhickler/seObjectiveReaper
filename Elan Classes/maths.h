@@ -13,7 +13,7 @@ private:
 
 public:
   RANGE() {};
-  RANGE(double start, double end) { s = min(start, end); e = max(start, end); }
+	RANGE(double start, double end) { s = min(start, end); e = max(start, end); }
   RANGE(double time) : s(time), e(time) {}
   template <class T, class U> RANGE(const T & a, const U & b)
   {
