@@ -119,6 +119,7 @@ public:
 	static double getGridDivision();
 	static double getGridDivisionTime();
 	static double getTempo();
+	static void getTimeSignature(int& numerator, int& denominator);
 
 	static String getFilePath();
 	static String getDirectory();
@@ -238,12 +239,12 @@ public:
 
 protected:
 	File file;
-	int srate;
-	int bitdepth;
-	int frames;
-	int samples;
-	int channels;
-	double length;
+	int srate = 0;
+	int bitdepth = 0;
+	int frames = 0;
+	int samples = 0;
+	int channels = 0;
+	double length = 0;
 	vector<vector<double>> data;
 
 	AudioSampleBuffer convertToAudioSampleBuffer() const;

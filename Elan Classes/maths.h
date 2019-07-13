@@ -125,8 +125,10 @@ template<class t> bool is_even(const t & value) { return value % 2 == 0; }
 template<class t> bool is_odd(const t & value) { return value % 2 != 0; }
 template<class t> t clamp(t in, t min, t max)
 {
-  if (in <= min) return min;
-  if (in >= max) return max;
+  if (in <= min)
+		return min;
+  if (in >= max)
+		return max;
   return in;
 }
 

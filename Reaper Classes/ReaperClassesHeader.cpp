@@ -108,6 +108,13 @@ double PROJECT::getTempo()
 	return Master_GetTempo();
 }
 
+void PROJECT::getTimeSignature(int& numerator, int& denominator)
+{
+	double bpm;
+	double qnStart, qnEnd;
+	TimeMap_GetMeasureInfo(nullptr, 0, &qnStart, &qnEnd, &numerator, &denominator, &bpm);
+}
+
 String PROJECT::getFilePath()
 {
 	char charbuf[1024];
@@ -226,6 +233,9 @@ void AUDIODATA::setSource(const File & file)
 
 void AUDIODATA::setSource(const vector<vector<double>> multichannelAudio, int sampleRate, int bitDepth)
 {
+	if (sampleRate == 0)
+		return; // take is not audio
+
 	data = multichannelAudio;
 	srate = sampleRate;
 	bitdepth = bitDepth;

@@ -23,6 +23,7 @@ public:
 	static ITEM createBlank(MediaTrack * track, double position, double length);
 	static ITEM createMidi(MediaTrack * track, double position, double length);
 	static ITEM createFromAudioData(const AUDIODATA & audioFile, const File & fileToWriteTo, const TRACK & existingTrack, double startTime);
+	static int count();
 
 	enum FADESHAPE
 	{

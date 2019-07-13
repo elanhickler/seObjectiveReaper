@@ -1,5 +1,6 @@
 #include "ReaperClassesHeader.h"
 #include "Track.h"
+#include "Item.h"
 
 TRACK TRACK::getByIndex(int idx) { return TRACK(idx); }
 
@@ -310,4 +311,9 @@ ITEM ITEM::createFromAudioData(const AUDIODATA & audioData, const File & fileToW
 	newItem.setName(fileToWriteTo.getFileNameWithoutExtension());
 	newItem.getActiveTake().setFile(fileToWriteTo);
 	return newItem;
+}
+
+int ITEM::count()
+{
+	return CountMediaItems(nullptr);
 }

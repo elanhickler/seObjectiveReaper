@@ -539,6 +539,18 @@ public:
 	}
 	
 	UserInputsComponent* m_comp = nullptr;
+
+	static StringArray loadSettings(String windowtitle)
+	{
+		ValueTree tree = loadWindowStateFromGlobalSettings(windowtitle);
+
+		StringArray results;
+
+		for (int i = 0; i < tree.getNumProperties(); ++i)
+			results.add(tree.getProperty("text" + String(i)));
+
+		return results;
+	}
 };
 
 struct UIInputBox
@@ -567,3 +579,4 @@ inline UserInputsWindow* ShowGenericUserInputs(String windowtitle, String but1tx
 	dlg->setSize(500, int(NameDefVal.size()) * 25 + 32);
 	return dlg;
 }
+

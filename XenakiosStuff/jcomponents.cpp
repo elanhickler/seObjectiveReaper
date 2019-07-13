@@ -689,14 +689,32 @@ void saveWindowStateIntoGlobalSettings(String windowname,ValueTree vt)
 ValueTree loadWindowStateFromGlobalSettings(String windowname)
 {
 	String sectname = windowname.replaceCharacter(' ', '_');
-	XmlElement* xml = g_properties_file->getXmlValue(sectname);
+
+	initialiseJuce_GUI();
+	PropertiesFile::Options poptions;
+	poptions.applicationName = "reasamplelib";
+	poptions.folderName = "Soundemote";
+	poptions.commonToAllUsers = false;
+	poptions.doNotSave = false;
+	poptions.storageFormat = PropertiesFile::storeAsXML;
+	poptions.millisecondsBeforeSaving = 1000;
+	poptions.ignoreCaseOfKeyNames = false;
+	poptions.processLock = nullptr;
+	poptions.filenameSuffix = ".xml";
+	poptions.osxLibrarySubFolder = "Application Support";
+
+	auto properties_file = std::make_unique<PropertiesFile>(poptions);
+
+	XmlElement* xml = properties_file->getXmlValue(sectname);
+
 	if (xml != nullptr)
 	{
 		ValueTree r = ValueTree::fromXml(*xml);
 		delete xml;
 		return r;
 	}
-    return ValueTree();
+
+  return ValueTree();
 }
 
 void saveWindowStateIntoReaperProject(NamedValueSet nvs)

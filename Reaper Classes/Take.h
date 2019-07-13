@@ -21,14 +21,14 @@ public:
   
   virtual ~MIDINOTE(){}
 
-	int getPitch() { return pitch; };
+	int getPitch() const { return pitch; };
 	String getPitchString() { return MIDI(pitch).getName(); }
 
 	void setPitch(int v);
 
 	void setPosition(double v) override;
 
-	double getLength() const override { return getEnd() - getStart(); }
+	double getLength() const const override { return getEnd() - getStart(); }
 	void setLength(double v) override;
 
 	double getStart() const override { return startTime; }
@@ -37,8 +37,8 @@ public:
 	double getEnd() const override { return endTime; }
 	void setEnd(double v) override;
 
-	bool getIsSelected() { return selected; }
-	bool getIsMuted() { return muted; }
+	bool getIsSelected() const { return selected; }
+	bool getIsMuted() const { return muted; }
 
 protected:
 	TAKE * take = nullptr;
