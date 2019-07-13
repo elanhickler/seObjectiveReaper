@@ -120,6 +120,10 @@ public:
 	static double getGridDivisionTime();
 	static double getTempo();
 	static void getTimeSignature(int& numerator, int& denominator);
+	static double getBarSeconds()
+	{
+		return TimeMap_GetMeasureInfo(nullptr, 1, nullptr, nullptr, nullptr, nullptr, nullptr);
+	}
 
 	static String getFilePath();
 	static String getDirectory();
