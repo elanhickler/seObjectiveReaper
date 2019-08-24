@@ -92,9 +92,10 @@ double ITEM::getStart() const { return GetMediaItemInfo_Value(itemPtr, "D_POSITI
 
 void ITEM::setStart(double v)
 {
-	PROJECT::unselectAllItems();
-	SetMediaItemInfo_Value(itemPtr, "B_UISEL", true);
-	//NUDGE::apply(v, false);
+	//PROJECT::unselectAllItems();
+	//setSelected(true);
+	//SetMediaItemInfo_Value(itemPtr, "B_UISEL", true);
+	//NUDGE::apply(NUDGE::what::start, v, NUDGE::units::seconds);
 	jassertfalse; // not yet implemented, unable to implement due to requiring item selection change, looking for solution
 }
 
@@ -170,7 +171,7 @@ int ITEM::getNumTakes() { return CountTakes(itemPtr); }
 
 double ITEM::getRate() const { return getActiveTake().getRate(); }
 
-ITEM ITEM::duplicate() const
+ITEM ITEM::copy() const
 {
 	char* chunk = GetSetObjectState((MediaItem*)itemPtr, "");
 

@@ -57,7 +57,7 @@ public:
 	/* FUNCTIONS */
 
 	// copies the item exactly taking the same position and length, thereby overlapping 100%
-	ITEM duplicate() const;
+	ITEM copy() const;
 	void remove();
 	void move(double v);
 	bool crop(RANGE r, bool move_edge);
@@ -243,6 +243,7 @@ public:
 	// setters
 	int setTrack(MediaTrack* track);
 	void setStart(double v) override;
+	void setPosition(double v) override { setStart(v); }
 	void setEnd(double v) override;
 	void setSnapOffset(double v);
 	void setSelected(bool select);

@@ -6,6 +6,7 @@ class TRACK : public LIST<ITEM>, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 
 public:
 	// conversion
+	static TRACK getMaster();
 	static TRACK getByIndex(int getIndex);
 	static TRACK getByName(const String & name);
 	static TRACK getSelectedByIndex(int getIndex);

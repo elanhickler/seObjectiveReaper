@@ -2,6 +2,14 @@
 #include "Track.h"
 #include "Item.h"
 
+
+// conversion
+
+TRACK TRACK::getMaster()
+{
+	return TRACK(GetMasterTrack(nullptr));
+}
+
 TRACK TRACK::getByIndex(int idx) { return TRACK(idx); }
 
 TRACK TRACK::getByName(const String & name)
