@@ -200,11 +200,16 @@ TAKE TAKE::move(MediaItem * new_item)
 
 void TAKE::initAudio(double starttime, double endtime)
 {
-	audioIsInitialized = true;
-
 	audioFile.setSource(getPCMSource());
 
-	jassert(audioFile.getNumChannels() > 0); // bad audio file
+	if (audioFile.getLength() <= 0 || // audio file offline
+		audioFile.getNumChannels() <= 0)  // bad audio file
+	{		
+		jassertfalse;
+		return;
+	}
+
+	audioIsInitialized = true;
 
 	if (starttime == -1)
 		starttime = audiobuf_starttime = 0;
@@ -232,6 +237,8 @@ void TAKE::loadAudio()
 }
 
 void TAKE::unloadAudio() { takeAudioBuffer.clear(); }
+
+bool TAKE::isAudioInitialized() { return audioIsInitialized; }
 
 int TAKE::getSampleRate() { return audioFile.getSampleRate(); }
 

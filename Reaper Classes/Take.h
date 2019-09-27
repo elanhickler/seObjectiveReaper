@@ -170,6 +170,7 @@ public:
 	void initAudio(double starttime = -1, double endtime = -1);
 	void loadAudio();
 	void unloadAudio();
+	bool isAudioInitialized();
 
 	AUDIODATA & getAudioFile();
 	int getSampleRate();

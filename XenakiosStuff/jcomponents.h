@@ -461,6 +461,7 @@ public:
 		addAndMakeVisible(&entry->m_line_edit);
 		m_entries.push_back(entry);
 	}
+
 	int getMaximumLabelWidth(int minimumwidth)
 	{
 		int labelw = minimumwidth;
@@ -473,6 +474,7 @@ public:
 		labelw = jlimit(minimumwidth, 1000, labelw);
 		return labelw;
 	}
+
 	void resized() override
 	{
 		int entryh = 25;
@@ -488,6 +490,7 @@ public:
 		m_ok_button.changeWidthToFitText(24);
 		m_ok_button.setTopLeftPosition(1, getHeight() - 25);
 	}
+
 	StringArray getResults()
 	{
 		StringArray results;
@@ -495,6 +498,7 @@ public:
 			results.add(e->m_line_edit.getText());
 		return results;
 	}
+
 	String m_owner_name;
 	void saveSettings()
 	{

@@ -60,9 +60,14 @@ MIDI::MIDI(int i, int transpose)
 
 void MIDI::read(String s, int transpose)
 {
-    if (s.isEmpty()) ERROR(e::empty_string);
+    if (s.isEmpty())
+			ERROR(e::empty_string);
 
-    if (STR::isInt(s)) { MIDI::read(s.getIntValue()); return; }
+    if (STR::isInt(s))
+		{
+			MIDI::read(s.getIntValue());
+			return;
+		}
 
     enum MODE { get_root, get_accidental, get_sign, get_octave };
     MODE mode = get_root;
