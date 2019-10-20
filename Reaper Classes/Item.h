@@ -323,7 +323,6 @@ public:
 				func(ch, fr);
 	}
 
-protected:
 	static void prepareToStart();
 	static void prepareToEnd();
 	static void loadTake(TAKE& take);

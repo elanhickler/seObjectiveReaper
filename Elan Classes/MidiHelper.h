@@ -28,6 +28,8 @@ public:
   int getName(int num);
   String applyOffset(int i);
 
+	double getFrequency();
+
 private:
   int lowest_octave = -2;
 

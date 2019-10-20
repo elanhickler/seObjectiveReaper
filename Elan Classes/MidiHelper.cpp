@@ -229,6 +229,11 @@ String MIDI::applyOffset(int i)
     return MIDI::getName();
 }
 
+double MIDI::getFrequency()
+{
+	return RAPT::rsPitchToFreq(getNum());
+}
+
 void MIDI::setMidOct(int i)
 {
     lowest_octave = i - 5;
