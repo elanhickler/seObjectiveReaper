@@ -22,6 +22,80 @@ static const String idCueRegion{ "CueRegion" };
 static const String idCue{ "Cue" };
 static const String idLoop{ "Loop" };
 
+bool WavAudioFile::write(const File& path, vector<double> singleChannelAudio, int sampleRate, int bitDepth)
+{
+	std::unique_ptr<juce::AudioSampleBuffer> buffer;
+	buffer.reset(new juce::AudioSampleBuffer(1, singleChannelAudio.size()));
+
+	auto ptr = buffer->getWritePointer(0);
+
+	for (int f = 0; f < singleChannelAudio.size(); ++f)
+		ptr[f] = float(singleChannelAudio[f]);
+
+	WavAudioFormat format;
+	std::unique_ptr<AudioFormatWriter> writer;
+
+	try
+	{
+		FileHelper::createFile(path.getFullPathName(), true);
+	}
+	catch (std::exception& e)
+	{
+		String error = e.what();
+		return false;
+	}
+
+	writer.reset(format.createWriterFor(new FileOutputStream(path), sampleRate, 1, bitDepth, {}, 0));
+
+	if (writer == nullptr)
+		return false;
+
+	writer->writeFromAudioSampleBuffer(*buffer.get(), 0, buffer->getNumSamples());	
+
+	return true;
+}
+
+bool WavAudioFile::write(const File& path, vector<vector<double>> multichannelAudio, int sampleRate, int bitDepth)
+{
+	AudioBuffer<float> buffer(multichannelAudio.size(), multichannelAudio[0].size());
+
+	auto ptr = buffer.getArrayOfWritePointers();
+
+	for (int c = 0; c < multichannelAudio.size(); ++c)
+		for (int f = 0; f < multichannelAudio[0].size(); ++f)
+			ptr[c][f] = float(multichannelAudio[c][f]);
+
+	WavAudioFormat format;
+	std::unique_ptr<AudioFormatWriter> writer;
+	writer.reset(format.createWriterFor(new FileOutputStream(path), sampleRate, multichannelAudio.size(), bitDepth, {}, 0));
+
+	if (writer == nullptr)
+		return false;
+
+	writer->writeFromAudioSampleBuffer(buffer, 0, buffer.getNumSamples());
+
+	return true;
+}
+
+WavAudioFile::WavAudioFile(const File& sourceFile)
+{
+	manager.registerBasicFormats();
+
+	fileInfo.path = sourceFile;
+
+	readFileInfo();
+	setClipInfoToFileInfo();
+
+	if (reader)
+	{
+		metadata = reader->metadataValues;
+		loadMetaData();
+		didRead = true;
+	}
+
+	reader = nullptr;
+}
+
 WavAudioFile::WavAudioFile(const File& sourceFile, double startOffset, double length)
   :
   clipStart(startOffset), clipLength(length)
@@ -73,14 +147,11 @@ int64 WavAudioFile::getLengthInSamples() const
 
 void WavAudioFile::loadAudio()
 {
-  auto startSample = getSamplePosition(clipStart);
-  auto numSamples = getSamplePosition(clipLength);
+	readFileInfo();
 
-  jassert(numSamples != 0);
-  jassert(clipStart + numSamples <= int(reader->lengthInSamples));
-
-  audio = new AudioSampleBuffer(reader->numChannels, numSamples);
-  reader->read(audio, 0, numSamples, startSample, true, true);
+	audio = new juce::AudioSampleBuffer(fileInfo.numChannels, clipInfo.numFrames);
+	reader->read(audio, 0, clipInfo.numFrames, clipInfo.startSample, true, true);
+	reader = nullptr;
 }
 
 int WavAudioFile::getSamplePosition(double timeInSeconds) const

@@ -61,8 +61,6 @@ public:
     int cueIdentifier{ -1 };
   };
 
-
-
   /**
   * Create a WavAudioFile object. Once this is created the regions and cuepoints
   * Array's can be inspected and modified as required.  Then call saveChanges
@@ -95,6 +93,11 @@ public:
   * written.
   */
   bool saveChanges(const File & destination);
+
+	static bool write(const File& path, vector<double> singleChannelAudio, int sampleRate, int bitDepth);
+	static bool write(const File& path, vector<vector<double>> multichannelAudio, int sampleRate, int bitDepth);
+
+	WavAudioFile(const File& sourceFile);
 
   WavAudioFile(const File& sourceFile, double startOffset, double length);
   /** Returns a copy of the metadata as read from the original file.  Used for debugging. */
@@ -164,15 +167,72 @@ public:
     gain = dBToAmp(v);
   }
 
+	struct FileInfo
+	{
+		double length = 0;
+		double sampleRate = 0;
+		int numChannels = 0;
+		int numFrames = 0;
+		int numSamples = 0;
+		int bitDepth = 0;
+		int fileLength = 0;
+		File path;
+	} fileInfo;
+
+	struct AudioInfo
+	{
+		int startSample = 0;
+		double sampleRate = 0;
+		int bitDepth = 0;
+		int numChannels = 0;
+		int numFrames = 0;
+		double gain = 1;
+	} clipInfo;
+
+	void readFileInfo()
+	{
+		fileInfo.sampleRate = 0;
+		fileInfo.bitDepth = 0;
+		fileInfo.numFrames = 0;
+		fileInfo.numChannels = 0;
+		fileInfo.numSamples = 0;
+		fileInfo.length = 0;
+
+		audioFileWasRead = false;
+
+		reader = manager.createReaderFor(fileInfo.path);
+
+		audioFileWasRead = reader != nullptr;
+
+		if (!isValid())
+		{
+			jassertfalse;
+			return;
+		}
+
+		fileInfo.sampleRate = reader->sampleRate;
+		fileInfo.bitDepth = reader->bitsPerSample;
+		fileInfo.numFrames = reader->lengthInSamples;
+		fileInfo.numChannels = reader->numChannels;
+		fileInfo.numSamples = reader->lengthInSamples * reader->numChannels;
+		fileInfo.length = reader->lengthInSamples / reader->sampleRate;
+	}
+
+	void setClipInfoToFileInfo()
+	{
+		clipInfo.numChannels = fileInfo.numChannels;
+		clipInfo.numFrames = fileInfo.numFrames;
+		clipInfo.sampleRate = fileInfo.sampleRate;
+		clipInfo.bitDepth = fileInfo.bitDepth;
+	}
+
+	void ensureAudioLoaded();
+	/** Returns true if the source file was read correctly */
+	bool isValid() const { return reader != nullptr && didRead; }
+
 private:
 
-  void ensureAudioLoaded();
-  /** Returns true if the source file was read correctly */
-  bool isValid() const { return reader != nullptr && didRead; }
-
   ScopedPointer<AudioFormatReader> reader;
-
-  WavAudioFile(const File& file);
 
   String getStringValue(const String& prefix, int num, const String& postfix) const;
   int64 getIntValue(const String& prefix, int num, const String& postfix) const;
@@ -198,6 +258,7 @@ private:
   CuePoint getCuePointByIdentifier(int identifier) const;
 
   bool didRead{ false };
+	bool audioFileWasRead = false;
 
   AudioFormatManager manager;
 

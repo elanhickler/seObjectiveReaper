@@ -69,7 +69,7 @@ public:
   static inline bool is_before(double a, double b) { return RANGE(a).range().is_before(RANGE(b).range()); }
   static inline bool is_after(double a, double b) { return RANGE(a).range().is_after(RANGE(b).range()); }
 
-  static inline bool is_touching(double a, const RANGE & b) { return  RANGE(a).range().is_touching(b.range()); }
+  static inline bool is_touching(double a, const RANGE & b) { return RANGE(a).range().is_touching(b.range()); }
   static inline bool is_overlapping(double a, const RANGE & b) { return RANGE(a).range().is_overlapping(b.range()); }
   static inline bool is_inside(double a, const RANGE & b) { return RANGE(a).range().is_inside(b.range()); }
   static inline bool is_outside(double a, const RANGE & b) { return RANGE(a).range().is_outside(b.range()); }
