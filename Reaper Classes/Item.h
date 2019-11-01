@@ -246,6 +246,7 @@ public:
 	void setPosition(double v) override { setStart(v); }
 	void setEnd(double v) override;
 	void setSnapOffset(double v);
+	// Sets selection flag for all items in list
 	void setSelected(bool select);
 
 protected:

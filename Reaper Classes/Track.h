@@ -48,6 +48,7 @@ public:
 	void setAsLastFolder();
 
 	 // functions
+	// Populates the track object's item list and selected item list.
 	void collectItems();
 	void remove();
 	void RemoveAllItemsFromProject();
