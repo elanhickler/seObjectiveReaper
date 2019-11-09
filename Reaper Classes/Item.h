@@ -116,6 +116,7 @@ public:
 
 	void setVolume(double v);
 	void setRate(double new_rate, bool warp = true);
+	void rateStretchToTime(double time);
 	void setSnapOffset(double v);
 
 	void setGroupId(int v);

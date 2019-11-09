@@ -242,28 +242,40 @@ void ITEM::setSelected(bool v) { SetMediaItemInfo_Value(itemPtr, "B_UISEL", v); 
 
 void ITEM::setRate(double new_rate, bool warp)
 {
-	if (warp)
+	if (!warp)
 	{
-		double old_rate = getRate();
-		if (old_rate == new_rate) return;
-
-		double ratio = old_rate / new_rate;
-
-		// set length based on rate change
-		setLength(getLength() * ratio);
-
-		// set snap offset based on rate change
-		setSnapOffset(getSnapOffset() * ratio);
-
-		// adjust all takes' rates
-		for (auto& take : list)
-		{
-			take.setPreservePitch(false);
-			take.setRate(new_rate);
-		}
-	}
-	else
 		setRate(new_rate);
+		return;
+	}
+
+	double old_rate = getRate();
+
+	if (old_rate == new_rate)
+		return;
+
+	double ratio = old_rate / new_rate;
+
+	// set length based on rate change
+	setLength(getLength() * ratio);
+
+	// set snap offset based on rate change
+	setSnapOffset(getSnapOffset() * ratio);
+
+	// adjust all takes' rates
+	for (auto& take : list)
+	{
+		take.setPreservePitch(false);
+		take.setRate(new_rate);
+	}
+}
+
+void ITEM::rateStretchToTime(double time)
+{
+	setRate(1);
+
+	double ratio = (time - getStart()) / getLength();
+
+	setRate(1 / ratio);
 }
 
 String ITEM::GetPropertyStringFromKey(const String & key, bool get_value) const
