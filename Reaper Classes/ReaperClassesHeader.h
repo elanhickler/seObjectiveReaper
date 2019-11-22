@@ -69,7 +69,8 @@ public:
 	static void pasteItems() { COMMAND(40058); }
 	static void removeItems() { COMMAND(40006); }
 	static void glueItems() { COMMAND(40362); }
-	void unselectAllItemsAndSelectItemUnderMouse() { COMMAND(40528); }
+	static void commonNormalizeItems() { COMMAND(40254); }
+	static void unselectAllItemsAndSelectItemUnderMouse() { COMMAND(40528); }
 
 	COMMAND(int action, int flag = 0) { Main_OnCommand(action, flag); }
 	COMMAND(const char* action, int flag = 0) { Main_OnCommand(NamedCommandLookup(action), flag); }
