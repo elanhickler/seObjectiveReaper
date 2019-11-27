@@ -57,9 +57,10 @@ public:
 	{
 		ShowConsoleMsg(text.toRawUTF8());
 	}
-	static void clear()
+	static void clear(String text = "")
 	{
 		ShowConsoleMsg("");
+		ShowConsoleMsg(text.toRawUTF8());
 	}
 };
 
@@ -156,6 +157,8 @@ public:
 
 	static double setCursor(double time, bool moveview = false, bool seekplay = false);
 	static double getCursor();
+
+	static String getClipboardFile(String clipboardName = "");
 };
 
 void UI();

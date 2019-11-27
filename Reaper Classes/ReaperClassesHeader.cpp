@@ -50,6 +50,18 @@ double PROJECT::setCursor(double time, bool moveview, bool seekplay)
 }
 double PROJECT::getCursor() { return GetCursorPosition(); }
 
+String PROJECT::getClipboardFile(String clipboardName)
+{
+	String fileName;
+	if (clipboardName.isEmpty())
+		fileName = "seSL.clipboard.txt";
+	else
+		fileName = "seSL." + clipboardName + ".clipboard.txt";
+
+	String filePath = PROJECT::getDirectory() + "/" + fileName;
+	return filePath;
+}
+
 void PROJECT::saveCursor() { saved_cursor_position = PROJECT::getCursor(); }
 void PROJECT::loadCursor() { PROJECT::setCursor(saved_cursor_position); }
 
