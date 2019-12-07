@@ -434,6 +434,7 @@ public:
 	void clear() { list.clear(); }
 	void sort() { if (do_sort) stable_sort(begin(), end(), [](const t & a, const t & b) { return a.getStart() < b.getStart(); }); }
 	void resize(size_t size) { list.resize(size); }
+	//void erase(vector<t>::const_iterator first, vector<t>::const_iterator last) { list.erase(first, last); }
 
 	// search functions
 	t SearchRange(RANGE r, bool find_near_start);

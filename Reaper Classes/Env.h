@@ -30,6 +30,14 @@ public:
 		if (!p2.isValid())
 			return p1;
 
+		if (isMoreThan(p2.getPosition(), time))
+		{
+			if (isLessThanOrEqual(p1.getPosition(), time))
+				return p1.isValid() ? p1 : ENVPT();
+			else
+				return ENVPT();
+		}
+
 		double p1_delta = abs(p1.getPosition() - time);
 		double p2_delta = abs(p2.getPosition() - time);
 
@@ -109,6 +117,8 @@ public:
 	{}
 
 	double getPosition() const { return position; }
+	void setPosition(double v) { position = v; }
+
 	double getStart() const override { return position; }
 	double getEnd() const override { return position; }
 
@@ -122,7 +132,7 @@ public:
 		return position != -1.0;
 	}
 
-protected:
+//protected:
 	int index = -1;
 	double value = -1.0;
 	double position = -1.0;
@@ -168,13 +178,23 @@ public:
 	// functions
 	void collectPoints();
 	void removeAllPoints();
+
+	// removes points based on given indexes of points inside envelope object
+	void removePoints(const ENVELOPE& v)
+	{
+		for (int i = v.size(); i--; )
+			list.erase(begin() + v[i].getIndex());
+	}
 	void collectAutoItemPoints(int autoitemidx);
 	void simplifyByAverage(double width);
 	void simplifyByDifference(double diff);
 	double centerValueTowardAverage(double min_x, double max_x);
 
+	// sets the reaper envelope to edit
 	void setEnvelope(MediaItem_Take* take, String name);
+	// sets the reaper envelope to edit
 	void setEnvelope(TrackEnvelope* trackEnv);
+	// sets given reaper envelope points based on given envelope object
 	void setPoints(const ENVELOPE & env);
 
 	ENVELOPE getPointsInRange(double start, double end)
@@ -187,7 +207,7 @@ public:
 
 		if (!firstPoint.isValid())
 		{
-			if (lastPoint.isValid())
+			if (lastPoint.isValid() && isMoreThanOrEqual(lastPoint.getPosition(), start))
 				envOut.push_back(lastPoint);
 
 			return envOut;
@@ -209,6 +229,19 @@ public:
 			envOut.push_back(this->list[i]);
 
 		return envOut;
+	}
+
+	void removePointsInRange(double start, double end)
+	{
+		auto envelope = getPointsInRange(start, end);
+
+		if (envelope.empty())
+			return;
+
+		auto startIndex = envelope.front().getIndex() - 1;
+		auto endIndex = envelope.back().getIndex() - 1;
+
+		list.erase(list.begin() + startIndex, list.begin() + endIndex + 1);
 	}
 
 	void toggle(bool off_on);

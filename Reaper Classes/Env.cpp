@@ -176,8 +176,11 @@ void ENVELOPE::collectPoints()
 {
 	ENVPT p;
 	p.index = 0;
-	while (GetEnvelopePoint(envelopePtr, p.index++, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
+	while (GetEnvelopePoint(envelopePtr, p.index, &p.position, &p.value, &p.shape, &p.tension, &p.selected))
+	{
 		list.push_back(p);
+		++p.index;
+	}
 }
 
 void ENVELOPE::removeAllPoints()
