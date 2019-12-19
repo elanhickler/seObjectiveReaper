@@ -56,16 +56,21 @@ public:
 
 	/* FUNCTIONS */
 
-	// copies the item exactly taking the same position and length, thereby overlapping 100%
+	// Copies the item exactly taking the same position, length, and properties, thereby overlapping 100%
 	ITEM copy() const;
 	void remove();
 	void move(double v);
-	bool crop(RANGE r, bool move_edge);
 
-	// returns the item created from the right-hand-side of the split, or invalid item if split failed
+	// Returns a new item object as the original item object is deleted. Time is local to item.
+	ITEM crop(double start, double end);
+
+	// Returns the right hand side item of the crop, the original item object is kept. Time is local to item;
+	ITEM invertCrop(double start, double end);
+
+	// Returns the item created from the right-hand-side of the split, or invalid item if split failed
 	ITEM split(double v);
 
-	// returns ITEMLIST of items created from splitting including itself using global time.
+	// Returns ITEMLIST of items created from splitting including itself using global time.
 	ITEMLIST split(vector<double> splitlist);
 
 	MediaItem* getPointer() { return itemPtr; }

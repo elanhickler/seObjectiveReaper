@@ -32,6 +32,8 @@ TAKE::TAKE(MediaItem_Take * take) : takePtr(take)
 	envelope.Pan = ENVELOPE(take, "Pan");
 	envelope.Mute = ENVELOPE(take, "Mute");
 	envelope.Pitch = ENVELOPE(take, "Pitch");
+
+	initAudio();
 }
 
 TAKE::TAKE(MediaItem * item) : takePtr(GetActiveTake(item))

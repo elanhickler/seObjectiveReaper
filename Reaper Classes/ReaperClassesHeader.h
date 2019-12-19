@@ -72,6 +72,7 @@ public:
 	static void glueItems() { COMMAND(40362); }
 	static void commonNormalizeItems() { COMMAND(40254); }
 	static void unselectAllItemsAndSelectItemUnderMouse() { COMMAND(40528); }
+	static void crossfadeSelectedOverlappingItems() { COMMAND(41059); }
 
 	COMMAND(int action, int flag = 0) { Main_OnCommand(action, flag); }
 	COMMAND(const char* action, int flag = 0) { Main_OnCommand(NamedCommandLookup(action), flag); }

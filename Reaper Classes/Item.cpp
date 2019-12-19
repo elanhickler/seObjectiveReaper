@@ -135,7 +135,7 @@ ITEM ITEM::split(double v)
 
 ITEMLIST ITEM::split(vector<double> splitlist)
 {
-	ITEMLIST SplitItems(itemPtr);
+	ITEMLIST SplitItems(*this);
 
 	stable_sort(splitlist.begin(), splitlist.end(), [](double a, double b) { return a < b; });
 
@@ -214,20 +214,29 @@ void ITEM::setMuted(bool v) { SetMediaItemInfo_Value(itemPtr, "B_MUTE", v); }
 void ITEM::setVolume(double v) { SetMediaItemInfo_Value(itemPtr, "D_VOL", v); }
 void ITEM::move(double v) { SetMediaItemInfo_Value(itemPtr, "D_POSITION", GetMediaItemInfo_Value(itemPtr, "D_POSITION") + v); }
 
-bool ITEM::crop(RANGE r, bool move_edge)
+ITEM ITEM::crop(double start, double end)
 {
-	bool start_was_moved = false, end_was_moved = false;
-	if (getStart() < r.start())
-	{
-		setStart(r.start());
-		start_was_moved = true;
-	}
-	if (getEnd() > r.end())
-	{
-		setEnd(r.end());
-		end_was_moved = true;
-	}
-	return start_was_moved || end_was_moved;
+	auto list = split({ start + getStart(), end + getStart() });
+
+	if (list.size() < 3)
+		return {};
+
+	list.front().remove();
+	list.back().remove();
+
+	return list[1];
+}
+
+ITEM ITEM::invertCrop(double start, double end)
+{
+	auto list = split({ start + getStart(), end + getStart() });
+
+	if (list.size() < 3)
+		return {};
+
+	list[1].remove();
+
+	return list[2];
 }
 
 void ITEM::setFadeInLen(double v) { SetMediaItemInfo_Value(itemPtr, "D_FADEINLEN", v); }
@@ -399,12 +408,16 @@ bool ITEMLIST::isSelected() const
 
 int ITEMLIST::crop(RANGE rng, bool move_edge)
 {
-	int num_cropped = 0;
-	for (auto& i : list)
-		if (i.crop(rng, move_edge))
-			++num_cropped;
+	//int num_cropped = 0;
+	//for (auto& i : list)
+	//	if (i.crop(rng, move_edge))
+	//		++num_cropped;
 
-	return num_cropped;
+	//return num_cropped;
+
+	jassertfalse; // not implemented
+
+	return 0;
 }
 
 int ITEMLIST::setTrack(MediaTrack * track)
