@@ -59,7 +59,7 @@ Functions to manipulate a point in ENVELOPE.
 Functions to manipulate a TrackEnvelope*. Holds a list of ENVPT. 
 
 ### AUTOITEM
-Functions to manpipulate automation items.
+Functions to manipulate automation items.
 
 ### AUTOITEMLIST
 Functions to gather automation items. Holds a list of AUTOITEM.
