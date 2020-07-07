@@ -84,6 +84,28 @@ void MARKERLIST::RemoveDuplicates()
 	list = std::move(NewMarkerList);
 }
 
+MARKER MARKER::getRegionAtTime(double time)
+{
+	MARKERLIST RegionList;
+	RegionList.CollectMarkersAndRegions();
+
+	for (const auto& r : RegionList)
+		if (isTouchingRange(time, r.getStart(), r.getEnd()))
+			return r;
+}
+
+MARKER MARKER::getRegionTouchingRange(double start, double end)
+{
+	MARKERLIST RegionList;
+	RegionList.CollectMarkersAndRegions();
+
+	for (auto& r : RegionList)
+		if (isTouchingRange(r.getStart(), start, end) || isTouchingRange(r.getEnd(), start, end))
+			return r;
+
+	return {};
+}
+
 MARKER::MARKER() {}
 MARKER::MARKER(int index) : index(index)
 {

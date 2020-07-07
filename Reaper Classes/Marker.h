@@ -43,9 +43,13 @@ public:
 		m.isRegion = m._start < m._end;
 		m.is_ghost = true;
 		m._name = name;
-		m.TagManager.setStringWithTags(name);
+		m.TagManager.setString(name);
 		return m;
 	}
+
+	static MARKER getRegionAtTime(double time);
+
+	static MARKER getRegionTouchingRange(double start, double end);
 
 	double getStart() const override { return _start; }
 	void setStart(double v) override { _start = v; _set(); cache_end(); }

@@ -721,11 +721,27 @@ bool AUDIOFUNCTION::isAudioSilent(TAKE & take, double minimumAmplitude)
 	return true;
 }
 
-void AUDIOPROCESS::processTakeList(TAKELIST & list, std::function<void(TAKE&)> perTakeFunction)
+void AUDIOPROCESS::processTakeList(TAKELIST& list, std::function<void(TAKE&)> perTakeFunction)
 {
 	prepareToStart();
 
 	for (auto & take : list)
+	{
+		loadTake(take);
+
+		perTakeFunction(take);
+
+		unloadTake(take);
+	}
+
+	prepareToEnd();
+}
+
+void AUDIOPROCESS::processTakeList(vector<TAKE>& list, std::function<void(TAKE&)> perTakeFunction)
+{
+	prepareToStart();
+
+	for (auto& take : list)
 	{
 		loadTake(take);
 

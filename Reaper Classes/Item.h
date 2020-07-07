@@ -322,6 +322,7 @@ class AUDIOPROCESS
 {
 public:
 	static void processTakeList(TAKELIST& list, function<void(TAKE&)> perTakeFunction);
+	static void processTakeList(vector<TAKE>& list, function<void(TAKE&)> perTakeFunction);
 
 	static void shorthand(TAKE& take, function<void(int,int)> func)
 	{

@@ -199,6 +199,12 @@ public:
 
 	ENVELOPE getPointsInRange(double start, double end)
 	{
+		if (list.size() == 0)
+		{
+			jassertfalse;
+			return {};
+		}
+
 		ENVELOPE envOut;
 		envOut.envelopePtr = this->envelopePtr;
 
@@ -233,6 +239,9 @@ public:
 
 	void removePointsInRange(double start, double end)
 	{
+		if (list.empty())
+			return;
+
 		auto envelope = getPointsInRange(start, end);
 
 		if (envelope.empty())

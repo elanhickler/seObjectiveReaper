@@ -7,6 +7,7 @@
 #include <set>
 #include <regex>
 
+using std::function;
 using std::regex;
 using std::match_results;
 using std::sregex_token_iterator;
@@ -53,14 +54,14 @@ template<class T, class U> void setOpt(T* parameter, U&& input)
 class CONSOLE
 {
 public:
-	CONSOLE(String text)
+	static void log(const String& text)
 	{
-		ShowConsoleMsg(text.toRawUTF8());
+		ShowConsoleMsg(String(text + "\n").toRawUTF8());
 	}
-	static void clear(String text = "")
+	static void clear(const String& text = "")
 	{
 		ShowConsoleMsg("");
-		ShowConsoleMsg(text.toRawUTF8());
+		ShowConsoleMsg(String(text + "\n").toRawUTF8());
 	}
 };
 
@@ -295,12 +296,13 @@ protected:
 
 class OBJECT_NAMABLE
 {
+public:
+	Tagger TagManager;
 protected:
   // members
-  Tagger TagManager;
 	// Call this function in the derived class's constructor like this: OBJECT_NAMABLE::initialize()
 	// Make sure you call this AFTER the object actually has a name.
-	void initialize() { TagManager.setStringWithTags(getObjectName()); }
+	void initialize() { TagManager.setString(getObjectName()); }
 	// Override this to provide a way for retreiving name string from the object, protect this function
 	virtual String getObjectName() const = 0;
 	// Override this to provide a way for applying the name string to the object, protect this function
@@ -312,12 +314,12 @@ public:
 	// Get the object's name including tags
 	String getName() const
 	{
-		return TagManager.getStringWithTags();
+		return TagManager.getString();
 	}
 	// Set the object's full name string which will also overwrite tags
 	void setName(const String & v)
 	{
-		TagManager.setStringWithTags(v);
+		TagManager.setString(v);
 		setObjectName(v);
 	}
 
@@ -328,44 +330,44 @@ public:
 	// Get a tag within the tag string
 	void setTag(const String & key, const String & value)
 	{
-		TagManager.SetTag(key, value);
-		setObjectName(TagManager.getStringWithTags());
+		TagManager.setTag(key, value);
+		setObjectName(TagManager.getString());
 	}
 
 	// Get name of object without tags
-	String getNameNoTags() const { return TagManager.getNameNoTags(); }
+	String getNameNoTags() const { return TagManager.getNameString(); }
 	// Set name of object without affecting tags
 	void setNameNoTags(const String & v)
 	{
-		TagManager.setStringNoTags(v);
-		setObjectName(TagManager.getStringWithTags());
+		TagManager.setNameString(v);
+		setObjectName(TagManager.getString());
 	}
 
 	// Get name of object only affecting the tag string portion
-	String getNameTagsOnly() const { return TagManager.getStringTagsOnly(); }
+	String getNameTagsOnly() const { return TagManager.getTagString(); }
 	// Set name of object only affecting the tag string portion
 	void setNameTagsOnly(const String & v)
 	{
-		TagManager.setStringWithTags(v);
-		setObjectName(TagManager.getStringWithTags());
+		TagManager.setString(v);
+		setObjectName(TagManager.getString());
 	}
 
 	// Remove a tag from the tag string
 	void removeTag(const String & key)
 	{
 		TagManager.removeTag(key);
-		setObjectName(TagManager.getStringWithTags());
+		setObjectName(TagManager.getString());
 	}
 
 	// Remove the entire tag string
 	void removeAllTags()
 	{
-		TagManager.RemoveAllTags();
-		setObjectName(TagManager.getNameNoTags());
+		TagManager.removeAllTags();
+		setObjectName(TagManager.getNameString());
 	}
 
 	// boolean
-	bool hasTag(const String & tag) const { return TagManager.tagExists(tag); }
+	bool hasTag(const String & tag) const { return TagManager.hasTag(tag); }
 };
 
 class OBJECT_MOVABLE

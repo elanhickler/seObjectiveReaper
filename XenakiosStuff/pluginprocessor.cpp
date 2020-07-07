@@ -1,4 +1,4 @@
-﻿#define WDL_NO_DEFINE_MINMAX
+#define WDL_NO_DEFINE_MINMAX
 
 #include "pluginprocessor.h"
 #include "../reaper plugin/reaper_plugin_functions.h"
@@ -39,10 +39,10 @@ PluginChain::~PluginChain()
 bool PluginChain::addPlugin(PluginDescription & plugdesc)
 {
 	String err;
-	AudioPluginInstance* plug = g_plugformat_manager->createPluginInstance(plugdesc, 44100.0, 512, err);
+	auto plug = g_plugformat_manager->createPluginInstance(plugdesc, 44100.0, 512, err);
 	if (plug != nullptr)
 	{
-		m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug));
+		m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug.get()));
 		return true;
 	}
 	else
@@ -226,13 +226,13 @@ PluginChain* PluginChain::duplicate()
 	for (auto& e : m_plugins)
 	{
 		String err;
-		AudioPluginInstance* plug = g_plugformat_manager->createPluginInstance(e.m_plug->getPluginDescription(), 44100.0, 512, err);
+		auto plug = g_plugformat_manager->createPluginInstance(e.m_plug->getPluginDescription(), 44100.0, 512, err);
 		if (plug != nullptr)
 		{
 			MemoryBlock state;
 			e.m_plug->getStateInformation(state);
 			plug->setStateInformation(state.getData(), state.getSize());
-			dupl->m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug));
+			dupl->m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug.get()));
 		}
 	}
 	return dupl;
@@ -464,11 +464,10 @@ void PluginProcessingContent::buttonClicked(Button * b)
 		int r = aw.runModalLoop();
 		if (r == 1)
 		{
-			XmlElement* xml = m_pluginlist.createXml();
+			auto xml = m_pluginlist.createXml();
 			if (xml != nullptr)
 			{
-				g_properties_file->setValue("plugin_scan_results", xml);
-				delete xml;
+				g_properties_file->setValue("plugin_scan_results", xml.get());
 			}
 		}
 		delete pluglistcomp;
@@ -477,12 +476,11 @@ void PluginProcessingContent::buttonClicked(Button * b)
 
 void PluginProcessingContent::initPlugList()
 {
-	XmlElement* elem = g_properties_file->getXmlValue("plugin_scan_results");
+	auto elem = g_properties_file->getXmlValue("plugin_scan_results");
 	if (elem != nullptr)
 	{
 		m_pluginlist.recreateFromXml(*elem);
         m_pluginlist.sort(KnownPluginList::sortAlphabetically, true);
-        delete elem;
 	}
 }
 

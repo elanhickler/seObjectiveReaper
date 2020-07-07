@@ -678,11 +678,10 @@ void saveWindowStateIntoGlobalSettings(String windowname,ValueTree vt)
 	if (windowname.isEmpty() == true)
 		return;
 	String sectname = windowname.replaceCharacter(' ', '_');
-	XmlElement* xml = vt.createXml();
+	auto xml = vt.createXml();
 	if (xml != nullptr)
 	{
-		g_properties_file->setValue(sectname, xml);
-		delete xml;
+		g_properties_file->setValue(sectname, xml.get());
 	}
 }
 
@@ -705,12 +704,11 @@ ValueTree loadWindowStateFromGlobalSettings(String windowname)
 
 	auto properties_file = std::make_unique<PropertiesFile>(poptions);
 
-	XmlElement* xml = properties_file->getXmlValue(sectname);
+	auto xml = properties_file->getXmlValue(sectname);
 
 	if (xml != nullptr)
 	{
 		ValueTree r = ValueTree::fromXml(*xml);
-		delete xml;
 		return r;
 	}
 

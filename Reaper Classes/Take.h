@@ -1,7 +1,5 @@
 #pragma once
 
-#include "../Elan Classes/MidiHelper.h"
-
 using juce::File;
 
 class TAKE;
