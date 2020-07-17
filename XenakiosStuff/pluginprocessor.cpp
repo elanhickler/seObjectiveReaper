@@ -42,7 +42,7 @@ bool PluginChain::addPlugin(PluginDescription & plugdesc)
 	auto plug = g_plugformat_manager->createPluginInstance(plugdesc, 44100.0, 512, err);
 	if (plug != nullptr)
 	{
-		m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug.get()));
+		m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug));
 		return true;
 	}
 	else
@@ -232,7 +232,7 @@ PluginChain* PluginChain::duplicate()
 			MemoryBlock state;
 			e.m_plug->getStateInformation(state);
 			plug->setStateInformation(state.getData(), state.getSize());
-			dupl->m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug.get()));
+			dupl->m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug));
 		}
 	}
 	return dupl;
@@ -467,7 +467,7 @@ void PluginProcessingContent::buttonClicked(Button * b)
 			auto xml = m_pluginlist.createXml();
 			if (xml != nullptr)
 			{
-				g_properties_file->setValue("plugin_scan_results", xml.get());
+				g_properties_file->setValue("plugin_scan_results", xml);
 			}
 		}
 		delete pluglistcomp;
