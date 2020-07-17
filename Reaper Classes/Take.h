@@ -171,9 +171,12 @@ public:
 	bool isAudioInitialized();
 
 	AUDIODATA & getAudioFile();
+	AUDIODATA& getTakeAudio() { return takeAudioBuffer; }
 	int getSampleRate();
 	int getBitDepth();
+	// return total channels for source audio
 	int getNumChannels();
+	// return number of active channels based on channel mode
 	int getNumChannelModeChannels();
 	size_t getNumFrames() const;
 	size_t getNumSamples() const;

@@ -335,4 +335,24 @@ public:
 	static void prepareToEnd();
 	static void loadTake(TAKE& take);
 	static void unloadTake(TAKE& take);
+
+	template <typename t> static vector<t> convertSampleRate(const vector<t>& audio, int incomingSampleRate, int outgoingSampleRate)
+	{
+		if (incomingSampleRate <= 0 || outgoingSampleRate <= 0)
+			jassertfalse;
+
+		if (incomingSampleRate == outgoingSampleRate || audio.empty())
+			return audio;
+
+		int numSamples = audio.size();
+		double resampleFactor = double(incomingSampleRate) / double(outgoingSampleRate);
+		int newSampleSize = int(ceil(numSamples * 1.0 / resampleFactor));
+
+		vector<t> returnSignal;
+		returnSignal.resize(newSampleSize, 0);
+
+		RAPT::rsResampler<t, t>::transposeSinc(audio.data(), numSamples, returnSignal.data(), newSampleSize, t(resampleFactor));
+
+		return returnSignal;
+	}
 };

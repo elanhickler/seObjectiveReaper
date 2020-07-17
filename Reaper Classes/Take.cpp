@@ -1,10 +1,6 @@
 #include "ReaperClassesHeader.h"
 #include "Take.h"
 
-
-
-
-
 String TAKE::getObjectName() const { return GetTakeName(takePtr); }
 void TAKE::setObjectName(const String & v) { GetSetMediaItemTakeInfo_String(takePtr, "P_NAME", (char*)v.toRawUTF8(), 1); }
 double TAKE::getStart() const { return GetMediaItemInfo_Value(GetMediaItemTake_Item(takePtr), "D_POSITION"); }

@@ -221,6 +221,64 @@ public:
 	double getSample(int channel, int sample) { return data[channel][sample]; }
 	vector<double> & getChannel(int channel) { return data[channel]; }
 	vector<vector<double>> & getData() { return data; }
+
+	// separate channels with '|', example 1|2|4, which will return a mono signal mixing channel 1, 2, and 4. NOTE: channels are 1-base. If blank, return full mono mixdown. Optional seconds limits the amount of signal to return.
+	template <typename t> vector<t> getMonoMixdown(double seconds = 0)
+	{
+		int numFrames = seconds > 0 ? min<int>(getSampleRate() * seconds, getNumFrames()) : getNumFrames();
+
+		vector<t> signal;
+		signal.reserve(numFrames);
+		for (int c = 0; c < getNumChannels(); ++c)
+			for (int s = 0; s < numFrames; ++s)
+				signal.push_back(getSample(c, s));
+
+		return std::move(signal);
+	}
+
+	template <typename t> vector<t> getMixdownViaChannelString(String channelString = "", double seconds = 0)
+	{
+		vector<String> channelListString = STR::splitToVector(channelString, '|');
+		vector<int> channelList;
+
+		for (const auto& s : channelListString)
+		{
+			if (!STR::isInt(s))
+			{
+				jassertfalse; // string is not a number
+				continue;
+			}
+			
+			int value = s.getIntValue() - 1; // 1 base to 0 base
+
+			if (isPositiveAndBelow(value, getNumChannels()))
+				VectorHelper::pushUnique<int>(channelList, value);
+			else
+				jassertfalse; // invalid channel
+		}
+
+		if (channelList.empty())
+			return getMonoMixdown<t>(seconds); // no channels provided, return full signal
+
+		int sr = getSampleRate();
+
+		int numFrames = seconds > 0 ? min<int>(getSampleRate() * seconds, getNumFrames()) : getNumFrames();
+
+		vector<t> ret;
+		ret.reserve(numFrames);
+		for (int i = 0; i < numFrames; ++i)
+		{
+			t value;
+
+			for (auto c : channelList)
+				value += getSample(c, i);
+
+			ret.push_back(value);
+		}
+
+		return std::move(ret);
+	}
+
 	int getNumSamples() const { return samples; }
 	int getNumChannels() const { return channels; }
 	int getNumFrames() const { return frames; }
