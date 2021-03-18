@@ -35,6 +35,8 @@ public:
 	{
 		return createGhost(r.start(), r.end());
 	}
+
+	// A ghost marker is one that is not yet added to the project
 	static MARKER createGhost(double start, double end, const String name = "")
 	{
 		MARKER m;
@@ -74,7 +76,7 @@ protected:
 	String _name;
 	Colour _color;
 	void cache_end() { if (!isRegion) _end = _start; }
-	bool is_ghost = false;
+	bool is_ghost = false; // A ghost marker is one that is not yet added to the project
 
 	void _set()
 	{
@@ -83,7 +85,7 @@ protected:
 	}
 	void _get()
 	{
-		const char * c;
+		const char* c;
 		int color;
 		int en = EnumProjectMarkers3(0, index, &isRegion, &_start, &_end, &c, &id, &color);
 		if (en <= 0)

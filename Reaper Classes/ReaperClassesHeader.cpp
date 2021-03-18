@@ -157,6 +157,22 @@ int PROJECT::countTracks() { return CountTracks(0); }
 
 int PROJECT::countSelectedTracks() { return CountSelectedTracks(0); }
 
+void PROJECT::selectItemsUnderCursor()
+{
+	int numItems = CountMediaItems(0);
+	double cursor_pos = GetCursorPositionEx(0);
+	for (int i = 0; i < numItems; ++i)
+	{
+		auto item = GetMediaItem(0, i);
+		double position = GetMediaItemInfo_Value(item, "D_POSITION");
+		double length = GetMediaItemInfo_Value(item, "D_LENGTH");
+		double end = position + length;
+
+		if (isTouchingRange(position, position, end))
+			SetMediaItemSelected(item, 1);
+	}
+}
+
 void PROJECT::unselectItem(MediaItem * itemPtr)
 {
 	SetMediaItemInfo_Value(itemPtr, "B_UISEL", false);

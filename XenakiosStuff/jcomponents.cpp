@@ -681,7 +681,7 @@ void saveWindowStateIntoGlobalSettings(String windowname,ValueTree vt)
 	auto xml = vt.createXml();
 	if (xml != nullptr)
 	{
-		g_properties_file->setValue(sectname, xml);
+		g_properties_file->setValue(sectname, xml.get());
 	}
 }
 

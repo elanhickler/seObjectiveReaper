@@ -70,6 +70,89 @@ protected:
 	TAKE * take = nullptr;
 };
 
+class TAKEMARKER
+{
+public:
+	static vector<TAKEMARKER> collect(MediaItem_Take* take)
+	{
+		vector<TAKEMARKER> list;
+
+		int numMarkers = TAKEMARKER::count(take);
+		for (int i = 0; i < numMarkers; ++i)
+			list.push_back(TAKEMARKER::get(take, i));
+
+		return std::move(list);
+	}
+
+	static void replace(MediaItem_Take* take, vector<TAKEMARKER>& list)
+	{
+		int i = 0;
+		while (DeleteTakeMarker(take, i))
+			++i;
+
+		for (auto& m : list)
+			TAKEMARKER::add(take, m.position, m.name, m.color);
+	}
+
+	static int count(MediaItem_Take* take)
+	{
+		return GetNumTakeMarkers(take);
+	}
+
+	static TAKEMARKER add(MediaItem_Take* take, double position, String name = "", int color = 0)
+	{
+		int idx = SetTakeMarker(take, -1, (char*)name.toRawUTF8(), &position, &color);
+		return { take, idx, position, name, color };
+	}
+
+	static TAKEMARKER get(MediaItem_Take* take, int idx)
+	{
+		char c[256];
+		String name;
+		double position = 0;
+		int color = 0;
+
+		if (isPositiveAndBelow(idx, TAKEMARKER::count(take)))
+		{
+			position = GetTakeMarker(take, idx, c, 256, &color);
+			name = c;
+		}
+		else
+		{
+			idx = -1;
+			jassertfalse;
+		}
+
+		return { take, idx, position, name, color };
+	}
+
+	TAKEMARKER(MediaItem_Take* take, int idx, double position, String name = "", int color = 0)
+		: take(take), idx(idx), position(position), name(name), color(color)	{}
+
+	~TAKEMARKER() = default;
+
+	// removes based on index, returns true if marker exists
+	bool remove();
+
+	int getIndex() { return idx; }
+
+	String getName();
+	void setName(const String& v);
+
+	Colour getColor();
+	void setColor(const Colour& v);
+
+	double getPosition();
+	// may cause index to change
+	void setPosition(double v);
+
+	int idx = -1; // changes based on position or existence
+	MediaItem_Take* take = nullptr;
+	String name;
+	double position = 0;
+	int color = 0; // default color is 0 based on theme
+};
+
 class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
 {
 	friend class AUDIOPROCESS;
@@ -148,6 +231,9 @@ public:
 	Colour getColor() const override;
 	void setColor(Colour v) override;
 
+	// uses item rate and take offset to calculate actual take position
+	double getLocalFromGlobalTime(double global);
+
 	TAKE move(MediaTrack* track);
 	TAKE move(MediaItem* new_item);
 
@@ -170,7 +256,7 @@ public:
 	void unloadAudio();
 	bool isAudioInitialized();
 
-	AUDIODATA & getAudioFile();
+	AUDIODATA& getAudioFile();
 	AUDIODATA& getTakeAudio() { return takeAudioBuffer; }
 	int getSampleRate();
 	int getBitDepth();

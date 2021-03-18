@@ -42,7 +42,7 @@ bool PluginChain::addPlugin(PluginDescription & plugdesc)
 	auto plug = g_plugformat_manager->createPluginInstance(plugdesc, 44100.0, 512, err);
 	if (plug != nullptr)
 	{
-		m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug));
+		m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug.get()));
 		return true;
 	}
 	else
@@ -232,7 +232,7 @@ PluginChain* PluginChain::duplicate()
 			MemoryBlock state;
 			e.m_plug->getStateInformation(state);
 			plug->setStateInformation(state.getData(), state.getSize());
-			dupl->m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug));
+			dupl->m_plugins.emplace_back(std::shared_ptr<AudioPluginInstance>(plug.get()));
 		}
 	}
 	return dupl;
@@ -306,13 +306,12 @@ void PluginChain::shutDown()
 std::shared_ptr<PluginChain> PluginChain::createFromFile(String fn)
 {
 	File file(fn);
-	FileInputStream* instream = file.createInputStream();
+	auto instream = file.createInputStream();
 	if (instream != nullptr)
 	{
 		ValueTree state = ValueTree::readFromStream(*instream);
 		auto result = std::make_shared<PluginChain>();
 		result->setState(state);
-		delete instream;
 		return result;
 	}
 	return std::shared_ptr<PluginChain>();
@@ -467,7 +466,7 @@ void PluginProcessingContent::buttonClicked(Button * b)
 			auto xml = m_pluginlist.createXml();
 			if (xml != nullptr)
 			{
-				g_properties_file->setValue("plugin_scan_results", xml);
+				g_properties_file->setValue("plugin_scan_results", xml.get());
 			}
 		}
 		delete pluglistcomp;
@@ -553,11 +552,10 @@ void PluginProcessingContent::saveChainToFile()
 			file.deleteFile();
 		}
 		ValueTree state = m_chain->getState();
-		FileOutputStream* outstream = file.createOutputStream();
+		auto outstream = file.createOutputStream();
 		if (outstream != nullptr)
 		{
 			state.writeToStream(*outstream);
-			delete outstream;
 		}
 	}
 }
@@ -570,13 +568,12 @@ void PluginProcessingContent::loadChainFromFile()
 	if (myChooser.browseForFileToOpen() == true)
 	{
 		File file = myChooser.getResult();
-		FileInputStream* instream = file.createInputStream();
+		auto instream = file.createInputStream();
 		if (instream != nullptr)
 		{
 			ValueTree state = ValueTree::readFromStream(*instream);
 			m_chain->setState(state);
 			m_chain_editor->repaint();
-			delete instream;
 		}
 	}
 }

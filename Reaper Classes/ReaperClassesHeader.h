@@ -74,6 +74,9 @@ public:
 	static void commonNormalizeItems() { COMMAND(40254); }
 	static void unselectAllItemsAndSelectItemUnderMouse() { COMMAND(40528); }
 	static void crossfadeSelectedOverlappingItems() { COMMAND(41059); }
+	static void gotoNextMarkerOrPojectEnd() { COMMAND(40173); };
+	static void selectItemUnderMouse() { COMMAND(40528); }
+	static void setCursorToMouse() { COMMAND(40514); }
 
 	COMMAND(int action, int flag = 0) { Main_OnCommand(action, flag); }
 	COMMAND(const char* action, int flag = 0) { Main_OnCommand(NamedCommandLookup(action), flag); }
@@ -109,6 +112,9 @@ public:
 	}
 };
 
+class MARKER;
+class ITEM;
+
 class PROJECT
 {
 protected:
@@ -140,6 +146,8 @@ public:
 	static int countSelectedTracks();
 
 	static void selectItem(MediaItem* itemPtr) { SetMediaItemInfo_Value(itemPtr, "B_UISEL", true); }
+	static void selectItemsUnderCursor();
+
 	static void unselectItem(MediaItem* itemPtr);
 	static void unselectAllItems() { COMMAND(40289); }
 
@@ -157,6 +165,14 @@ public:
 	static void saveView();
 	static void loadView();
 
+	static double getMousePosition()
+	{
+		saveCursor();
+		COMMAND::setCursorToMouse();
+		double mousePosition = getCursor();
+		loadCursor();
+		return mousePosition;
+	}
 	static double setCursor(double time, bool moveview = false, bool seekplay = false);
 	static double getCursor();
 
@@ -238,7 +254,7 @@ public:
 
 	template <typename t> vector<t> getMixdownViaChannelString(String channelString = "", double seconds = 0)
 	{
-		vector<String> channelListString = STR::splitToVector(channelString, '|');
+		vector<String> channelListString = STR::splitToVector(channelString, "|");
 		vector<int> channelList;
 
 		for (const auto& s : channelListString)
@@ -338,7 +354,7 @@ protected:
 	}
 };
 
-
+// Class used to simply add a boolean for if the object is valid or not
 class OBJECT_VALIDATES
 {
 	friend class MARKERLIST;
@@ -428,6 +444,7 @@ public:
 	bool hasTag(const String & tag) const { return TagManager.hasTag(tag); }
 };
 
+// Override getStart/getEnd functions and optionally setPosition/Start/End/Length, as wll as optionally get/set Color.
 class OBJECT_MOVABLE
 {
 public:

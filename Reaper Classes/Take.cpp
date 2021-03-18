@@ -145,6 +145,15 @@ void TAKE::remove()
 	PROJECT::loadItemSelection();
 }
 
+
+// uses item rate and take offset to calculate actual take position
+
+double TAKE::getLocalFromGlobalTime(double global)
+{
+	auto item = ITEM(getMediaItemPtr());
+	return (global - item.getStart()) * item.getRate() + getStartOffset();
+}
+
 TAKE TAKE::move(MediaTrack * track)
 {
 	//// duplicate item
@@ -305,12 +314,12 @@ void MIDINOTELIST::insert(MIDINOTE obj)
 	MIDI_InsertNote(take->getPointer(), obj.selected, obj.muted, ppq_start, ppq_end, obj.channel, obj.pitch, obj.velocity, &noSort);
 }
 
-inline void MIDINOTELIST::remove(int index)
+void MIDINOTELIST::remove(int index)
 {
 	MIDI_DeleteNote(take->getPointer(), index);
 }
 
-inline void MIDINOTELIST::removeAll()
+void MIDINOTELIST::removeAll()
 {
 	int notecount;
 	MIDI_CountEvts(take->getPointer(), &notecount, nullptr, nullptr);
@@ -373,4 +382,47 @@ void MIDINOTE::setEnd(double v)
 	MIDI_SetNote(take->getPointer(), index, nullptr, nullptr, &ppq_start_original, &ppq_end, nullptr, nullptr, nullptr, &noSort);
 
 	endTime = v;
+}
+
+bool TAKEMARKER::remove()
+{
+	idx = -1;
+	return DeleteTakeMarker(take, idx);
+}
+
+String TAKEMARKER::getName()
+{
+	int sz = 256;
+	char c[256];
+	GetTakeMarker(take, idx, c, sz, nullptr);
+	return c;
+}
+
+void TAKEMARKER::setName(const String& v)
+{
+	SetTakeMarker(take, idx, (char*)v.toRawUTF8(), nullptr, nullptr);
+}
+
+Colour TAKEMARKER::getColor()
+{
+	GetTakeMarker(take, idx, nullptr, 0, &color);
+	return reaperToJuceColor(color);
+}
+
+void TAKEMARKER::setColor(const Colour& v)
+{
+	color = juceToReaperColor(v);
+	SetTakeMarker(take, idx, nullptr, nullptr, &color);
+}
+
+double TAKEMARKER::getPosition()
+{
+	position = GetTakeMarker(take, idx, nullptr, 0, nullptr);
+	return position;
+}
+
+void TAKEMARKER::setPosition(double v)
+{
+	position = v;
+	idx = SetTakeMarker(take, idx, nullptr, &v, nullptr);
 }

@@ -1,7 +1,7 @@
 /***************************************
 *** REAPER Plug-in API
 **
-** Copyright (C) 2006-2014, Cockos Incorporated
+** Copyright (C) 2006-2015, Cockos Incorporated
 **
 **    This software is provided 'as-is', without any express or implied
 **    warranty.  In no event will the authors be held liable for any damages
@@ -26,8 +26,6 @@
 #ifndef _REAPER_PLUGIN_H_
 #define _REAPER_PLUGIN_H_
 
-#pragma warning(disable: 4100)
-#pragma warning(disable: 4505)
 
 #ifndef REASAMPLE_SIZE
 #define REASAMPLE_SIZE 8 // if we change this it will break everything!
@@ -48,7 +46,7 @@ typedef double ReaSample;
 #define REAPER_PLUGIN_HINSTANCE HINSTANCE
 
 #else
-#include "swell.h"
+#include "../WDL/swell/swell.h"
 #include <pthread.h>
 
 #define REAPER_PLUGIN_DLL_EXPORT __attribute__((visibility("default")))
@@ -223,7 +221,7 @@ typedef struct
   unsigned char msg[3]; // if varmsg is valid, msg[0] is the text event type or 0xF0 for sysex
   char* varmsg;
   int varmsglen;
-  int setflag; // &1:selected, &2:muted, &4:ppqpos, &8:endppqpos, &16:msg1 high bits, &32:msg1 low bits, &64:msg2, &128:msg3, &256:varmsg, &512:text/sysex type (msg[0])
+  int setflag; // &1:selected, &2:muted, &4:ppqpos, &8:endppqpos, &16:msg1 high bits, &32:msg1 low bits, &64:msg2, &128:msg3, &256:varmsg, &512:text/sysex type (msg[0]), &16384:no sort after set
 } MIDI_eventprops;
 
 
@@ -251,6 +249,8 @@ typedef struct
   double absolute_time_s;
   double force_bpm;
 } PCM_source_transfer_t;
+
+class REAPER_PeakGet_Interface;
 
 typedef struct
 {
@@ -281,7 +281,29 @@ typedef struct
 
   double samplerate; // peakrate is peaks per second, samplerate is used only as a hint for what style of peaks to draw, OK to pass in zero
 
-  int *exp[30];
+#define PEAKINFO_EXTRADATA_SPECTRAL1 ((int)'s')
+#define PEAKINFO_EXTRADATA_SPECTROGRAM1 ((int)'g')
+  int extra_requested_data_type; // PEAKINFO_EXTRADATA_* for spectral information
+  int extra_requested_data_out; // output: number of samples returned (== peaks_out if successful)
+  void *extra_requested_data;
+
+  REAPER_PeakGet_Interface *__peakgetter;
+#ifdef __LP64__
+  int *exp[27];
+#else
+  int *exp[26];
+#endif
+
+  static inline int extra_blocksize(int extra_requested_data_type)
+  {
+    switch (extra_requested_data_type) 
+    {
+      case PEAKINFO_EXTRADATA_SPECTRAL1: return sizeof(int); // one int per channel per sample spectral info: low 15 bits frequency, next 14 bits density (16383=tonal, 0=noise, 12288 = a bit noisy)
+      case PEAKINFO_EXTRADATA_SPECTROGRAM1: return SPECTROGRAM1_BLOCKSIZE_BYTES; 
+    }
+    return 0;
+  }
+  enum { SPECTROGRAM1_BLOCKSIZE_BYTES=128 * 3 / 2 }; // 128 bins, 12 bits each (MSB1, (LSN1<<4)|LSN2, MSB2)
 
 } PCM_source_peaktransfer_t;
 
@@ -302,6 +324,8 @@ typedef struct
   double latency;
 
   unsigned int *overwrite_actives; // [16][4]; only used when overwritemode is >0
+
+  double do_not_quantize_past_sec; // amount in future that quantizing should never move things past (or 0 for not used)
 } midi_realtime_write_struct_t;
 
 
@@ -348,12 +372,12 @@ class PCM_source
 
 typedef struct
 {
-  int m_group;
+  int m_id;
   double m_time;
   double m_endtime;
   bool m_isregion;
   char *m_name; // can be NULL if unnamed
-  int m_flags; // DEPRECATED, for legacy use only when calling PCM_SOURCE_EXT_ENUMCUES. &1=caller must call Extended(PCM_SOURCE_EXT_ENUMCUES, -1, &cue, 0) when finished
+  int m_flags; // &1=DEPRECATED caller must call Extended(PCM_SOURCE_EXT_ENUMCUES, -1, &cue, 0) when finished, &2=time is QN
   char resvd[124]; // future expansion -- should be 0
 } REAPER_cue;
 
@@ -405,6 +429,7 @@ typedef struct
 #define PCM_SOURCE_EXT_SEND_EDITOR_MSG 0x1000A  // parm1=int: 1=focus editor to primary, 2=focus editor to all, 3=focus editor to all selected
 #define PCM_SOURCE_EXT_SETSECONDARYSOURCELIST 0x1000B // parm1=(PCM_source**)sourcelist, parm2=list size, parm3=close any existing src not in the list
 #define PCM_SOURCE_EXT_ISOPENEDITOR 0x1000C // returns 1 if this source is currently open in an editor, parm1=1 to close
+#define PCM_SOURCE_EXT_SETEDITORGRID 0x1000D // parm1=(double*)griddiv: 0.25=quarter note, 1.0/3.0=half note triplet, etc. parm2=int* swingmode(1=swing), parm3=double*swingamt
 #define PCM_SOURCE_EXT_GETITEMCONTEXT 0x10010 // parm1=MediaItem**, parm2=MediaItem_Take**, parm3=MediaTrack**
 #define PCM_SOURCE_EXT_CONFIGISFILENAME 0x20000
 #define PCM_SOURCE_EXT_GETBPMANDINFO 0x40000 // parm1=pointer to double for bpm. parm2=pointer to double for snap/downbeat offset (seconds).
@@ -412,6 +437,7 @@ typedef struct
 #define PCM_SOURCE_EXT_GETTITLE   0x80001 // parm1=(char**)title (string persists in plugin)
 #define PCM_SOURCE_EXT_GETTEMPOMAP 0x80002
 #define PCM_SOURCE_EXT_WANTOLDBEATSTYLE 0x80003
+#define PCM_SOURCE_EXT_GETNOTATIONSETTINGS 0x80004 // parm1=(int)what, (what==0) => parm2=(double*)keysigmap, parm3=(int*)keysigmapsize; (what==1) => parm2=(int*)display transpose semitones, (what==2) => parm2=(char*)clef1, parm3=(char*)clef2
 #define PCM_SOURCE_EXT_WANTTRIM 0x90002 // bla
 #define PCM_SOURCE_EXT_TRIMITEM 0x90003 // parm1=lrflag, parm2=double *{position,length,startoffs,rate}
 #define PCM_SOURCE_EXT_EXPORTTOFILE 0x90004 // parm1=output filename, only currently supported by MIDI but in theory any source could support this
@@ -427,12 +453,12 @@ enum { RAWMIDI_NOTESONLY=1, RAWMIDI_UNFILTERED=2 };
 
 #define PCM_SOURCE_EXT_SETRESAMPLEMODE 0x9000A // parm1= mode to pass to resampler->Extended(RESAMPLE_EXT_SETRSMODE,mode,0,0)
 #define PCM_SOURCE_EXT_NOTIFYPREVIEWPLAYPOS 0x9000B // parm1 = ptr to double of play position, or NULL if stopped
-#define PCM_SOURCE_EXT_SETSIZE 0x9000C // parm1=(double*)startpos, parm2=(double*)endpos, parm3=1 if start/end in QN. Start can be negative. Receiver may adjust start/end to avoid erasing content, in which case the adjusted values are returned in parm1 and parm2.
+#define PCM_SOURCE_EXT_SETSIZE 0x9000C // parm1=(double*)startpos, parm2=(double*)endpos, parm3=flags. Start can be negative. Receiver may adjust start/end to avoid erasing content, in which case the adjusted values are returned in parm1 and parm2. parm3/flags: 1 if start/end in QN (always the case now). 2=resize even pooled items
 #define PCM_SOURCE_EXT_GETSOURCETEMPO 0x9000D // parm=(double*)bpm, this is for reporting purposes only, does not necessarily mean the media should be adjusted (as PCM_SOURCE_EXT_GETBPMANDINFO means)
 #define PCM_SOURCE_EXT_ISABNORMALAUDIO  0x9000E // return 1 if rex, video, etc (meaning file export will just copy file directly rather than trim/converting)
 #define PCM_SOURCE_EXT_GETPOOLEDMIDIID 0x9000F // parm1=(char*)id, parm2=(int*)pool user count, parm3=(MediaItem_Take**)firstuser
 #define PCM_SOURCE_EXT_REMOVEFROMMIDIPOOL 0x90010 
-#define PCM_SOURCE_EXT_GETMIDIDATAHASH 0x90011 // parm1=(WDL_UINT64*)hash (64-bit hash of the MIDI source data)
+#define PCM_SOURCE_EXT_GETHASH 0x90011 // parm1=(WDL_UINT64*)hash (64-bit hash of the source data)
 #define PCM_SOURCE_EXT_GETIMAGE 0x90012  // parm1=(LICE_IBitmap**)image. parm2 = NULL or pointer to int, which is (w<<16)|h desired approx
 #define PCM_SOURCE_EXT_NOAUDIO 0x90013 
 #define PCM_SOURCE_EXT_HASMIDI 0x90014 // returns 1 if contains any MIDI data, parm1=(double*)time offset of first event
@@ -444,6 +470,13 @@ enum { RAWMIDI_NOTESONLY=1, RAWMIDI_UNFILTERED=2 };
 #define PCM_SOURCE_EXT_COUNTMIDIEVTS 0x90021 // parm1=(int*)notecnt, parm2=(int*)ccevtcnt, parm3=(int*)metaevtcnt
 #define PCM_SOURCE_EXT_GETSETMIDIEVT 0x90022 // parm1=(MIDI_eventprops*)event properties (NULL to delete); parm2=(int)event index (<0 to insert); parm2=(int)flag: 1=index counts notes only, 2=index counts CC only, 3=index counts meta-events only
 #define PCM_SOURCE_EXT_GETSUGGESTEDTEXT 0x90023 // parm1=char ** which will receive pointer to suggested label text, if any
+#define PCM_SOURCE_EXT_GETSCALE 0x90024 // parm1=unsigned int: &0xF=pitch (0=C), &0x10=root, &0x20=min2, &0x40=maj2, &0x80=min3, &0xF0=maj3, &0x100=4, etc) ; parm2=(char*)name (optional), parm3=int size of name buffer
+#define PCM_SOURCE_EXT_SELECTCONTENT 0x90025 // parm1=1 to select, 0 to deselect
+#define PCM_SOURCE_EXT_GETGRIDINFO 0x90026 // parm1=(double*)snap grid size, parm2=(double*)swing strength, parm3=(double*)note insert length, -1 if follows grid size
+#define PCM_SOURCE_EXT_SORTMIDIEVTS 0x9027
+#define PCM_SOURCE_EXT_MIDI_COMPACTPHRASES 0x90028 // compact the notation phrase ID space
+#define PCM_SOURCE_EXT_GETSETALLMIDI 0x90029 // parm1=(unsigned char*)data buffer, parm2=(int*)buffer length in bytes, parm2=(1:set, 0:get). Buffer is a list of { int offset, char flag, int msglen, unsigned char msg[] }. offset: MIDI ticks from previous event, flag: &1=selected &2=muted, msglen: byte length of msg (usually 3), msg: the MIDI message.
+
 
 // register with Register("pcmsrc",&struct ... and unregister with "-pcmsrc"
 typedef struct {
@@ -696,6 +729,7 @@ typedef struct accelerator_register_t
   // 1 to eat the keystroke, 
   // -1 to pass it on to the window, 
   // -666 to force it to the main window's accel table (with the exception of ESC)
+  // -667 to force it to the main window's accel table, even if in a text field (5.24+ or so)
   int (*translateAccel)(MSG *msg, accelerator_register_t *ctx); 
   bool isLocal; // must be TRUE, now (false is no longer supported, heh)
   void *user;
@@ -703,16 +737,17 @@ typedef struct accelerator_register_t
 
 
 /*
-** custom_action_register_t allows you to register ("custom_action") an action into a keyboard section action list
-** register("custom_action",ca) will return the command ID (instance-dependent but unique across all sections), or 0 if failed (e.g dupe idStr)
-** the related callback should be registered with "hookcommand2"
+** custom_action_register_t allows you to register ("custom_action") an action or a reascript into a section of the action list
+** register("custom_action",ca) will return the command ID (instance-dependent but unique across all sections), 
+** or 0 if failed (e.g dupe idStr for actions, or script not found/supported, etc)
+** for actions, the related callback should be registered with "hookcommand2"
 */
 
 typedef struct
 {
   int uniqueSectionId; // 0/100=main/main alt, 32063=media explorer, 32060=midi editor, 32061=midi event list editor, 32062=midi inline editor, etc
-  const char* idStr; // must be unique across all sections
-  const char* name;
+  const char* idStr; // must be unique across all sections for actions, NULL for reascripts (automatically generated)
+  const char* name; // name as it is displayed in the action list, or full path to a reascript file
   void *extra; // reserved for future use
 } custom_action_register_t;
 
@@ -743,10 +778,8 @@ typedef struct
 /*
 ** register("toggleaction", toggleactioncallback) lets you register a callback function
 ** that is called to check if an action registered by an extension has an on/off state.
-
 callback function:
   int toggleactioncallback(int command_id);
-
 return:
   -1=action does not belong to this extension, or does not toggle
   0=action belongs to this extension and is currently set to "off"
@@ -757,25 +790,19 @@ return:
 /*
 ** register("hookcustommenu", menuhook) lets you register a menu hook function that is called 
 ** when a customizable Reaper menu is initialized or shown.
-
 hook (callback) function:
   void menuhook(const char* menuidstr, void* menu, int flag); 
-
 flag:
   0=default menu is being initialized
   1=menu is about to be shown
-
 Do not retrieve or modify any Reaper menus except when your menuhook is called.
-
 Reaper calls menuhook with flag=0 when first initializing the menu, before the first time the menu
 is displayed.  You can add menu items or submenus during this call, which then become part of the 
 default menu structure (which the user can modify). Do not set any menu checked/grayed state,
 do not add menu icons, if you add submenus do not retain handles to the submenus.
 Do not modify any menus that don't call menuhook.
-
 Reaper calls menuhook with flag=1 before each time the menu is displayed.  You can do any
 dynamic menu populating, setting check/grayed states, adding icons during this call.
-
 All handling should be done relative to menu commands, not menu item positions, 
 because these menus can be customized and item order can change.
 */
@@ -847,16 +874,14 @@ typedef struct audio_hook_register_t
   // plug-in should zero these and they will be set by host
   // only call from OnAudioBuffer, nowhere else!!!
   int input_nch, output_nch; 
-  ReaSample *(*GetBuffer)(bool isOutput, int getIndex); 
+  ReaSample *(*GetBuffer)(bool isOutput, int idx); 
 
 } audio_hook_register_t;
 
 /*
 ** Allows you to get callback from the audio thread before and after REAPER's processing.
 ** register with Audio_RegHardwareHook()
-
   Note that you should be careful with this! :)
-
 */
 
 
@@ -1139,11 +1164,14 @@ typedef struct
 
 #ifndef UNDO_STATE_ALL
 #define UNDO_STATE_ALL 0xFFFFFFFF
-#define UNDO_STATE_TRACKCFG 1 // has track/master vol/pan/routing, ALL envelopes (matser included)
+#define UNDO_STATE_TRACKCFG 1 // has track/master vol/pan/routing, routing/hwout envelopes too
 #define UNDO_STATE_FX 2  // track/master fx
 #define UNDO_STATE_ITEMS 4  // track items
 #define UNDO_STATE_MISCCFG 8 // loop selection, markers, regions, extensions!
 #define UNDO_STATE_FREEZE 16 // freeze state -- note that isfreeze is used independently, this is only used for the undo system to serialize the already frozen state
+#define UNDO_STATE_TRACKENV 32 // non-FX envelopes only
+#define UNDO_STATE_FXENV 64   // FX envelopes, implied by UNDO_STATE_FX too
+#define UNDO_STATE_POOLEDENVS 128 // contents of pooled envs -- not position, length, rate etc of pooled env instances, which is part of envelope state
 #endif
 
 

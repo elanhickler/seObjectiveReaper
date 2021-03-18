@@ -53,7 +53,8 @@ public:
 	void remove();
 	void RemoveAllItemsFromProject();
 
-	ITEMLIST & getSelectedItemList() { return ItemList_selected; }
+	ITEMLIST& getItemList() { return ItemList_all; }
+	ITEMLIST& getSelectedItemList() { return ItemList_selected; }
 
 	// getters
 	bool sel() const { return GetMediaTrackInfo_Value(track, "I_SELECTED") == 1; }
