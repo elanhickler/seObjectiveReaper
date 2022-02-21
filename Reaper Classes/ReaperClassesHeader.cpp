@@ -43,6 +43,15 @@ void PROJECT::loadItemSelection()
 		selectItem(item);
 }
 
+double PROJECT::getMousePosition()
+{
+	saveCursor();
+	COMMAND::setCursorToMouse();
+	double mousePosition = getCursor();
+	loadCursor();
+	return mousePosition;
+}
+
 double PROJECT::setCursor(double time, bool moveview, bool seekplay)
 {
 	SetEditCurPos(time, moveview, seekplay);
@@ -75,6 +84,19 @@ void PROJECT::loadView()
 {
 	GetSet_ArrangeView2(0, 1, 0, 0, &global_save_view_start, &global_save_view_end);
 	view_is_being_saved = true;
+}
+
+void PROJECT::scrollView(double pos, double view_factor) {
+	double view_start = 1.0 - view_factor;
+
+	double zoom_start = 0.0;
+	double zoom_end = 0.0;
+	GetSet_ArrangeView2(0, 0, 0, 0, &zoom_start, &zoom_end);
+
+	double zoom_time_range = zoom_end - zoom_start;
+	zoom_start = pos - zoom_time_range * (1 - view_factor);
+	zoom_end = pos + zoom_time_range * view_factor;
+	GetSet_ArrangeView2(0, 1, 0, 0, &zoom_start, &zoom_end);
 }
 
 int juceToReaperColor(const Colour & v)
@@ -171,6 +193,33 @@ void PROJECT::selectItemsUnderCursor()
 		if (isTouchingRange(position, position, end))
 			SetMediaItemSelected(item, 1);
 	}
+}
+
+void PROJECT::selectNextItem()
+{
+	COMMAND(40417);
+
+	if (CountSelectedMediaItems(0) == 0)
+		PROJECT::selectItem(ITEM::get(0));
+}
+
+void PROJECT::selectPreviousItem()
+{
+	ITEM item1;
+	ITEM item2;
+
+	if (ITEM::countSelected())
+		item1 = ITEM::getSelected(0);
+
+	COMMAND(40416);
+
+	item2 = ITEM::getSelected(0);
+
+	if (item1.getPointer() == item2.getPointer());
+		COMMAND(40416);
+
+	if (CountSelectedMediaItems(0) == 0)
+		PROJECT::selectItem(ITEM::get(0));
 }
 
 void PROJECT::unselectItem(MediaItem * itemPtr)

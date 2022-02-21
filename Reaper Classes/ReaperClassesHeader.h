@@ -77,9 +77,10 @@ public:
 	static void gotoNextMarkerOrPojectEnd() { COMMAND(40173); };
 	static void selectItemUnderMouse() { COMMAND(40528); }
 	static void setCursorToMouse() { COMMAND(40514); }
+	static void openInEditor() { COMMAND(40109); }
 
 	COMMAND(int action, int flag = 0) { Main_OnCommand(action, flag); }
-	COMMAND(const char* action, int flag = 0) { Main_OnCommand(NamedCommandLookup(action), flag); }
+	COMMAND(String action, int flag = 0) { Main_OnCommand(NamedCommandLookup(action.toRawUTF8()), flag); }
 };
 
 class NUDGE
@@ -147,6 +148,8 @@ public:
 
 	static void selectItem(MediaItem* itemPtr) { SetMediaItemInfo_Value(itemPtr, "B_UISEL", true); }
 	static void selectItemsUnderCursor();
+	static void selectNextItem();
+	static void selectPreviousItem();
 
 	static void unselectItem(MediaItem* itemPtr);
 	static void unselectAllItems() { COMMAND(40289); }
@@ -164,19 +167,53 @@ public:
 
 	static void saveView();
 	static void loadView();
+	static void scrollView(double pos, double view_factor);
 
-	static double getMousePosition()
-	{
-		saveCursor();
-		COMMAND::setCursorToMouse();
-		double mousePosition = getCursor();
-		loadCursor();
-		return mousePosition;
-	}
+	static void play() { COMMAND(1007); }
+	static void play(double time) { SetEditCurPos(time, false, true); COMMAND(1007); }
+	static void playSelectedItem() { COMMAND("_XENAKIOS_TIMERTEST1"); }
+	static void stop() { COMMAND(1016); }
+
+	static double getMousePosition();
 	static double setCursor(double time, bool moveview = false, bool seekplay = false);
 	static double getCursor();
 
 	static String getClipboardFile(String clipboardName = "");
+
+	static void setClipboard(const String& v)
+	{
+#ifdef WIN32
+		if (OpenClipboard(nullptr))
+		{
+			HGLOBAL clipbuffer;
+			char* buffer;
+			EmptyClipboard();
+			clipbuffer = GlobalAlloc(GMEM_DDESHARE, v.length() + 1);
+			buffer = (char*)GlobalLock(clipbuffer);
+			strcpy(buffer, LPCSTR(v.toRawUTF8()));
+			GlobalUnlock(clipbuffer);
+			SetClipboardData(CF_TEXT, clipbuffer);
+			CloseClipboard();
+		}
+#endif
+	}
+
+	static String getClipboard()
+	{
+#ifdef WIN32
+		char* buffer;
+		String ret;
+		if (OpenClipboard(nullptr))
+		{
+			buffer = (char*)GetClipboardData(CF_TEXT);
+			ret = buffer;
+		}
+
+		CloseClipboard();
+
+		return ret;
+#endif
+	}
 };
 
 void UI();
@@ -238,20 +275,23 @@ public:
 	vector<double> & getChannel(int channel) { return data[channel]; }
 	vector<vector<double>> & getData() { return data; }
 
-	// separate channels with '|', example 1|2|4, which will return a mono signal mixing channel 1, 2, and 4. NOTE: channels are 1-base. If blank, return full mono mixdown. Optional seconds limits the amount of signal to return.
-	template <typename t> vector<t> getMonoMixdown(double seconds = 0)
-	{
-		int numFrames = seconds > 0 ? min<int>(getSampleRate() * seconds, getNumFrames()) : getNumFrames();
+	//// separate channels with '|', example 1|2|4, which will return a mono signal mixing channel 1, 2, and 4. NOTE: channels are 1-base. If blank, return full mono mixdown. Optional seconds limits the amount of signal to return.
+	//template <typename t> vector<t> getMonoMixdown(double seconds = 0)
+	//{
+	//	int numFrames = seconds > 0 ? min<int>(getSampleRate() * seconds, getNumFrames()) : getNumFrames();
 
-		vector<t> signal;
-		signal.reserve(numFrames);
-		for (int c = 0; c < getNumChannels(); ++c)
-			for (int s = 0; s < numFrames; ++s)
-				signal.push_back(getSample(c, s));
+	//	vector<t> signal;
+	//	signal.reserve(numFrames);
+	//	for (int c = 0; c < getNumChannels(); ++c)
+	//		for (int s = 0; s < numFrames; ++s)
+	//			signal.push_back(getSample(c, s));
 
-		return std::move(signal);
-	}
+	//	return std::move(signal);
+	//}
 
+	// separate channels with '|', example 1|2|4, which will return a mono signal mixing channel 1, 2, and 4.
+	// NOTE: channels are 1-base. If blank, return full mono mixdown.
+	// Optional seconds limits the amount of signal to return.
 	template <typename t> vector<t> getMixdownViaChannelString(String channelString = "", double seconds = 0)
 	{
 		vector<String> channelListString = STR::splitToVector(channelString, "|");
@@ -264,7 +304,7 @@ public:
 				jassertfalse; // string is not a number
 				continue;
 			}
-			
+
 			int value = s.getIntValue() - 1; // 1 base to 0 base
 
 			if (isPositiveAndBelow(value, getNumChannels()))
@@ -273,8 +313,10 @@ public:
 				jassertfalse; // invalid channel
 		}
 
-		if (channelList.empty())
-			return getMonoMixdown<t>(seconds); // no channels provided, return full signal
+		if (channelList.empty()) // populate with all channels
+			for (int c = 0; c < getNumChannels(); ++c)
+				channelList.push_back(c);
+			//return getMonoMixdown<t>(seconds);
 
 		int sr = getSampleRate();
 
@@ -284,12 +326,12 @@ public:
 		ret.reserve(numFrames);
 		for (int i = 0; i < numFrames; ++i)
 		{
-			t value;
+			t value = t(0);
 
 			for (auto c : channelList)
 				value += getSample(c, i);
 
-			ret.push_back(value);
+			ret.push_back(value / double(channelList.size()));
 		}
 
 		return std::move(ret);

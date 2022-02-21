@@ -12,15 +12,17 @@ TRACK TRACK::getMaster()
 
 TRACK TRACK::getByIndex(int idx) { return TRACK(idx); }
 
-TRACK TRACK::getByName(const String & name)
+TRACKLIST TRACK::getByName(const String& name)
 {
 	int num_tracks = CountTracks(0);
+	TRACKLIST tracklistOut;
 	for (int i = 0; i < num_tracks; ++i)
 	{
 		TRACK t = GetTrack(0, i);
-		if (name == t.getName()) return t;
+		if (name == t.getName())
+			tracklistOut.push_back(t);
 	}
-	return nullptr;
+	return tracklistOut;
 }
 
 TRACK TRACK::getSelectedByIndex(int idx)
@@ -28,34 +30,89 @@ TRACK TRACK::getSelectedByIndex(int idx)
 	return GetSelectedTrack(0, idx);
 }
 
-TRACK TRACK::getSelectedByName(const String & name)
+TRACKLIST TRACK::getSelectedByName(const String & name)
 {
 	int num_tracks = CountSelectedTracks(0);
+	TRACKLIST tracklistOut;
 	for (int i = 0; i < num_tracks; ++i)
 	{
 		TRACK t = GetSelectedTrack(0, i);
-		if (name == t.getName()) return t;
+		if (name == t.getName())
+			tracklistOut.push_back(t);
 	}
-	return nullptr;
+	return tracklistOut;
 }
 
-TRACK TRACK::insertBeforeIndex(int i) { InsertTrackAtIndex(i, true); TrackList_AdjustWindows(false); return TRACK(i); }
-TRACK TRACK::insertAfterIndex(int i) { InsertTrackAtIndex(i + 1, true); TrackList_AdjustWindows(false); return TRACK(i + 1); }
+TRACK TRACK::insertBeforeIndex(int i)
+{
+	InsertTrackAtIndex(i, true);
+	TrackList_AdjustWindows(false);
+	return TRACK(i);
+}
+TRACK TRACK::insertAfterIndex(int i)
+{
+	InsertTrackAtIndex(i + 1, true);
+	TrackList_AdjustWindows(false);
+	return TRACK(i + 1);
+}
 TRACK TRACK::insertFirst() { InsertTrackAtIndex(0, true); TrackList_AdjustWindows(false); return TRACK(0); }
 TRACK TRACK::insertLast() { InsertTrackAtIndex(GetNumTracks(), true); TrackList_AdjustWindows(false); return TRACK(GetNumTracks() - 1); }
 
 TRACK TRACK::getParent() const
 {
 	TRACK t = GetParentTrack(track);
+
+	if(t.track == track)
+		t.track = nullptr;
+
 	return t;
+}
+
+TRACK TRACK::getParentWithName(const String& v) const
+{
+	auto parentTrack = getParent();
+	while (parentTrack.isValid())
+	{
+		if (parentTrack.getName() == v)
+			break;
+
+		parentTrack = parentTrack.getParent();
+	}
+
+	return parentTrack;
+}
+
+TRACK TRACK::getChildWithName(const String& v) const
+{
+	int numTracks = CountTracks(nullptr);
+
+	for (int i = getIndex() + 1; i < numTracks; ++i)
+	{
+		auto t = TRACK(i);
+		if (t.getParent().getPointer() == track)
+			if (t.getName() == v)
+				return t;
+	}
+
+	return {};
 }
 
 TRACK TRACK::getLastChild() const
 {
+	if (!has_child())
+		return {};
+	
+	int numTracks = CountTracks(nullptr);
+
 	int i = getIndex() + 1;
-	TRACK t(i);
-	while (track == t.getParent()) t = TRACK(i++);
-	return TRACK(--i);
+	int i2;
+
+	for (i2 = i; i2 < numTracks; ++i2)
+		if (TRACK(i2).getParent() == track)
+			i = i2;
+
+	return TRACK(i);
+
 }
 
 TRACK TRACK::getFirstChild() const
@@ -66,20 +123,32 @@ TRACK TRACK::getFirstChild() const
 	return {};
 }
 
-void TRACK::setAsLastFolder()
-{
-	TRACK t = getParent();
-	int i = t.isValid() ? -1 : 0;
+
+// setters
+
+void TRACK::setFolderDepth(int mode) { SetMediaTrackInfo_Value(track, "I_FOLDERDEPTH", mode); }
+
+void TRACK::setAsFolderParent() { SetMediaTrackInfo_Value(track, "I_FOLDERDEPTH", 1); }
+
+void TRACK::setAsChild() { SetMediaTrackInfo_Value(track, "I_FOLDERDEPTH", 0); }
+
+void TRACK::setAsLastChild()
+ {
+ 	TRACK t = getParent();
+	int i = 0;
 	while (t.isValid())
 	{
 		t = t.getParent();
 		--i;
 	}
-	folder(i);
+	setFolderDepth(i);
 }
 
 void TRACK::collectItems()
 {
+	list.clear();
+	ItemList_selected.clear();
+
 	int num_items = CountTrackMediaItems(track);
 
 	for (int i = 0; i < num_items; ++i)
@@ -95,7 +164,7 @@ void TRACK::remove()
 {
 	auto prev_track = TRACK(getIndex() - 1);
 	if (!prev_track.is_parent() && prev_track.isValid())
-		prev_track.folder(folder());
+		prev_track.setFolderDepth(getFolderDepth());
 	DeleteTrack(track);
 	track = nullptr;
 }
@@ -109,7 +178,7 @@ void TRACK::RemoveAllItemsFromProject()
 TRACKLIST TRACKLIST::CreateTrackAsFirstChild(TRACK parent, int how_many)
 {
 	bool did_not_have_child = !parent.has_child();
-	parent.folder(1);
+	parent.setFolderDepth(1);
 
 	TRACKLIST tl;
 
@@ -117,7 +186,7 @@ TRACKLIST TRACKLIST::CreateTrackAsFirstChild(TRACK parent, int how_many)
 		tl.push_back(TRACK::insertAfterIndex(parent.getIndex() + i));
 
 	if (did_not_have_child)
-		TRACK(parent.getIndex() + how_many).setAsLastFolder();
+		TRACK(parent.getIndex() + how_many).setAsLastChild();
 
 	return tl;
 }
@@ -130,13 +199,13 @@ TRACKLIST TRACKLIST::CreateTrackAsLastChild(TRACK parent, int how_many)
 
 	auto t = parent.getLastChild();
 
-	int orig_folder_mode = t.folder();
-	t.folder(0);
+	int orig_folder_mode = t.getFolderDepth();
+	t.setFolderDepth(0);
 
 	for (int i = 0; i < how_many; ++i)
 		tl.push_back(TRACK::insertAfterIndex(t.getIndex() + i));
 
-	tl.back().folder(orig_folder_mode);
+	tl.back().setFolderDepth(orig_folder_mode);
 
 	return tl;
 }
@@ -239,16 +308,16 @@ void TRACKLIST::CollectTracksWithSelectedItems()
 	}
 }
 
-TRACK & TRACKLIST::getByName(const String & name)
+TRACK TRACKLIST::getByName(const String & name)
 {
 	for (auto& t : list)
 		if (name == t.getName())
 			return t;
 
-	return INVALID_TRACK;
+	return TRACK();
 }
 
-TRACK & TRACKLIST::getSelectedByIdx(int idx)
+TRACK TRACKLIST::getSelectedByIdx(int idx)
 {
 	int sel_idx = 0;
 	for (auto& track : list)
@@ -261,7 +330,7 @@ TRACK & TRACKLIST::getSelectedByIdx(int idx)
 		}
 	}
 
-	return INVALID_TRACK;
+	return TRACK();
 }
 
 TRACK TRACKLIST::getSelectedChildByIdx(TRACK parent, int idx)
@@ -324,4 +393,9 @@ ITEM ITEM::createFromAudioData(const AUDIODATA & audioData, const File & fileToW
 int ITEM::count()
 {
 	return CountMediaItems(nullptr);
+}
+
+int ITEM::countSelected()
+{
+	return CountSelectedMediaItems(nullptr);
 }

@@ -94,6 +94,10 @@ protected:
 			return;
 		}
 		_name = c;
+
+		if (color <= 0)
+			color = max(0, GetThemeColor(isRegion ? "region" : "marker", 0));
+
 		_color = reaperToJuceColor(color);
 		cache_end();
 	}

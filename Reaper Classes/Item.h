@@ -24,6 +24,7 @@ public:
 	static ITEM createMidi(MediaTrack * track, double position, double length);
 	static ITEM createFromAudioData(const AUDIODATA & audioFile, const File & fileToWriteTo, const TRACK & existingTrack, double startTime);
 	static int count();
+	static int countSelected();
 
 	enum FADESHAPE
 	{
@@ -57,11 +58,11 @@ public:
 	/* FUNCTIONS */
 
 	// Copies the item exactly taking the same position, length, and properties, thereby overlapping 100%
-	ITEM copy() const;
+	ITEM copy();
 	void remove();
 	void move(double v);
 
-	// Returns a new item object as the original item object is deleted. Time is local to item.
+	// IMPORTANT: Returns a new item object as the original item object is deleted. Time is local to item.
 	ITEM crop(double start, double end);
 
 	// Returns the right hand side item of the crop, the original item object is kept. Time is local to item;
@@ -90,8 +91,9 @@ public:
 	MediaTrack* getTrack() const;
 	int getTrackIndex() const;
 
-	bool isMuted() const;
 	bool isSelected() const;
+	bool isMuted() const;
+	bool isLooped() const;
 
 	int getIndex() const;
 	int getGroupId() const;
@@ -109,8 +111,9 @@ public:
 	double getFadeOutCurve() const;
 
 	/* SETTER */
-	void setMuted(bool v);
 	void setSelected(bool v);
+	void setMuted(bool v);
+	void setLooped(bool v);
 
 	void setActiveTake(int idx);
 	void setActiveTake(const TAKE & take);
@@ -225,6 +228,16 @@ public:
 	void move(double v);
 	void remove();
 	int crop(RANGE r, bool move_edge);
+
+	/* Use this workaround before the UNDO() function in order to force an undo point to be made. */
+	void UNDO_WORKAROUND()
+	{
+		if (!empty())
+		{
+			back().copy();
+			back().remove();
+		}
+	}
 
 	// getters
 	double getStart() const override;

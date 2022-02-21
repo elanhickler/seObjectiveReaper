@@ -1,6 +1,17 @@
 #include "ReaperClassesHeader.h"
 #include "Take.h"
 
+const TAKEMARKER::MarkerPreset TAKEMARKER::atk = TAKEMARKER::MarkerPreset{ "atk", Colour::fromRGB(149, 0, 0) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::rel = TAKEMARKER::MarkerPreset{ "rel", Colour::fromRGB(47,94,255) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::pre = TAKEMARKER::MarkerPreset{ "pre", Colour::fromRGB(67,156,81) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::leg_s = TAKEMARKER::MarkerPreset{ "leg-s", Colour::fromRGB(47,94,255) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::leg_e = TAKEMARKER::MarkerPreset{ "leg-e", Colour::fromRGB(149,0,0) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::rel_s = TAKEMARKER::MarkerPreset{ "leg-s", Colour::fromRGB(47,94,255) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::rel_e = TAKEMARKER::MarkerPreset{ "leg-e", Colour::fromRGB(149,0,0) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::start = TAKEMARKER::MarkerPreset{ "start", Colour::fromRGB(82,82,82) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::end = TAKEMARKER::MarkerPreset{ "end", Colour::fromRGB(82,82,82) };
+
+
 String TAKE::getObjectName() const { return GetTakeName(takePtr); }
 void TAKE::setObjectName(const String & v) { GetSetMediaItemTakeInfo_String(takePtr, "P_NAME", (char*)v.toRawUTF8(), 1); }
 double TAKE::getStart() const { return GetMediaItemInfo_Value(GetMediaItemTake_Item(takePtr), "D_POSITION"); }
@@ -148,10 +159,16 @@ void TAKE::remove()
 
 // uses item rate and take offset to calculate actual take position
 
-double TAKE::getLocalFromGlobalTime(double global)
+double TAKE::globalToLocalTime(double global)
 {
 	auto item = ITEM(getMediaItemPtr());
 	return (global - item.getStart()) * item.getRate() + getStartOffset();
+}
+
+double TAKE::localToGlobalTime(double local)
+{
+	auto item = ITEM(getMediaItemPtr());
+	return (local - getStartOffset()) / item.getRate() + item.getStart();
 }
 
 TAKE TAKE::move(MediaTrack * track)
@@ -291,10 +308,12 @@ void MIDINOTELIST::collect()
 		int note, vel, channel;
 		bool selected, muted;
 
+		double offset = ITEM(take->getMediaItemPtr()).getStart();
+
 		MIDI_GetNote(take->getPointer(), n, &selected, &muted, &ppqStart, &ppqEnd, &channel, &note, &vel);
 
-		double startTime = MIDI_GetProjTimeFromPPQPos(take->getPointer(), ppqStart) - take->getStart();
-		double endTime = MIDI_GetProjTimeFromPPQPos(take->getPointer(), ppqEnd) - take->getStart();
+		double startTime = MIDI_GetProjTimeFromPPQPos(take->getPointer(), ppqStart) - offset;
+		double endTime = MIDI_GetProjTimeFromPPQPos(take->getPointer(), ppqEnd) - offset;
 
 		push_back({ note, startTime, endTime, vel, channel, muted, selected });
 		back().take = take;
@@ -304,14 +323,24 @@ void MIDINOTELIST::collect()
 
 void MIDINOTELIST::insert(MIDINOTE obj)
 {
-	//obj.take = take;
-	double position = obj.getStart() + take->getStart();
+	if (obj.take == nullptr)
+		obj.take = take;
+
+	double position = obj.getProjectStart();
 
 	double ppq_start = MIDI_GetPPQPosFromProjTime(take->getPointer(), position);
 	double ppq_end = MIDI_GetPPQPosFromProjTime(take->getPointer(), position + obj.getLength());
 
 	bool noSort = false;
 	MIDI_InsertNote(take->getPointer(), obj.selected, obj.muted, ppq_start, ppq_end, obj.channel, obj.pitch, obj.velocity, &noSort);
+}
+
+void MIDINOTELIST::append(MIDINOTELIST list)
+{
+	for (const auto& note : list)
+		insert(note);
+
+	MIDI_Sort(take->getPointer());
 }
 
 void MIDINOTELIST::remove(int index)
@@ -323,7 +352,7 @@ void MIDINOTELIST::removeAll()
 {
 	int notecount;
 	MIDI_CountEvts(take->getPointer(), &notecount, nullptr, nullptr);
-	for (int i = 0; i < notecount; ++i)
+	for (int i = notecount; i --> 0; )
 		MIDI_DeleteNote(take->getPointer(), i);
 }
 
@@ -333,6 +362,14 @@ void MIDINOTE::setPitch(int v)
 	MIDI_SetNote(take->getPointer(), index, nullptr, nullptr, nullptr, nullptr, nullptr, &v, nullptr, &noSort);
 
 	pitch = v;
+}
+
+void MIDINOTE::setVelocity(int v)
+{
+	bool noSort = false;
+	MIDI_SetNote(take->getPointer(), index, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, &v, &noSort);
+
+	velocity = v;
 }
 
 void MIDINOTE::setPosition(double v)
@@ -384,45 +421,150 @@ void MIDINOTE::setEnd(double v)
 	endTime = v;
 }
 
+double MIDINOTE::getProjectStart() const { return startTime + ITEM(take->getMediaItemPtr()).getStart() + take->getStartOffset(); }
+
+double MIDINOTE::getProjectEnd() const { return endTime + ITEM(take->getMediaItemPtr()).getStart() + take->getStartOffset(); }
+
+vector<TAKEMARKER> TAKEMARKER::collect(TAKE& take)
+{
+	vector<TAKEMARKER> list;
+
+	int numMarkers = TAKEMARKER::count(take);
+	for (int i = 0; i < numMarkers; ++i)
+		list.push_back(TAKEMARKER::getByIdx(take, i));
+
+	return std::move(list);
+}
+
+void TAKEMARKER::replace(TAKE& take, vector<TAKEMARKER>& list)
+{
+	int i = 0;
+	while (DeleteTakeMarker(take.getPointer(), i))
+		++i;
+
+	for (auto& m : list)
+		TAKEMARKER::add(take, m.position, m.name, m.color);
+}
+
+int TAKEMARKER::count(TAKE& take)
+{
+	return GetNumTakeMarkers(take.getPointer());
+}
+
+TAKEMARKER TAKEMARKER::add(TAKE& take, double position, String name, int color)
+{
+	int idx = SetTakeMarker(take.getPointer(), -1, (char*)name.toRawUTF8(), &position, &color);
+	return { take, idx, position, name, color };
+}
+
+TAKEMARKER TAKEMARKER::addOrUpdateByName(TAKE& take, double position, String name, int color)
+{
+	auto list = TAKEMARKER::collect(take);
+
+	auto it = std::find_if(std::begin(list), std::end(list), [&](TAKEMARKER& m) { return m.name == name; });
+
+	int i = -1;
+	if (it != std::end(list))
+		i = it->getIndex();
+
+	int idx = SetTakeMarker(take.getPointer(), i, (char*)name.toRawUTF8(), &position, &color);
+	return { take, idx, position, name, color };
+}
+
+TAKEMARKER TAKEMARKER::addOrUpdateByIdx(TAKE& take, int idx, double position, String name, int color)
+{
+	auto list = TAKEMARKER::collect(take);
+
+	idx = SetTakeMarker(take.getPointer(), idx, (char*)name.toRawUTF8(), &position, &color);
+	return { take, idx, position, name, color };
+}
+
+TAKEMARKER TAKEMARKER::getByName(TAKE& take, String name)
+{
+	if (name.isNotEmpty())
+	{
+		auto list = TAKEMARKER::collect(take);
+
+		auto it = std::find_if(std::begin(list), std::end(list), [&](TAKEMARKER& m) { return m.name == name; });
+
+		int i = -1;
+
+		char c[256];
+		String name;
+		int color;
+		double position;
+		if (it != std::end(list))
+			return *it;
+	}
+
+	return TAKEMARKER{ take, -1, 0 };
+}
+
+TAKEMARKER TAKEMARKER::getByIdx(TAKE& take, int idx)
+{
+	char c[256];
+	String name;
+	double position = 0;
+	int color = 0;
+
+	if (isPositiveAndBelow(idx, TAKEMARKER::count(take)))
+	{
+		position = GetTakeMarker(take.getPointer(), idx, c, 256, &color);
+		name = c;
+	}
+	else
+	{
+		idx = -1;
+		jassertfalse;
+	}
+
+	return { take, idx, position, name, color };
+}
+
 bool TAKEMARKER::remove()
 {
 	idx = -1;
-	return DeleteTakeMarker(take, idx);
+	return DeleteTakeMarker(take->getPointer(), idx);
 }
 
 String TAKEMARKER::getName()
 {
 	int sz = 256;
 	char c[256];
-	GetTakeMarker(take, idx, c, sz, nullptr);
+	for (int i = 0; i < 256; ++i)
+		c[i] = 0;
+	GetTakeMarker(take->getPointer(), idx, c, sz, nullptr);
+
+	String ret = c;
+
 	return c;
 }
 
 void TAKEMARKER::setName(const String& v)
 {
-	SetTakeMarker(take, idx, (char*)v.toRawUTF8(), nullptr, nullptr);
+	SetTakeMarker(take->getPointer(), idx, (char*)v.toRawUTF8(), nullptr, nullptr);
 }
 
 Colour TAKEMARKER::getColor()
 {
-	GetTakeMarker(take, idx, nullptr, 0, &color);
+	GetTakeMarker(take->getPointer(), idx, nullptr, 0, &color);
 	return reaperToJuceColor(color);
 }
 
 void TAKEMARKER::setColor(const Colour& v)
 {
 	color = juceToReaperColor(v);
-	SetTakeMarker(take, idx, nullptr, nullptr, &color);
+	SetTakeMarker(take->getPointer(), idx, nullptr, nullptr, &color);
 }
 
 double TAKEMARKER::getPosition()
 {
-	position = GetTakeMarker(take, idx, nullptr, 0, nullptr);
+	position = GetTakeMarker(take->getPointer(), idx, nullptr, 0, nullptr);
 	return position;
 }
 
 void TAKEMARKER::setPosition(double v)
 {
 	position = v;
-	idx = SetTakeMarker(take, idx, nullptr, &v, nullptr);
+	idx = SetTakeMarker(take->getPointer(), idx, nullptr, &v, nullptr);
 }

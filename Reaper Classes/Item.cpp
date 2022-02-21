@@ -66,8 +66,17 @@ bool ITEM::isGrouped(const ITEM & i1, const ITEM & i2, bool must_be_on_same_trac
 	return i1.getGroupId() && i1.getGroupId() == i2.getGroupId();
 }
 
-ITEM ITEM::get(int idx) { return GetMediaItem(0, idx); }
-ITEM ITEM::getSelected(int idx) { return GetSelectedMediaItem(0, idx); }
+ITEM ITEM::get(int idx)
+{
+	jassert(CountMediaItems(0)); // no items!
+	return GetMediaItem(0, idx);
+}
+ITEM ITEM::getSelected(int idx)
+{
+	if (CountSelectedMediaItems(0))
+		jassert(CountSelectedMediaItems(0)); // no selected items!
+	return GetSelectedMediaItem(0, idx);
+}
 
 ITEM ITEM::createBlank(MediaTrack * track, double position, double length)
 {
@@ -126,9 +135,17 @@ bool ITEM::isValid() const { return itemPtr != nullptr; }
 void ITEM::remove() { DeleteTrackMediaItem(GetMediaItemTrack(itemPtr), itemPtr); itemPtr = nullptr; }
 ITEM ITEM::split(double v)
 {
+	bool isItemLooped = isLooped();
+	setLooped(true);
+
 	MediaItem * i = SplitMediaItem(itemPtr, v);
+
+	setLooped(isItemLooped);
+
 	if (i == nullptr)
 		return itemPtr;
+
+	ITEM(i).setLooped(isItemLooped);
 
 	return i;
 }
@@ -137,10 +154,18 @@ ITEMLIST ITEM::split(vector<double> splitlist)
 {
 	ITEMLIST SplitItems(*this);
 
+	double start = getStart();
+	double end = getEnd();
+
 	stable_sort(splitlist.begin(), splitlist.end(), [](double a, double b) { return a < b; });
 
-	for (const auto& v : splitlist)
-		SplitItems.push_back(SplitItems.back().split(v));
+	for (const auto& time : splitlist)
+	{
+		jassert(!(time == start || time == end)); // cannot split at item edges
+
+		if (isInsideRange(time, start, end))
+			SplitItems.push_back(SplitItems.back().split(time));
+	}
 
 	return SplitItems;
 }
@@ -150,6 +175,7 @@ MediaTrack * ITEM::getTrack() const { return GetMediaItem_Track(itemPtr); }
 int ITEM::getTrackIndex() const { return GetMediaTrackInfo_Value(GetMediaItem_Track(itemPtr), "IP_TRACKNUMBER"); }
 double ITEM::getSnapOffset() const { return GetMediaItemInfo_Value(itemPtr, "D_SNAPOFFSET"); }
 bool ITEM::isMuted() const { return 0.0 != GetMediaItemInfo_Value(itemPtr, "B_MUTE"); }
+bool ITEM::isLooped() const { return GetMediaItemInfo_Value(itemPtr, "B_LOOPSRC"); }
 int ITEM::getGroupId() const { return GetMediaItemInfo_Value(itemPtr, "I_GROUPID"); }
 double ITEM::getVolume() const { return GetMediaItemInfo_Value(itemPtr, "D_VOL"); }
 double ITEM::getFadeInLen() const { return GetMediaItemInfo_Value(itemPtr, "D_FADEINLEN"); }
@@ -171,11 +197,11 @@ int ITEM::getNumTakes() { return CountTakes(itemPtr); }
 
 double ITEM::getRate() const { return getActiveTake().getRate(); }
 
-ITEM ITEM::copy() const
+ITEM ITEM::copy()
 {
 	char* chunk = GetSetObjectState((MediaItem*)itemPtr, "");
 
-	ITEM copy = SplitMediaItem(itemPtr, getStart() + getLength() / 2);
+	ITEM copy = SplitMediaItem(itemPtr, getStart() + getLength() / 2.0);
 
 	GetSetObjectState(copy.itemPtr, chunk);
 	GetSetObjectState(itemPtr, chunk);
@@ -189,7 +215,10 @@ ITEM ITEM::copy() const
 void ITEM::setTrackByIndex(int v)
 {
 	int tracks = CountTracks(0);
-	for (int t = tracks; t < v + 1; ++t) InsertTrackAtIndex(t, true);
+
+	for (int t = tracks; t < v + 1; ++t)
+		InsertTrackAtIndex(t, true);
+
 	MoveMediaItemToTrack(itemPtr, GetTrack(0, v));
 }
 
@@ -198,7 +227,15 @@ bool ITEM::setTrack(MediaTrack * track) {
 	UpdateArrange();
 	return t;
 }
-bool ITEM::setTrackByName(String name) { return MoveMediaItemToTrack(itemPtr, TRACK::getByName(name)); }
+bool ITEM::setTrackByName(String name)
+{
+	auto t = TRACK::getByName(name);
+
+	if (t.size() > 0)
+		return MoveMediaItemToTrack(itemPtr, t[0]);
+	else
+		return {};
+}
 void ITEM::setActiveTake(int idx) { SetActiveTake(GetTake(itemPtr, idx)); }
 void ITEM::setActiveTake(const TAKE & take) { SetActiveTake(take.getPointer()); }
 void ITEM::setSnapOffset(double v) { SetMediaItemInfo_Value(itemPtr, "D_SNAPOFFSET", v); }
@@ -211,20 +248,36 @@ void ITEM::removeGroup()
 	setGroupId(0);
 }
 void ITEM::setMuted(bool v) { SetMediaItemInfo_Value(itemPtr, "B_MUTE", v); }
+void ITEM::setLooped(bool v) { SetMediaItemInfo_Value(itemPtr, "B_LOOPSRC", v); }
 void ITEM::setVolume(double v) { SetMediaItemInfo_Value(itemPtr, "D_VOL", v); }
 void ITEM::move(double v) { SetMediaItemInfo_Value(itemPtr, "D_POSITION", GetMediaItemInfo_Value(itemPtr, "D_POSITION") + v); }
 
 ITEM ITEM::crop(double start, double end)
 {
-	auto list = split({ start + getStart(), end + getStart() });
+	start = std::max(0.0, start);
+	end = std::min(getLength(), end);
 
-	if (list.size() < 3)
-		return {};
+	jassert(start != end);
+	jassert(start < end);
 
-	list.front().remove();
-	list.back().remove();
+	if (start == 0.0)
+	{
+		setLength(end - start);
+		return itemPtr;
+	}
 
-	return list[1];
+	if (end == getLength())
+	{
+		auto newItem = split(start);
+		remove();
+		return newItem;
+	}
+
+	auto splitItems = split({ getStart() + start, getStart() + end });
+
+	splitItems[0].remove();
+	splitItems[2].remove();
+	return splitItems[1];
 }
 
 ITEM ITEM::invertCrop(double start, double end)
@@ -727,6 +780,9 @@ void AUDIOPROCESS::processTakeList(TAKELIST& list, std::function<void(TAKE&)> pe
 
 	for (auto & take : list)
 	{
+		if (!take.isAudio())
+			continue;
+
 		loadTake(take);
 
 		perTakeFunction(take);

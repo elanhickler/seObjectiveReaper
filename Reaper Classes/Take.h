@@ -1,5 +1,41 @@
 #pragma once
 
+/*
+* BASE OBJECT:
+
+Simple base objects that directly manipulate the reaper project in an object oriented way
+CONSTRUCTOR DOES NOTHING TO PROJECT
+STATIC FUNCTIONS: 
+	count (return number of objects)
+	add (adds object to project) 
+	get (gets an object from project)
+	collect (returns a vector of all objects)
+	replace (clears objects from project and rewrites from list)
+REMOVE FUNCTION: object's method, object removes itself from project
+NEVER USE CONST
+
+
+NOMENCLATURE:
+
+cursor = edit cursor, not play cursor and not mouse cursor
+mouse = mouse cursor
+play cursor = edit cursor when not in play mode or cursor that is moving during play mode
+
+
+
+use advanced objects to manipulate mass simple objects
+
+make public the raw simple object list such as takeMarkerList and the Take that owns the takeMarkerList, only have read/write/add
+
+never use const auto in loops
+
+use collect actions to gather objects and info on objects
+manipulate the list that is created from collecting objects
+remove all said objects, rewrite all objects from scratch
+
+READ -> MANIPULATE -> WRITE
+*/
+
 using juce::File;
 
 class TAKE;
@@ -13,7 +49,7 @@ public:
 	MIDINOTE(int pitch, double position, double length)
 		: pitch(pitch), startTime(position), endTime(position + length)
 	{ }
-	MIDINOTE(int pitch, double startTime, double endTime, int velocity, int channel = 1, bool selected = false, bool muted = false)
+	MIDINOTE(int pitch, double startTime, double endTime, int velocity, int channel = 0, bool selected = false, bool muted = false)
 		: pitch(pitch), startTime(startTime), endTime(endTime), velocity(velocity), channel(channel), selected(selected), muted(muted)
 	{ }
   
@@ -23,17 +59,23 @@ public:
 	String getPitchString() { return MIDI(pitch).getName(); }
 
 	void setPitch(int v);
+	void setVelocity(int v);
+	int getVelocity() { return velocity; }
 
 	void setPosition(double v) override;
 
 	double getLength() const const override { return getEnd() - getStart(); }
 	void setLength(double v) override;
 
+	// Returns time based on item, add item start time to get project start time
 	double getStart() const override { return startTime; }
 	void setStart(double v) override;
 
 	double getEnd() const override { return endTime; }
 	void setEnd(double v) override;
+
+	double getProjectStart() const;
+	double getProjectEnd() const;
 
 	bool getIsSelected() const { return selected; }
 	bool getIsMuted() const { return muted; }
@@ -49,7 +91,7 @@ protected:
 	bool selected = false;
 	bool muted = false;
 
-	int channel = 1;
+	int channel = 0;
 	int velocity = 127;
 };
 
@@ -63,6 +105,7 @@ public:
 
 	void collect();
 	void insert(MIDINOTE midinote);
+	void append(MIDINOTELIST list);
 	void remove(int index);
 	void removeAll();
 
@@ -73,61 +116,59 @@ protected:
 class TAKEMARKER
 {
 public:
-	static vector<TAKEMARKER> collect(MediaItem_Take* take)
+
+	struct MarkerPreset
 	{
-		vector<TAKEMARKER> list;
-
-		int numMarkers = TAKEMARKER::count(take);
-		for (int i = 0; i < numMarkers; ++i)
-			list.push_back(TAKEMARKER::get(take, i));
-
-		return std::move(list);
-	}
-
-	static void replace(MediaItem_Take* take, vector<TAKEMARKER>& list)
-	{
-		int i = 0;
-		while (DeleteTakeMarker(take, i))
-			++i;
-
-		for (auto& m : list)
-			TAKEMARKER::add(take, m.position, m.name, m.color);
-	}
-
-	static int count(MediaItem_Take* take)
-	{
-		return GetNumTakeMarkers(take);
-	}
-
-	static TAKEMARKER add(MediaItem_Take* take, double position, String name = "", int color = 0)
-	{
-		int idx = SetTakeMarker(take, -1, (char*)name.toRawUTF8(), &position, &color);
-		return { take, idx, position, name, color };
-	}
-
-	static TAKEMARKER get(MediaItem_Take* take, int idx)
-	{
-		char c[256];
+		MarkerPreset(String name, Colour color) : name(name), color(color) {}
 		String name;
-		double position = 0;
-		int color = 0;
+		Colour color;
+	};
 
-		if (isPositiveAndBelow(idx, TAKEMARKER::count(take)))
-		{
-			position = GetTakeMarker(take, idx, c, 256, &color);
-			name = c;
-		}
-		else
-		{
-			idx = -1;
-			jassertfalse;
-		}
+	static const MarkerPreset atk, rel, pre, leg_s, leg_e, rel_s, rel_e, start, end;
 
-		return { take, idx, position, name, color };
+	static int getColorFromPreset(String name)
+	{
+		if (name.isEmpty())
+			name == "unnamed";
+
+		if (name == "atk")
+			return juceToReaperColor(atk.color);
+		if (name == "rel")
+			return juceToReaperColor(rel.color);
+		if (name == "pre")
+			return juceToReaperColor(pre.color);
+		if (name == "leg-s" || name == "rel-s")
+			return juceToReaperColor(leg_s.color);
+		if (name == "leg-e" || name == "rel-e")
+			return juceToReaperColor(leg_e.color);
+		if (name == "start")
+			return juceToReaperColor(start.color);
+		if (name == "end")
+			return juceToReaperColor(end.color);
+
+		return 0;
 	}
 
-	TAKEMARKER(MediaItem_Take* take, int idx, double position, String name = "", int color = 0)
-		: take(take), idx(idx), position(position), name(name), color(color)	{}
+	static vector<TAKEMARKER> collect(TAKE& take);
+
+	static void replace(TAKE& take, vector<TAKEMARKER>& list);
+
+	static int count(TAKE& take);
+
+	static TAKEMARKER add(TAKE& take, double position, String name = "", int color = 0);
+
+	static TAKEMARKER addOrUpdateByName(TAKE& take, double position, String name = "", int color = 0);
+
+	static TAKEMARKER addOrUpdateByIdx(TAKE& take, int idx, double position, String name = "", int color = 0);
+
+	static TAKEMARKER getByName(TAKE& take, String name);
+
+	static TAKEMARKER getByIdx(TAKE& take, int idx);
+
+	TAKEMARKER(TAKE& take, int idx = -1, double position = 0, String name = "", int color = 0)
+		: take(&take), idx(idx), position(position), name(name), color(color)	{ }
+
+	TAKEMARKER() {}
 
 	~TAKEMARKER() = default;
 
@@ -135,6 +176,7 @@ public:
 	bool remove();
 
 	int getIndex() { return idx; }
+	bool isValid() { return take != nullptr && idx >= 0; }
 
 	String getName();
 	void setName(const String& v);
@@ -142,15 +184,18 @@ public:
 	Colour getColor();
 	void setColor(const Colour& v);
 
+	// local to item
 	double getPosition();
 	// may cause index to change
 	void setPosition(double v);
 
 	int idx = -1; // changes based on position or existence
-	MediaItem_Take* take = nullptr;
+	TAKE* take;
 	String name;
 	double position = 0;
 	int color = 0; // default color is 0 based on theme
+
+	
 };
 
 class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES
@@ -232,7 +277,8 @@ public:
 	void setColor(Colour v) override;
 
 	// uses item rate and take offset to calculate actual take position
-	double getLocalFromGlobalTime(double global);
+	double globalToLocalTime(double global);
+	double localToGlobalTime(double local);
 
 	TAKE move(MediaTrack* track);
 	TAKE move(MediaItem* new_item);
