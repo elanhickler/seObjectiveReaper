@@ -124,10 +124,12 @@ public:
 		Colour color;
 	};
 
-	static const MarkerPreset atk, rel, pre, leg_s, leg_e, rel_s, rel_e, start, end;
+	static const MarkerPreset atk, rel, pre, leg_s, leg_e, rel_s, rel_e, start, end, loop_s, loop_e;
 
 	static int getColorFromPreset(String name)
 	{
+		name = name.toLowerCase();
+
 		if (name.isEmpty())
 			name == "unnamed";
 
@@ -145,26 +147,34 @@ public:
 			return juceToReaperColor(start.color);
 		if (name == "end")
 			return juceToReaperColor(end.color);
+		if (name == "[")
+			return juceToReaperColor(loop_s.color);
+		if (name == "]")
+			return juceToReaperColor(loop_e.color);
 
 		return 0;
 	}
 
-	static vector<TAKEMARKER> collect(TAKE& take);
+	static vector<TAKEMARKER> collect(TAKE& take, bool ignoreMarkersOutsideItem = true);
 
 	static void replace(TAKE& take, vector<TAKEMARKER>& list);
 
 	static int count(TAKE& take);
 
+	// local time
 	static TAKEMARKER add(TAKE& take, double position, String name = "", int color = 0);
 
+	// local time
 	static TAKEMARKER addOrUpdateByName(TAKE& take, double position, String name = "", int color = 0);
 
+	// local time
 	static TAKEMARKER addOrUpdateByIdx(TAKE& take, int idx, double position, String name = "", int color = 0);
 
-	static TAKEMARKER getByName(TAKE& take, String name);
+	static TAKEMARKER getByName(TAKE& take, String name, bool ignoreMarkersOutsideItem = true);
 
 	static TAKEMARKER getByIdx(TAKE& take, int idx);
 
+	// local time
 	TAKEMARKER(TAKE& take, int idx = -1, double position = 0, String name = "", int color = 0)
 		: take(&take), idx(idx), position(position), name(name), color(color)	{ }
 
@@ -176,7 +186,12 @@ public:
 	bool remove();
 
 	int getIndex() { return idx; }
+
+	// returns true if marker did exists in project
 	bool isValid() { return take != nullptr && idx >= 0; }
+
+	// returns true if take marker is outside the range of the item's length and thus not visible
+	bool isOutsideItem();
 
 	String getName();
 	void setName(const String& v);
@@ -184,18 +199,17 @@ public:
 	Colour getColor();
 	void setColor(const Colour& v);
 
-	// local to item
+	// local to take
 	double getPosition();
+	double getPositionInItem();
 	// may cause index to change
 	void setPosition(double v);
 
 	int idx = -1; // changes based on position or existence
 	TAKE* take;
 	String name;
-	double position = 0;
-	int color = 0; // default color is 0 based on theme
-
-	
+	double position = 0; // local time
+	int color = 0; // default color is 0 based on theme	
 };
 
 class TAKE : public OBJECT_MOVABLE, public OBJECT_NAMABLE, public OBJECT_VALIDATES

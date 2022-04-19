@@ -1,16 +1,17 @@
 #include "ReaperClassesHeader.h"
 #include "Take.h"
 
-const TAKEMARKER::MarkerPreset TAKEMARKER::atk = TAKEMARKER::MarkerPreset{ "atk", Colour::fromRGB(149, 0, 0) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::rel = TAKEMARKER::MarkerPreset{ "rel", Colour::fromRGB(47,94,255) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::pre = TAKEMARKER::MarkerPreset{ "pre", Colour::fromRGB(67,156,81) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::leg_s = TAKEMARKER::MarkerPreset{ "leg-s", Colour::fromRGB(47,94,255) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::leg_e = TAKEMARKER::MarkerPreset{ "leg-e", Colour::fromRGB(149,0,0) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::rel_s = TAKEMARKER::MarkerPreset{ "leg-s", Colour::fromRGB(47,94,255) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::rel_e = TAKEMARKER::MarkerPreset{ "leg-e", Colour::fromRGB(149,0,0) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::start = TAKEMARKER::MarkerPreset{ "start", Colour::fromRGB(82,82,82) };
-const TAKEMARKER::MarkerPreset TAKEMARKER::end = TAKEMARKER::MarkerPreset{ "end", Colour::fromRGB(82,82,82) };
-
+const TAKEMARKER::MarkerPreset TAKEMARKER::atk    = TAKEMARKER::MarkerPreset{ "atk",   Colour::fromRGB(149, 0, 0)  };
+const TAKEMARKER::MarkerPreset TAKEMARKER::rel    = TAKEMARKER::MarkerPreset{ "rel",   Colour::fromRGB(47,94,255)  };
+const TAKEMARKER::MarkerPreset TAKEMARKER::pre    = TAKEMARKER::MarkerPreset{ "pre",   Colour::fromRGB(67,156,81)  };
+const TAKEMARKER::MarkerPreset TAKEMARKER::leg_s  = TAKEMARKER::MarkerPreset{ "leg-s", Colour::fromRGB(47,94,255)  };
+const TAKEMARKER::MarkerPreset TAKEMARKER::leg_e  = TAKEMARKER::MarkerPreset{ "leg-e", Colour::fromRGB(149,0,0)    };
+const TAKEMARKER::MarkerPreset TAKEMARKER::rel_s  = TAKEMARKER::MarkerPreset{ "rel-s", Colour::fromRGB(47,94,255)  };
+const TAKEMARKER::MarkerPreset TAKEMARKER::rel_e  = TAKEMARKER::MarkerPreset{ "rel-e", Colour::fromRGB(149,0,0)    };
+const TAKEMARKER::MarkerPreset TAKEMARKER::start  = TAKEMARKER::MarkerPreset{ "start", Colour::fromRGB(82,82,82)   };
+const TAKEMARKER::MarkerPreset TAKEMARKER::end    = TAKEMARKER::MarkerPreset{ "end",   Colour::fromRGB(82,82,82)   };
+const TAKEMARKER::MarkerPreset TAKEMARKER::loop_s = TAKEMARKER::MarkerPreset{ "[",     Colour::fromRGB(78,176,157) };
+const TAKEMARKER::MarkerPreset TAKEMARKER::loop_e = TAKEMARKER::MarkerPreset{ "]",     Colour::fromRGB(135,75,178) };
 
 String TAKE::getObjectName() const { return GetTakeName(takePtr); }
 void TAKE::setObjectName(const String & v) { GetSetMediaItemTakeInfo_String(takePtr, "P_NAME", (char*)v.toRawUTF8(), 1); }
@@ -425,13 +426,20 @@ double MIDINOTE::getProjectStart() const { return startTime + ITEM(take->getMedi
 
 double MIDINOTE::getProjectEnd() const { return endTime + ITEM(take->getMediaItemPtr()).getStart() + take->getStartOffset(); }
 
-vector<TAKEMARKER> TAKEMARKER::collect(TAKE& take)
+vector<TAKEMARKER> TAKEMARKER::collect(TAKE& take, bool ignoreMarkersOutsideItem)
 {
 	vector<TAKEMARKER> list;
 
 	int numMarkers = TAKEMARKER::count(take);
 	for (int i = 0; i < numMarkers; ++i)
-		list.push_back(TAKEMARKER::getByIdx(take, i));
+	{
+		auto marker = TAKEMARKER::getByIdx(take, i);
+
+		if (ignoreMarkersOutsideItem && marker.isOutsideItem())
+			continue;
+
+		list.push_back(marker);
+	}
 
 	return std::move(list);
 }
@@ -461,7 +469,7 @@ TAKEMARKER TAKEMARKER::addOrUpdateByName(TAKE& take, double position, String nam
 {
 	auto list = TAKEMARKER::collect(take);
 
-	auto it = std::find_if(std::begin(list), std::end(list), [&](TAKEMARKER& m) { return m.name == name; });
+	auto it = std::find_if(std::begin(list), std::end(list), [&](TAKEMARKER& m) { return m.name.compare(name) == 0; });
 
 	int i = -1;
 	if (it != std::end(list))
@@ -479,25 +487,16 @@ TAKEMARKER TAKEMARKER::addOrUpdateByIdx(TAKE& take, int idx, double position, St
 	return { take, idx, position, name, color };
 }
 
-TAKEMARKER TAKEMARKER::getByName(TAKE& take, String name)
+TAKEMARKER TAKEMARKER::getByName(TAKE& take, String name, bool ignoreMarkersOutsideItem)
 {
-	if (name.isNotEmpty())
-	{
-		auto list = TAKEMARKER::collect(take);
+	auto list = TAKEMARKER::collect(take, ignoreMarkersOutsideItem);
 
-		auto it = std::find_if(std::begin(list), std::end(list), [&](TAKEMARKER& m) { return m.name == name; });
+	auto it = std::find_if(std::begin(list), std::end(list), [&](TAKEMARKER& m) { return m.name.compare(name) == 0; });
 
-		int i = -1;
+	if (it == std::end(list) || (ignoreMarkersOutsideItem && it->isOutsideItem()))
+		return TAKEMARKER{ take, -1, 0 };
 
-		char c[256];
-		String name;
-		int color;
-		double position;
-		if (it != std::end(list))
-			return *it;
-	}
-
-	return TAKEMARKER{ take, -1, 0 };
+	return *it;
 }
 
 TAKEMARKER TAKEMARKER::getByIdx(TAKE& take, int idx)
@@ -525,6 +524,17 @@ bool TAKEMARKER::remove()
 {
 	idx = -1;
 	return DeleteTakeMarker(take->getPointer(), idx);
+}
+
+bool TAKEMARKER::isOutsideItem()
+{
+	ITEM item = take->getMediaItemPtr();
+	double pos = getPositionInItem();
+
+	if (isTouchingRange(getPositionInItem(), 0.0, item.getLength(), .0001))
+		return false;
+
+	return true;
 }
 
 String TAKEMARKER::getName()
@@ -561,6 +571,11 @@ double TAKEMARKER::getPosition()
 {
 	position = GetTakeMarker(take->getPointer(), idx, nullptr, 0, nullptr);
 	return position;
+}
+
+double TAKEMARKER::getPositionInItem()
+{
+	return (getPosition() - take->getStartOffset()) / take->getRate();
 }
 
 void TAKEMARKER::setPosition(double v)
