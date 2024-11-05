@@ -323,8 +323,8 @@ public:
 	static double getPeakValueAbsolute(TAKE & take, double * frameIndexOut = nullptr, double * channelIndexOut = nullptr);
 
 	static vector<double> sumChannelModeChannels(TAKE & take);
-
 	static vector<double> sumAllChannels(TAKE & take);
+	vector<double> sumSpecificChannels(TAKE& take, vector<int> channelList);
 
 	static double getPeakRMS(TAKE & take, double timeWindowForPeakRMS);
 

@@ -254,6 +254,18 @@ void UNDO(String undostr, ReaProject* project)
 	flip(undo_is_active);
 }
 
+void UNDO_WITH_ERROR(String undostr, ReaProject* project) {
+
+	undostr = "ERROR: " + undostr;
+	if (undo_is_active)
+	{
+		Undo_EndBlock2(project, undostr.toRawUTF8(), -1);
+		flip(undo_is_active);
+	}
+
+	CONSOLE::log("ERROR: " + undostr);
+}
+
 void UPDATE()
 {
 	UpdateArrange();

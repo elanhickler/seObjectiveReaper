@@ -219,9 +219,11 @@ public:
 void UI();
 void UNDO(String undostr = "ACTION ENDED EARLY", ReaProject* project = 0);
 void UPDATE();
+void UNDO_WITH_ERROR(String undostr, ReaProject* project = 0);
 
 int juceToReaperColor(const Colour & v);
 Colour reaperToJuceColor(int v);
+static vector<int> notecolors = { 0xa6cee3,0x1f78b4,0xb2df8a,0x33a02c,0xffff99,0xfb9a99,0xe31a1c,0xfdbf6f,0xff7f00,0xcab2d6,0x6a3d9a,0xb15928 };
 
 // [\\s\\S] replaces . for c++ regex since . does not match newline characters
 

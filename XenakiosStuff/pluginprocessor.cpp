@@ -102,7 +102,7 @@ void PluginChain::render(MediaItem * item, double sr, String outfn)
 			std::vector<double> buf(bufsize*outchans);
 			MidiBuffer midibuf;
 			AudioBuffer<float> plugprocbuf(8,bufsize);
-			float** plugbufptrs = plugprocbuf.getArrayOfWritePointers();
+			float* const* plugbufptrs = plugprocbuf.getArrayOfWritePointers();
 			int64_t count = 0;
 			std::vector<double> diskoutbuf(outchans*bufsize);
 			double* diskoutbufptrs[64];
@@ -182,7 +182,7 @@ void PluginChain::render(std::vector<std::vector<double>>& buf, double sr, int b
 	int64_t inputlenframes = buf[0].size();
 	MidiBuffer midibuf;
 	AudioBuffer<float> plugprocbuf(outchans, blocksize);
-	float** plugbufptrs = plugprocbuf.getArrayOfWritePointers();
+	float* const* plugbufptrs = plugprocbuf.getArrayOfWritePointers();
 	while (inposcount < lenframes)
 	{
 		if (cancel_flag != nullptr && *cancel_flag == true)
@@ -256,7 +256,7 @@ ValueTree PluginChain::getState()
 		plugstate.setProperty("plugname", desc.name, nullptr);
 		plugstate.setProperty("plugfileorid", desc.fileOrIdentifier, nullptr);
 		plugstate.setProperty("plugfmt", desc.pluginFormatName, nullptr);
-		plugstate.setProperty("pluguid", desc.uid, nullptr);
+		plugstate.setProperty("pluguid", desc.deprecatedUid, nullptr);
 		MemoryBlock block;
 		e.m_plug->getStateInformation(block);
 		plugstate.setProperty("chunk", block, nullptr);

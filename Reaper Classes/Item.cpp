@@ -739,6 +739,24 @@ vector<double> AUDIOFUNCTION::sumChannelModeChannels(TAKE & take)
 	return std::move(summed);
 }
 
+vector<double> AUDIOFUNCTION::sumSpecificChannels(TAKE& take, vector<int> channelList)
+{
+	vector<double> summed(take.getNumFrames(), 0);
+
+	for (int fr = 0; fr < take.getNumFrames(); ++fr)
+	{
+		for (int i = 0; i < channelList.size(); ++i) {
+			int ch = channelList[i];
+			if (ch >= take.getNumChannels()) {
+				continue;
+			}
+			summed[fr] += take[ch][fr];
+		}
+	}
+
+	return std::move(summed);
+}
+
 vector<double> AUDIOFUNCTION::sumAllChannels(TAKE & take)
 {
 	vector<double> summed(take.getNumFrames(), 0);
